@@ -1,4 +1,3 @@
-#include <hubero_local_planner/HuberoPlannerROS.h>
 #include <Eigen/Core>
 #include <cmath>
 
@@ -7,6 +6,7 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <base_local_planner/goal_functions.h>
+#include <hubero_local_planner/hubero_planner_ros.h>
 #include <nav_msgs/Path.h>
 
 //register this planner as a BaseLocalPlanner plugin

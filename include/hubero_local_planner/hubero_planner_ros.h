@@ -17,7 +17,7 @@
 
 #include <base_local_planner/odometry_helper_ros.h>
 
-#include <hubero_local_planner/HuberoPlanner.h>
+#include <hubero_local_planner/hubero_planner.h>
 
 namespace hubero_local_planner {
 /**
