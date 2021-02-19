@@ -21,6 +21,11 @@ HuberoPlannerROS::HuberoPlannerROS() : initialized_(false),
 	odom_helper_("odom"), setup_(false), dsrv_(nullptr) {
 }
 
+HuberoPlannerROS::~HuberoPlannerROS(){
+	//make sure to clean things up
+	delete dsrv_;
+}
+
 void HuberoPlannerROS::initialize(
 	std::string name,
 	tf::TransformListener* tf,
@@ -32,7 +37,7 @@ bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& or
 }
 
 bool HuberoPlannerROS::isGoalReached() {
-	return true;
+	return false;
 }
 
 void HuberoPlannerROS::publishLocalPlan(std::vector<geometry_msgs::PoseStamped>& path) {
@@ -43,12 +48,8 @@ void HuberoPlannerROS::publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>
 	base_local_planner::publishPlan(path, g_plan_pub_);
 }
 
-HuberoPlannerROS::~HuberoPlannerROS(){
-	//make sure to clean things up
-	delete dsrv_;
-}
-
 bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
+	cmd_vel.linear.x = 0.25;
 	return true;
 }
 

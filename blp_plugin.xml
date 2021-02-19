@@ -1,5 +1,5 @@
 <library path="lib/libhubero_local_planner">
-  <class name="hubero/HuberoPlannerROS" type="hubero::HuberoPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
+  <class name="hubero_local_planner/HuberoPlannerROS" type="hubero_local_planner::HuberoPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
     <description>
       A implementation of a HuBeRo local planner algorithm.
     </description>

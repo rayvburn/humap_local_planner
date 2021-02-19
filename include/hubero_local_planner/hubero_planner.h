@@ -128,6 +128,13 @@ public:
 
 private:
 	base_local_planner::LocalPlannerUtil *planner_util_;
+	/// ?
+	Eigen::Vector3f vsamples_;
+	// FIXME: cheat
+	double pdist_scale_, gdist_scale_, occdist_scale_;
+	double forward_point_distance_;
+	double cheat_factor_;
+
 	///< @brief The number of seconds to use to compute max/min vels for the planner
 	double sim_period_;
 	base_local_planner::Trajectory result_traj_;
