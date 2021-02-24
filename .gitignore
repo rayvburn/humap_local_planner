@@ -1,0 +1,18 @@
+# disable temporarily
+include/hubero_local_planner/fuzz/
+src/fuzz/
+
+# libraries
+lib/
+
+# temporarily
+include/hubero_local_planner/inflation/
+src/inflation/
+
+include/hubero_local_planner/trajectory_generator.h
+src/trajectory_generator.cpp
+
+include/hubero_local_planner/vis/
+src/vis/
+
+test/

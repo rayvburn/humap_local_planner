@@ -2,22 +2,24 @@
 
 // shared_ptr
 #include <memory>
+
 #include <tf/transform_listener.h>
-
-#include <dynamic_reconfigure/server.h>
-#include <hubero_local_planner/HuberoPlannerConfig.h>
-
 #include <angles/angles.h>
-
-#include <nav_msgs/Odometry.h>
 
 #include <costmap_2d/costmap_2d_ros.h>
 #include <nav_core/base_local_planner.h>
 #include <base_local_planner/latched_stop_rotate_controller.h>
 
+#include <nav_msgs/Odometry.h>
 #include <base_local_planner/odometry_helper_ros.h>
 
-#include <hubero_local_planner/hubero_planner.h>
+#include <costmap_converter/costmap_to_polygons.h>
+
+#include <dynamic_reconfigure/server.h>
+#include <hubero_local_planner/HuberoPlannerConfig.h> //!< Dynamic reconfigure
+#include <hubero_local_planner/hubero_config_ros.h>
+
+#include <hubero_local_planner/hubero_planner.h> //!< Planner
 
 namespace hubero_local_planner {
 /**
@@ -71,7 +73,7 @@ public:
       return initialized_;
     }
 
-private:
+protected:
 	/**
 	* @brief Callback to update the local planner's parameters based on dynamic reconfigure
 	*/
@@ -93,6 +95,10 @@ private:
 
 	costmap_2d::Costmap2DROS* costmap_ros_;
 
+	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
+	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
+
+
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;
 	hubero_local_planner::HuberoPlannerConfig default_config_;
 	bool setup_;
@@ -104,6 +110,9 @@ private:
 
 	base_local_planner::OdometryHelperRos odom_helper_;
 	std::string odom_topic_;
+
+	HuberoConfigROS cfg_;
+	ObstContainer obstacles_;
 
 }; // class HuberoPlannerROS
 }; // namespace hubero_local_planner

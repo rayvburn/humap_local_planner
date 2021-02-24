@@ -87,10 +87,8 @@ HuberoPlanner::~HuberoPlanner() {
 	delete traj_cloud_;
 }
 
-void HuberoPlanner::reconfigure(HuberoPlannerConfig &cfg) {
-	std::lock_guard<std::mutex> lock(configuration_mutex_);
-	// TODO
-	std::cout << "reconfigure Callback" << std::endl;
+void HuberoPlanner::init(HuberoConfigConstPtr cfg) {
+	cfg_ = cfg;
 }
 
 bool HuberoPlanner::checkTrajectory(
@@ -274,5 +272,10 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
     oscillation_costs_.resetOscillationFlags();
     return planner_util_->setPlan(orig_global_plan);
 }
+
+//// protected
+//void HuberoPlanner::updateConfig(HuberoPlannerROS cfg) {
+//
+//}
 
 }; // namespace hubero_local_planner
