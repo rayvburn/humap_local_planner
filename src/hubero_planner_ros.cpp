@@ -14,11 +14,13 @@ PLUGINLIB_EXPORT_CLASS(hubero_local_planner::HuberoPlannerROS, nav_core::BaseLoc
 
 namespace hubero_local_planner {
 
-void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
-}
-
-HuberoPlannerROS::HuberoPlannerROS() : initialized_(false),
-	odom_helper_("odom"), setup_(false), dsrv_(nullptr) {
+HuberoPlannerROS::HuberoPlannerROS():
+		costmap_ros_(NULL), tf_(NULL), /*costmap_model_(NULL),*/
+		costmap_converter_loader_("costmap_converter", "costmap_converter::BaseCostmapToPolygons"),
+		initialized_(false),
+		odom_helper_("odom"),
+		setup_(false),
+		dsrv_(nullptr) {
 }
 
 HuberoPlannerROS::~HuberoPlannerROS(){
@@ -27,9 +29,22 @@ HuberoPlannerROS::~HuberoPlannerROS(){
 }
 
 void HuberoPlannerROS::initialize(
-	std::string name,
-	tf::TransformListener* tf,
-	costmap_2d::Costmap2DROS* costmap_ros) {
+		std::string name,
+		tf::TransformListener* tf,
+		costmap_2d::Costmap2DROS* costmap_ros) {
+	// check if the plugin is already initialized
+	if (!initialized_) {
+		// create Node Handle with name of plugin (as used in move_base for loading)
+		ros::NodeHandle nh("~/" + name);
+
+		// get parameters of TebConfig via the nodehandle and override the default config
+		cfg_.loadFromParamServer(nh);
+
+		// reserve some memory for obstacles
+		obstacles_.reserve(500);
+
+		// ...
+	}
 }
 
 bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
@@ -38,6 +53,10 @@ bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& or
 
 bool HuberoPlannerROS::isGoalReached() {
 	return false;
+}
+
+void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
+	cfg_.reconfigure(config);
 }
 
 void HuberoPlannerROS::publishLocalPlan(std::vector<geometry_msgs::PoseStamped>& path) {

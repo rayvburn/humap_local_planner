@@ -3,7 +3,8 @@
 #include <vector>
 #include <mutex>
 
-#include <hubero_local_planner/HuberoPlannerConfig.h>
+#include <hubero_local_planner/hubero_config.h>
+#include <hubero_local_planner/obstacles.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -48,10 +49,7 @@ public:
      */
     virtual ~HuberoPlanner();
 
-    /**
-     * @brief Reconfigures the trajectory planner
-     */
-    void reconfigure(HuberoPlannerConfig &cfg);
+    void init(HuberoConfigConstPtr cfg);
 
     /**
      * @brief  Check if a trajectory is legal for a position/velocity pair
@@ -126,6 +124,10 @@ public:
      */
     bool setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
 
+protected:
+    // NOTE: THIS SHOULD NOT BE NEEDED! PTR!
+//    void updateConfig(HuberoPlannerROS cfg);
+
 private:
 	base_local_planner::LocalPlannerUtil *planner_util_;
 	/// ?
@@ -162,6 +164,9 @@ private:
     base_local_planner::TwirlingCostFunction twirling_costs_;
 
     base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
+
+    HuberoConfigConstPtr cfg_;
+	ObstContainerConstPtr obstacles_;
 
 }; // class HuberoPlanner
 }; // namespace hubero_local_planner
