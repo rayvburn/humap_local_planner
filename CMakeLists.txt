@@ -116,25 +116,66 @@ set(SOURCES_VIS
     src/vis/text.cpp
 )
 
+set(HEADERS_CONFIG
+    include/${PROJECT_NAME}/hubero_config.h
+)
+
+set(HEADERS_CONFIG_ROS
+    include/${PROJECT_NAME}/hubero_config_ros.h
+)
+set(SOURCES_CONFIG_ROS
+    src/hubero_config_ros.cpp
+)
+
+message(WARNING "witam")
+message(WARNING ${CMAKE_CURRENT_SOURCE_DIR})
+message(WARNING ${ignition-math3_EXPORTED_TARGETS})
+message(WARNING ${ignition-math_EXPORTED_TARGETS})
+message(WARNING ${ignition_math_EXPORTED_TARGETS})
+message(WARNING ${IGNITION-MATH_INCLUDE_DIRS})
+message(WARNING ${IGNITION-MATH_LIBRARIES})
+message(WARNING "zegnam")
+
+
 ## Custom libraries
+### Config
+add_library(config ${HEADERS_CONFIG})
+set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Fuzzy
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
-target_link_libraries(fuzzy ${fuzzylite_LIBRARY})
+target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Inflation
 add_library(inflation ${HEADERS_INFLATION} ${SOURCES_INFLATION})
+target_link_libraries(inflation ${IGNITION-MATH_LIBRARIES})
 set_target_properties(inflation PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### SFM
-add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM})
+add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
+target_link_libraries(sfm inflation config ${IGNITION-MATH_LIBRARIES})
 set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization
 add_library(vis ${HEADERS_VIS} ${SOURCES_VIS})
+target_link_libraries(vis ${IGNITION-MATH_LIBRARIES})
 set_target_properties(vis PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
+### ConfigROS
+add_library(config_ros ${HEADERS_CONFIG_ROS} ${SOURCES_CONFIG_ROS})
+target_link_libraries(config_ros config ${catkin_LIBRARIES})
+set_target_properties(config_ros PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+
 ## Library
-add_library(hubero_local_planner src/hubero_planner.cpp src/hubero_planner_ros.cpp)
+add_library(hubero_local_planner include/${PROJECT_NAME}/hubero_planner.h src/hubero_planner.cpp include/${PROJECT_NAME}/hubero_planner_ros.h src/hubero_planner_ros.cpp)
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis)
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES})
+
+## Executables
+add_executable(test_executable
+	src/test_executable.cpp
+)
+target_link_libraries(test_executable
+	hubero_local_planner
+	${catkin_LIBRARIES}
+)
 
 ## Install
 install(TARGETS hubero_local_planner
@@ -150,3 +191,14 @@ install(DIRECTORY include/${PROJECT_NAME}/
     DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
     PATTERN ".svn" EXCLUDE
 )
+
+#############
+## Testing ##
+#############
+
+if (CATKIN_ENABLE_TESTING)
+  catkin_add_gtest(test_hubero_planner test/test_hubero_planner.cpp)
+  if(TARGET test_hubero_planner)
+     target_link_libraries(test_hubero_planner hubero_local_planner)
+  endif()
+endif()
