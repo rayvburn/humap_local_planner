@@ -1,17 +1,16 @@
 #pragma once
 
-#include <ros/node_handle.h>
+#include <ros/console.h>
+#include <ros/ros.h>
 #include <hubero_local_planner/HuberoPlannerConfig.h> //!< Dynamic reconfigure struct
-#include <hubero_local_planner/hubero_config.h>
+#include <hubero_local_planner/hubero_config.h> //!< Base class containing configuration
 
 namespace hubero_local_planner {
 
 class HuberoConfigROS: public HuberoConfig {
 public:
-	std::string odom_topic; //!< Topic name of the odometry message, provided by the robot driver or simulator
-	std::string map_frame; //!< Global planning frame
-
 	HuberoConfigROS() = default;
+	virtual ~HuberoConfigROS() = default;
 
 	/**
 	 * @brief Loads params from ROS parameter server
@@ -25,8 +24,8 @@ public:
 	 */
 	void reconfigure(HuberoPlannerConfig& cfg);
 
-	virtual ~HuberoConfigROS() = default;
-
+	std::string odom_topic; //!< Topic name of the odometry message, provided by the robot driver or simulator
+	std::string map_frame; //!< Global planning frame
 private:
 	std::mutex config_mutex_; //!< Mutex for config accesses and changes
 };

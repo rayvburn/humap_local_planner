@@ -40,8 +40,7 @@ public:
      * @param tf A pointer to a transform listener
      * @param costmap The cost map to use for assigning costs to trajectories
      */
-    void initialize(std::string name, tf::TransformListener* tf,
-          costmap_2d::Costmap2DROS* costmap_ros);
+    void initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros);
 
     /**
      * @brief  Destructor for the wrapper
@@ -57,7 +56,7 @@ public:
     bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
 
     /**
-     * @brief  Set the plan that the controller is following
+     * @brief Set the plan that the controller is following
      * @param orig_global_plan The plan to pass to the controller
      * @return True if the plan was updated successfully, false otherwise
      */
@@ -83,36 +82,36 @@ protected:
 
 	void publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>& path);
 
-	tf::TransformListener* tf_; ///< @brief Used for transforming point clouds
-
-	// for visualisation, publishers of global and local plan
-	ros::Publisher g_plan_pub_, l_plan_pub_;
-
-	base_local_planner::LocalPlannerUtil planner_util_;
-
-	///< @brief The trajectory controller
-	std::shared_ptr<HuberoPlanner> planner_;
-
-	costmap_2d::Costmap2DROS* costmap_ros_;
-
-	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
-	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
-
-
-	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;
-	hubero_local_planner::HuberoPlannerConfig default_config_;
-	bool setup_;
-	tf::Stamped<tf::Pose> current_pose_;
-
-	base_local_planner::LatchedStopRotateController latchedStopRotateController_;
-
+	/// @brief nav_core status
 	bool initialized_;
 
+	/// @section Publishers
+	/// @brief Global plan publisher (for visualisation)
+	ros::Publisher g_plan_pub_;
+	/// @brief Local plan publisher (for visualisation)
+	ros::Publisher l_plan_pub_;
+
+	/// @section Local planning
+	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
+	HuberoPlannerPtr planner_; ///< @brief The trajectory controller
+
+	/// @section Costmap
+	costmap_2d::Costmap2DROS* costmap_ros_;
+	/// @subsection Costmap converter
+	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
+	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
+	ObstContainer obstacles_;
+
+	/// @section Dynamic reconfigure
+	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;
+	hubero_local_planner::HuberoPlannerConfig default_config_;
+	std::shared_ptr<HuberoConfigROS> cfg_;
+
+	/// @section Odometry
+	tf::TransformListener* tf_;
 	base_local_planner::OdometryHelperRos odom_helper_;
 	std::string odom_topic_;
-
-	HuberoConfigROS cfg_;
-	ObstContainer obstacles_;
+	tf::Stamped<tf::Pose> current_pose_;
 
 }; // class HuberoPlannerROS
 }; // namespace hubero_local_planner

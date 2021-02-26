@@ -10,6 +10,8 @@
 namespace hubero_local_planner {
 
 void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
+	ROS_INFO("[HuberoConfigROS] loadFromParamServer()");
+
 	nh.param("odom_topic", odom_topic, odom_topic);
 	nh.param("map_frame", map_frame, map_frame);
 
@@ -17,7 +19,10 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	// subsection to delete?
 	nh.param("init_pose", general.init_pose, general.init_pose);
 	nh.param("init_target", general.init_target, general.init_target);
-	nh.param("init_stance", general.init_stance, general.init_stance);
+	//
+	int general_init_stance = general.init_stance;
+	nh.param("init_stance", general_init_stance, general_init_stance);
+	general.init_stance = static_cast<unsigned short int>(general_init_stance);
 
 	nh.param("global_frame_name", general.global_frame_name, general.global_frame_name);
 	nh.param("animation_factor", general.animation_factor, general.animation_factor);
@@ -28,10 +33,13 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("limit_actors_workspace", general.limit_actors_workspace, general.limit_actors_workspace);
 	nh.param("world_bound_x", general.world_bound_x, general.world_bound_x);
 	nh.param("world_bound_y", general.world_bound_y, general.world_bound_y);
-	//
 
 	// InflatorParams
-	nh.param("bounding_type", inflator.bounding_type, inflator.bounding_type);
+	// unsigned short int - needed reference so static_cast will not do
+	int inflator_bounding_type = inflator.bounding_type;
+	nh.param("bounding_type", inflator_bounding_type, inflator_bounding_type);
+	inflator.bounding_type = static_cast<unsigned short int>(inflator_bounding_type);
+	//
 	nh.param("circle_radius", inflator.circle_radius, inflator.circle_radius);
 	nh.param("box_size", inflator.box_size, inflator.box_size);
 	nh.param("ellipse", inflator.ellipse, inflator.ellipse);
@@ -47,9 +55,19 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("min_force", sfm.min_force, sfm.min_force);
 	nh.param("max_force", sfm.max_force, sfm.max_force);
 	nh.param("heterogenous_population", sfm.heterogenous_population, sfm.heterogenous_population);
-	nh.param("static_obj_interaction", sfm.static_obj_interaction, sfm.static_obj_interaction);
-	nh.param("box_inflation_type", sfm.box_inflation_type, sfm.box_inflation_type);
-	nh.param("opposite_force", sfm.opposite_force, sfm.opposite_force);
+	//
+	int sfm_static_obj_interaction = sfm.static_obj_interaction;
+	nh.param("static_obj_interaction", sfm_static_obj_interaction, sfm_static_obj_interaction);
+	sfm.static_obj_interaction = static_cast<unsigned short int>(sfm_static_obj_interaction);
+	//
+	int sfm_box_inflation_type = sfm.box_inflation_type;
+	nh.param("box_inflation_type", sfm_box_inflation_type, sfm_box_inflation_type);
+	sfm.box_inflation_type = static_cast<unsigned short int>(sfm_box_inflation_type);
+	//
+	int sfm_opposite_force_method = sfm.opposite_force_method;
+	nh.param("opposite_force", sfm_opposite_force_method, sfm_opposite_force_method);
+	sfm.opposite_force_method = static_cast<unsigned short int>(sfm_opposite_force_method);
+	//
 	nh.param("disable_interaction_forces", sfm.disable_interaction_forces, sfm.disable_interaction_forces);
 
 	// BehaviourParams
@@ -68,8 +86,9 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 }
 
 void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
-	printf("HuberoConfigROS::reconfigure() called but no actions will be performed!\r\n");
-	//std::lock_guard lock(config_mutex_);
+	ROS_INFO("[HuberoConfigROS] reconfigure()");
+	ROS_DEBUG("[HuberoConfigROS] reconfigure() called but no actions will be performed!");
+	std::lock_guard<std::mutex> lock(config_mutex_);
 
 	/*
 	general.init_pose = cfg
