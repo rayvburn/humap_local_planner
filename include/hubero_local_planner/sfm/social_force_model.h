@@ -11,7 +11,7 @@
 #include <hubero_common/shift_register.h>
 
 #include <hubero_local_planner/sfm/inflator.h>
-#include <hubero_local_planner/obstacles.h>
+#include <hubero_local_planner/external/obstacles.h>
 #include <hubero_local_planner/hubero_config.h>
 
 // C++ STL

@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <angles/angles.h>
 
 #include <costmap_2d/costmap_2d_ros.h>
@@ -14,12 +15,15 @@
 #include <base_local_planner/odometry_helper_ros.h>
 
 #include <costmap_converter/costmap_to_polygons.h>
+#include <costmap_converter/costmap_converter_interface.h>
+#include <costmap_converter/ObstacleMsg.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <hubero_local_planner/HuberoPlannerConfig.h> //!< Dynamic reconfigure
 #include <hubero_local_planner/hubero_config_ros.h>
 
 #include <hubero_local_planner/hubero_planner.h> //!< Planner
+#include <hubero_local_planner/visualization.h>
 
 namespace hubero_local_planner {
 /**
@@ -35,25 +39,17 @@ public:
     HuberoPlannerROS();
 
     /**
+     * @brief  Destructor for the wrapper
+     */
+    ~HuberoPlannerROS();
+
+    /**
      * @brief  Constructs the ros wrapper
      * @param name The name to give this instance of the trajectory planner
      * @param tf A pointer to a transform listener
      * @param costmap The cost map to use for assigning costs to trajectories
      */
     void initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros);
-
-    /**
-     * @brief  Destructor for the wrapper
-     */
-    ~HuberoPlannerROS();
-
-    /**
-     * @brief  Given the current position, orientation, and velocity of the robot,
-     * compute velocity commands to send to the base
-     * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
-     * @return True if a valid trajectory was found, false otherwise
-     */
-    bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
 
     /**
      * @brief Set the plan that the controller is following
@@ -68,6 +64,18 @@ public:
      */
     bool isGoalReached();
 
+    /**
+     * @brief  Given the current position, orientation, and velocity of the robot,
+     * compute velocity commands to send to the base
+     * @param cmd_vel Will be filled with the velocity command to be passed to the robot base
+     * @return True if a valid trajectory was found, false otherwise
+     */
+    bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
+
+    /**
+     * @brief Evaluates whether planner's initialization procedure was already executed
+     * @return Returns @ref initialized_ flag
+     */
     bool isInitialized() {
       return initialized_;
     }
@@ -81,6 +89,12 @@ protected:
 	void publishLocalPlan(std::vector<geometry_msgs::PoseStamped>& path);
 
 	void publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>& path);
+
+	/**
+	 * @brief Updates @ref obstacles_ with costmap converter's data
+	 * @note This method is copied from TEB Local Planner
+	 */
+	bool updateObstacleContainerWithCostmapConverter();
 
 	/// @brief nav_core status
 	bool initialized_;
@@ -100,7 +114,7 @@ protected:
 	/// @subsection Costmap converter
 	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
 	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
-	ObstContainer obstacles_;
+	std::shared_ptr<ObstContainer> obstacles_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;
@@ -112,6 +126,10 @@ protected:
 	base_local_planner::OdometryHelperRos odom_helper_;
 	std::string odom_topic_;
 	tf::Stamped<tf::Pose> current_pose_;
+	// helpers
+	tf::TransformBroadcaster tf_broadcaster_;
+
+	Visualization vis_;
 
 }; // class HuberoPlannerROS
 }; // namespace hubero_local_planner
