@@ -86,9 +86,10 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 }
 
 void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
-	ROS_INFO("[HuberoConfigROS] reconfigure()");
-	ROS_DEBUG("[HuberoConfigROS] reconfigure() called but no actions will be performed!");
 	std::lock_guard<std::mutex> lock(config_mutex_);
+	ROS_INFO("[HuberoConfigROS] reconfigure()");
+
+	// sfm.disable_interaction_forces = cfg.groups.sfm.disable_interaction_forces;
 
 	/*
 	general.init_pose = cfg

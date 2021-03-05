@@ -10,6 +10,7 @@ include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite)
 find_package(catkin REQUIRED
     COMPONENTS
         base_local_planner
+        costmap_converter
         cmake_modules
         costmap_2d
         dynamic_reconfigure
@@ -51,6 +52,7 @@ catkin_package(
         nav_msgs
         pluginlib
         roscpp
+        costmap_converter
 )
 
 set(HEADERS_FUZZY
@@ -120,22 +122,10 @@ set(HEADERS_CONFIG
     include/${PROJECT_NAME}/hubero_config.h
 )
 
-set(HEADERS_CONFIG_ROS
-    include/${PROJECT_NAME}/hubero_config_ros.h
-)
-set(SOURCES_CONFIG_ROS
-    src/hubero_config_ros.cpp
-)
-
-message(WARNING "witam")
-message(WARNING ${CMAKE_CURRENT_SOURCE_DIR})
-message(WARNING ${ignition-math3_EXPORTED_TARGETS})
-message(WARNING ${ignition-math_EXPORTED_TARGETS})
-message(WARNING ${ignition_math_EXPORTED_TARGETS})
-message(WARNING ${IGNITION-MATH_INCLUDE_DIRS})
-message(WARNING ${IGNITION-MATH_LIBRARIES})
-message(WARNING "zegnam")
-
+## External libraries (TEB Local Planner)
+add_library(obstacles include/${PROJECT_NAME}/external/obstacles.h src/external/obstacles.cpp)
+target_link_libraries(obstacles ${fuzzylite_LIBRARY} config ${EIGEN3_LIBRARIES})
+set_target_properties(obstacles PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 ## Custom libraries
 ### Config
@@ -153,20 +143,29 @@ set_target_properties(inflation PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOUR
 add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
 target_link_libraries(sfm inflation config ${IGNITION-MATH_LIBRARIES})
 set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+### Visualization - Helper library
+add_library(vis_helper ${HEADERS_VIS} ${SOURCES_VIS})
+target_link_libraries(vis_helper ${IGNITION-MATH_LIBRARIES})
+set_target_properties(vis_helper PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization
-add_library(vis ${HEADERS_VIS} ${SOURCES_VIS})
-target_link_libraries(vis ${IGNITION-MATH_LIBRARIES})
+add_library(vis include/${PROJECT_NAME}/visualization.h src/visualization.cpp)
+target_link_libraries(vis vis_helper)
 set_target_properties(vis PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 ### ConfigROS
-add_library(config_ros ${HEADERS_CONFIG_ROS} ${SOURCES_CONFIG_ROS})
+add_library(config_ros include/${PROJECT_NAME}/hubero_config_ros.h src/hubero_config_ros.cpp)
 target_link_libraries(config_ros config ${catkin_LIBRARIES})
 set_target_properties(config_ros PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 ## Library
-add_library(hubero_local_planner include/${PROJECT_NAME}/hubero_planner.h src/hubero_planner.cpp include/${PROJECT_NAME}/hubero_planner_ros.h src/hubero_planner_ros.cpp)
+add_library(hubero_local_planner
+    include/${PROJECT_NAME}/hubero_planner.h
+    src/hubero_planner.cpp
+    include/${PROJECT_NAME}/hubero_planner_ros.h
+    src/hubero_planner_ros.cpp
+)
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES} obstacles)
 
 ## Executables
 add_executable(test_executable
