@@ -20,6 +20,8 @@
 #include <hubero_local_planner/vis/line_list.h>
 #include <hubero_local_planner/vis/text.h>
 
+#include <hubero_local_planner/hubero_planner.h>
+
 namespace hubero_local_planner {
 
 class Visualization {
@@ -37,8 +39,24 @@ public:
 
 	bool publishBehaviourActive(const Vector3& pos, const std::string& description);
 	bool publishClosestPoints(const std::vector<Pose3>& pts);
-	// TODO: handle
-	bool publishPath(const Vector3& new_pos);
+	bool publishVelocity(const Vector3& pos_start,
+			const double& angle_lin,
+			const double& linear_x,
+			const Vector3& pos_lin_end,
+			const double& angle_ang,
+			const double& angular_z
+	);
+
+	void publishPath(const Pose3& new_pos);
+	void resetPath();
+
+	void publishGrid(
+			const Pose3& pos_current,
+			const Vector3& vel_current,
+			const Pose3& goal,
+			ObstContainerConstPtr obstacles,
+			HuberoPlanner& planner
+	);
 
 	virtual ~Visualization() = default;
 

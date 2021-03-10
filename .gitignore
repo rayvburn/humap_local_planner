@@ -12,7 +12,4 @@ src/inflation/
 include/hubero_local_planner/trajectory_generator.h
 src/trajectory_generator.cpp
 
-include/hubero_local_planner/vis/
-src/vis/
-
 test/
