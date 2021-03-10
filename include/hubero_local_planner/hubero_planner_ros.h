@@ -109,7 +109,7 @@ protected:
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 	HuberoPlannerPtr planner_; ///< @brief The trajectory controller
 
-	/// @section Costmap
+	/// @section Local costmap (expressed in odometry frame)
 	costmap_2d::Costmap2DROS* costmap_ros_;
 	/// @subsection Costmap converter
 	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
