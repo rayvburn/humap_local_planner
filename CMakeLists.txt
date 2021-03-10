@@ -34,7 +34,6 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
-    ${hubero_common_INCLUDE_DIRS}
     ${IGNITION-MATH_INCLUDE_DIRS}
 )
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -53,6 +52,7 @@ catkin_package(
         pluginlib
         roscpp
         costmap_converter
+        hubero_common
 )
 
 set(HEADERS_FUZZY
@@ -165,7 +165,7 @@ add_library(hubero_local_planner
     src/hubero_planner_ros.cpp
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES} obstacles)
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES} obstacles ${hubero_common_LIBRARIES})
 
 ## Executables
 add_executable(test_executable

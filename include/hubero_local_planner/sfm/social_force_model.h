@@ -262,9 +262,23 @@ private:
 	/// Additionally, a distance vector to the currently
 	/// considered obstacle is returned as the tuple's second
 	/// element. Third element is a length of that vector.
-	std::tuple<Vector3, Vector3, double> computeInteractionForce(const ignition::math::Pose3d &actor_pose,
-			const Vector3 &actor_vel, const ignition::math::Pose3d &object_pose,
-			const Vector3 &object_vel, const bool &is_actor);
+//	std::tuple<Vector3, Vector3, double> computeInteractionForce(const ignition::math::Pose3d &actor_pose,
+//			const Vector3 &actor_vel, const ignition::math::Pose3d &object_pose,
+//			const Vector3 &object_vel, const Vector3 &d_alpha_beta,
+//			const bool &is_actor);
+
+	std::tuple<Vector3, Vector3, double> computeInteractionForce(
+			const Pose3 &actor_pose,
+			const Vector3 &actor_vel,
+			const Pose3 &object_pose,
+			const Vector3 &object_vel,
+			const Vector3 &d_alpha_beta,
+			const double &d_alpha_beta_length,
+			const RelativeLocation &beta_rel_location,
+			const double &beta_angle_rel,
+			const double &d_alpha_beta_angle,
+			const bool &is_actor
+	);
 
 	/// \brief Helper function which computes a repulsive
 	/// force which static obstacle exerts on the actor;

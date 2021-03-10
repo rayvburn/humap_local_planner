@@ -1,4 +1,5 @@
 #include <hubero_local_planner/hubero_planner.h>
+#include <hubero_common/converter.h>
 #include <math.h>
 
 namespace hubero_local_planner {
@@ -32,96 +33,26 @@ bool HuberoPlanner::checkTrajectory(
 }
 
 bool HuberoPlanner::compute(
-		const tf::Stamped<tf::Pose> pose_global,
-		const geometry_msgs::Twist robot_vel,
+		const tf::Stamped<tf::Pose>& pose,
+		const geometry_msgs::Twist& velocity,
+		const tf::Stamped<tf::Pose>& goal,
 		ObstContainerConstPtr obstacles,
-		Eigen::Vector3f& force) {
-
+		Eigen::Vector3f& force
+) {
 	// NOTE: typical operations are available in `base_local_planner` ns as free functions
 	// base_local_planner::getGoalPose()
 	// NOTE: stick to ROS interface with base_local_planner functions,
 	// let Hubero Planner abstract from the actual tf conversions etc
-
-	printf("[HuberoPlanner::compute()] 1 \r\n");
-
-	// calculate `social` force (i.e. `internal` and `interaction` components)
-	tf::Stamped<tf::Pose> goal_tf;
-	planner_util_->getGoal(goal_tf);
-	Vector3 goal(
-		goal_tf.getOrigin().x(),
-		goal_tf.getOrigin().y(),
-		goal_tf.getOrigin().z()
+	//
+	Vector3 force_result;
+	bool status = compute(
+			converter::tfPoseToIgnPose(pose),
+			converter::twistToIgnVector3(velocity), // TODO angular velocity!
+			converter::tfPoseToIgnPose(goal),
+			obstacles,
+			force_result
 	);
-
-	Pose3 pose_global_ign(
-		pose_global.getOrigin().x(),
-		pose_global.getOrigin().y(),
-		pose_global.getOrigin().z(),
-		pose_global.getRotation().x(),
-		pose_global.getRotation().y(),
-		pose_global.getRotation().z(),
-		pose_global.getRotation().w()
-	);
-
-	printf("[HuberoPlanner::compute()] 2 \r\n");
-
-	// TODO: angular velocity!
-	Vector3 vel(robot_vel.linear.x, robot_vel.linear.y, 0.0);
-
-	printf("[HuberoPlanner::compute()] 3 \r\n");
-
-	sfm_.computeSocialForce(obstacles, pose_global_ign, vel, goal, 0.2);
-
-	// actual `social` vector
-	Vector3 human_action_force;
-
-	printf("[HuberoPlanner::compute()] 4 \r\n");
-
-	// evaluate whether more complex forces are supposed to be calculated
-	// TODO: add param `disable fuzzy behaviours`
-	if (!cfg_->sfm.disable_interaction_forces) {
-
-		printf("DYNAMIC: %d,  %d,  %d",
-			sfm_.getDirectionBetaDynamic().size(),
-			sfm_.getRelativeLocationDynamic().size(),
-			sfm_.getDistanceAngleDynamic().size()
-		);
-
-		// execute fuzzy operations block
-		fuzzy_processor_.load(
-			sfm_.getDirectionAlpha(),
-			sfm_.getDirectionBetaDynamic(),
-		 	sfm_.getRelativeLocationDynamic(),
-			sfm_.getDistanceAngleDynamic()
-		);
-		fuzzy_processor_.process();
-
-		// create a force vector according to the activated `social behaviour`
-		social_conductor_.apply(
-			sfm_.getForceCombined(),
-			sfm_.getDirectionAlpha(),
-			sfm_.getDistanceDynamic(),
-			fuzzy_processor_.getOutput()
-		);
-
-		// assign `social` vector
-		human_action_force = social_conductor_.getSocialVector();
-
-	}
-
-	printf("[HuberoPlanner::compute()] 5 \r\n");
-
-	auto force_total = sfm_.getForceCombined() + human_action_force;
-	force[0] = force_total.X();
-	force[1] = force_total.Y();
-	force[2] = force_total.Z();
-
-	motion_data_.force_internal = sfm_.getForceInternal();
-	motion_data_.force_interaction = sfm_.getForceInternal();
-	motion_data_.force_social = social_conductor_.getSocialVector();
-	motion_data_.force_combined = force_total;
-	motion_data_.closest_points = sfm_.getClosestPointsVector();
-	motion_data_.behaviour_active = social_conductor_.getBehaviourActive();
+	force = converter::ignVectorToEigenV3f(force_result);
 
 //	double dt = 0.2;
 //	Vector3 result_vel = (force / cfg_->sfm.mass) * 0.2;
@@ -145,7 +76,70 @@ bool HuberoPlanner::compute(
 
 	// TODO: saturate
 
-	printf("[HuberoPlanner::compute()] FINISH \r\n");
+	return true;
+}
+
+bool HuberoPlanner::compute(
+		const Pose3& pose,
+		const Vector3& velocity,
+		const Pose3& goal,
+		ObstContainerConstPtr obstacles,
+		Vector3& force
+) {
+	// calculate `social` force (i.e. `internal` and `interaction` components)
+	sfm_.computeSocialForce(
+			obstacles,
+			pose,
+			velocity, // TODO angular velocity!
+			goal.Pos(), // TODO:
+			0.2
+	);
+
+	// actual `social` vector
+	Vector3 human_action_force;
+
+	// evaluate whether more complex forces are supposed to be calculated
+	// TODO: add param `disable fuzzy behaviours`
+	if (!cfg_->sfm.disable_interaction_forces) {
+
+//		printf("DYNAMIC: %lu,  %lu,  %lu\r\n",
+//			sfm_.getDirectionBetaDynamic().size(),
+//			sfm_.getRelativeLocationDynamic().size(),
+//			sfm_.getDistanceAngleDynamic().size()
+//		);
+
+		// execute fuzzy operations block
+		fuzzy_processor_.load(
+			sfm_.getDirectionAlpha(),
+			sfm_.getDirectionBetaDynamic(),
+			sfm_.getRelativeLocationDynamic(),
+			sfm_.getDistanceAngleDynamic()
+		);
+		fuzzy_processor_.process();
+
+		// create a force vector according to the activated `social behaviour`
+		social_conductor_.apply(
+			sfm_.getForceCombined(),
+			sfm_.getDirectionAlpha(),
+			sfm_.getDistanceDynamic(),
+			fuzzy_processor_.getOutput()
+		);
+
+		// assign `social` vector
+		human_action_force = social_conductor_.getSocialVector();
+
+	}
+
+	force = sfm_.getForceCombined() + human_action_force;
+
+	motion_data_.force_internal = sfm_.getForceInternal();
+	motion_data_.force_interaction = sfm_.getForceInternal();
+	motion_data_.force_social = social_conductor_.getSocialVector();
+	motion_data_.force_combined = force;
+	motion_data_.closest_points = sfm_.getClosestPointsVector();
+	motion_data_.behaviour_active = social_conductor_.getBehaviourActive();
+
+	return true;
 }
 
 bool HuberoPlanner::plan() {

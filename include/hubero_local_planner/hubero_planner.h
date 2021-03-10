@@ -85,10 +85,19 @@ public:
     void initialize(HuberoConfigConstPtr cfg);
 
     bool compute(
-		const tf::Stamped<tf::Pose> pose_global,
-		const geometry_msgs::Twist robot_vel,
-		ObstContainerConstPtr obstacles,
-		Eigen::Vector3f& force
+    		const tf::Stamped<tf::Pose>& pose,
+			const geometry_msgs::Twist& velocity,
+			const tf::Stamped<tf::Pose>& goal,
+			ObstContainerConstPtr obstacles,
+			Eigen::Vector3f& force
+	);
+
+    bool compute(
+			const Pose3& pose,
+			const Vector3& velocity,
+			const Pose3& goal,
+			ObstContainerConstPtr obstacles,
+			Vector3& force
 	);
 
     bool plan();

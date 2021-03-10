@@ -26,6 +26,18 @@ static bool print_info = false;
 // #define SFM_FUZZY_PROC_INDICATORS
 // #define SFM_PRINT_FORCE_RESULTS
 
+//
+
+#include <hubero_local_planner/debug.h>
+
+#define DEBUG_BASIC 0
+#define DEBUG_WARN 0
+#define DEBUG_ERROR 0
+
+#define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
+#define debug_print_warn(fmt, ...) _template_debug_print_warn_(DEBUG_WARN, fmt, ##__VA_ARGS__)
+#define debug_print_err(fmt, ...) _template_debug_print_err_(DEBUG_ERROR, fmt, ##__VA_ARGS__)
+
 // ----------------------------------------
 
 namespace sfm {
@@ -132,9 +144,7 @@ bool SocialForceModel::computeSocialForce(
 	// RosService-driven?
 	(SfmGetPrintData()) ? (print_info = true) : (0);
 
-	printf("[SocialForceModel::computeSocialForce()] 1 \r\n");
 
-	printf("target - x=%2.3f, y=%2.3f, z=%2.3f \r\n", target.X(), target.Y(), target.Z());
 
 	// -----------------------------------------------------------------------------------------
 	// ------- internal force calculation ------------------------------------------------------
@@ -149,8 +159,6 @@ bool SocialForceModel::computeSocialForce(
 		return (false);
 	}
 
-	printf("[SocialForceModel::computeSocialForce()] 2 \r\n");
-
 	// -----------------------------------------------------------------------------------------
 	// ------ interaction forces calculation (repulsive, attractive) ---------------------------
 	// -----------------------------------------------------------------------------------------
@@ -159,8 +167,6 @@ bool SocialForceModel::computeSocialForce(
 
 	// whether obstacle is moving or not (different computation method selected)
 	bool is_dynamic;
-
-	printf("[SocialForceModel::computeSocialForce()] 3 \r\n\r\n");
 
 	for (const auto& obstacle: *obstacles) {
 		// check if the obstacle is static or dynamic (force calculation differs)
@@ -173,41 +179,79 @@ bool SocialForceModel::computeSocialForce(
 
 		// no inflation, `closest points` are objects centers (done above)
 		Eigen::Vector2d obstacle_closest = obstacle->getClosestPoint(Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y()));
-		std::cout << "\t obstacle_closest: " << obstacle_closest[0] << "  " << obstacle_closest[1] << std::endl;
+//		std::cout << "\t obstacle_closest: " << obstacle_closest[0] << "  " << obstacle_closest[1] << std::endl;
 		Pose3 obstacle_closest_to_robot_pose = Pose3(obstacle_closest[0], obstacle_closest[1], 0.0, 0.0, 0.0, 0.0);
-		std::cout << "\t obstacle_closest_to_robot_pose: " << obstacle_closest_to_robot_pose << std::endl;
+//		std::cout << "\t obstacle_closest_to_robot_pose: " << obstacle_closest_to_robot_pose << std::endl;
 		auto distance_v_eig = obstacle_closest - Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y());
-		std::cout << "\t distance_v_eig: " << distance_v_eig[0] << "  " << distance_v_eig[1] << std::endl;
+//		std::cout << "\t distance_v_eig: " << distance_v_eig[0] << "  " << distance_v_eig[1] << std::endl;
 		Vector3 distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
-		std::cout << "\t distance_v: " << distance_v << std::endl;
+//		std::cout << "\t distance_v: " << distance_v << std::endl;
 		double distance = obstacle->getMinimumDistance(Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y()));
-		std::cout << "\t distance: " << distance << std::endl;
+//		std::cout << "\t distance: " << distance << std::endl;
 		Vector3 model_vel = Vector3((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
-		std::cout << "\t model_vel: " << model_vel << std::endl;
+//		std::cout << "\t model_vel: " << model_vel << std::endl;
 		is_dynamic = model_vel.Length() > 1e-05;
 
-		printf("DYNAMIC - obs: %d, vel-based: %d / vel: %2.4f, %2.4f \r\n",
-			obstacle->isDynamic(),
-			is_dynamic,
-			model_vel.X(),
-			model_vel.Y()
+		if (is_dynamic) {
+			debug_print_basic(ANSI_COLOR_RED "DYNAMIC - obs: %d, vel-based: %d / vel: %2.4f, %2.4f" ANSI_COLOR_RESET "\r\n",
+				obstacle->isDynamic(),
+				is_dynamic,
+				model_vel.X(),
+				model_vel.Y()
+			);
+		}
+
+		// from interaction force internals
+
+		// `d_alpha_beta` is a vector between objects positions.
+		Vector3 d_alpha_beta = obstacle_closest_to_robot_pose.Pos() - robot_closest_to_obstacle_pose.Pos();
+		d_alpha_beta.Z(0.0); // NOTE: in SFM calculations it is assumed that all objects are in the actor's plane
+		double d_alpha_beta_length = d_alpha_beta.Length(); // Length calculates vector's distance with each call
+
+		Angle robot_yaw(getYawFromPose(pose));
+		robot_yaw.Normalize();
+
+		RelativeLocation beta_rel_location = LOCATION_UNSPECIFIED;
+		double beta_angle_rel = 0.0;
+		double d_alpha_beta_angle = 0.0;
+		std::tie(beta_rel_location, beta_angle_rel, d_alpha_beta_angle) = computeObjectRelativeLocation(
+				robot_yaw,
+				d_alpha_beta
 		);
+
 		// based on a parameter and an object type - calculate a force from a static object properly
 		if (is_dynamic || cfg_->static_obj_interaction == INTERACTION_REPULSIVE_EVASIVE) {
 
 			// calculate interaction force
-			bool is_dynamic = false;
 			std::tie(f_alpha_beta, distance_v, distance) = computeInteractionForce(
 				robot_closest_to_obstacle_pose,
 				velocity,
 				obstacle_closest_to_robot_pose,
 				model_vel,
+				//
+				d_alpha_beta,
+				d_alpha_beta_length,
+				beta_rel_location,
+				beta_angle_rel,
+				d_alpha_beta_angle,
+				//
 				is_dynamic
 			); // FIXME: is an actor
 
-			std::cout << "\t DYNAMIC f_alpha_beta: " << f_alpha_beta << std::endl;
-			std::cout << "\t DYNAMIC distance_v: " << distance_v << std::endl;
-			std::cout << "\t DYNAMIC distance: " << distance << std::endl;
+
+
+//			if ( is_actor ) {
+//				dir_beta_dynamic_v_.push_back(/*convertActorToWorldOrientation(*/object_pose.Rot().Yaw()/*)*/);
+//			} else {
+//				ignition::math::Angle angle(std::atan2(object_vel.Y(), object_vel.X()));
+//				angle.Normalize();
+//				// TODO: major change!
+//				//dir_beta_dynamic_v_.push_back(angle.Radian());
+//			}
+
+//			std::cout << "\t DYNAMIC f_alpha_beta: " << f_alpha_beta << std::endl;
+//			std::cout << "\t DYNAMIC distance_v: " << distance_v << std::endl;
+//			std::cout << "\t DYNAMIC distance: " << distance << std::endl;
 
 			// truncate to `FORCE_INTERACTION_MAX` length
 			const double FORCE_INTERACTION_MAX = 1200; 	// 900.0; (intersection occurs)
@@ -224,10 +268,20 @@ bool SocialForceModel::computeSocialForce(
 				dt
 			);
 
-			std::cout << "\t STATIC f_alpha_beta: " << f_alpha_beta << std::endl;
-			std::cout << "\t STATIC distance_v: " << distance_v << std::endl;
-			std::cout << "\t STATIC distance: " << distance << std::endl;
+//			std::cout << "\t STATIC f_alpha_beta: " << f_alpha_beta << std::endl;
+//			std::cout << "\t STATIC distance_v: " << distance_v << std::endl;
+//			std::cout << "\t STATIC distance: " << distance << std::endl;
 
+		}
+
+		if (is_dynamic) {
+			// ---- fuzzylite-related
+			dir_alpha_ = std::atan2(velocity.Y(), velocity.X()); // /*convertActorToWorldOrientation(*/actor_pose.Rot().Yaw()/*)*/;
+			// TODO: major change
+			rel_loc_dynamic_v_.push_back(beta_angle_rel);
+			dist_angle_dynamic_v_.push_back(d_alpha_beta_angle);
+			dist_dynamic_v_.push_back(d_alpha_beta_length);
+			dir_beta_dynamic_v_.push_back(std::atan2(model_vel.Y(), model_vel.X()));
 		}
 
 		/* debug closest points
@@ -252,18 +306,16 @@ bool SocialForceModel::computeSocialForce(
 		// sum all forces
 		force_interaction_ += f_alpha_beta;
 
-		std::cout << "\t sum so far: f_alpha_beta: " << force_interaction_ << std::endl;
+//		std::cout << "\t sum so far: f_alpha_beta: " << force_interaction_ << std::endl;
 
-		std::cout << "===============================================" << std::endl;
+//		std::cout << "===============================================" << std::endl;
 
 	} /* for loop ends here (iterates over all world models) */
 
-	printf("[SocialForceModel::computeSocialForce()] 4 \r\n");
-
 	// multiply force vector components by parameter values
 	factorInForceCoefficients();
-	std::cout << "\t force_internal_: " << force_internal_ << std::endl;
-	std::cout << "\t force_interaction_: " << force_interaction_ << std::endl;
+	debug_print_basic("\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.X(), force_internal_.Y(), force_internal_.Z());
+	debug_print_basic("\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.X(), force_interaction_.Y(), force_interaction_.Z());
 
 #ifdef SFM_PRINT_FORCE_RESULTS
 	if ( print_info ) {
@@ -279,9 +331,8 @@ bool SocialForceModel::computeSocialForce(
 	// extend or truncate force vectors if needed
 	applyNonlinearOperations(dist_closest_static_, dist_closest_dynamic_);
 
-	printf("[SocialForceModel::computeSocialForce()] 5 \r\n");
-	std::cout << "\t force_internal_: " << force_internal_ << std::endl;
-	std::cout << "\t force_interaction_: " << force_interaction_ << std::endl;
+	debug_print_basic("\t\t\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.X(), force_internal_.Y(), force_internal_.Z());
+	debug_print_basic("\t\t\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.X(), force_interaction_.Y(), force_interaction_.Z());
 
 #ifdef DEBUG_FORCE_PRINTING_SF_TOTAL_AND_NEW_POSE
 	( SfmGetPrintData() ) ? (print_info = true) : (0);
@@ -304,8 +355,6 @@ bool SocialForceModel::computeSocialForce(
 	std::cout << "\t\tTOTAL: \t\t" << force_combined_ << std::endl;
 	std::cout << "**************************************************************************\n\n";
 #endif
-
-	printf("[SocialForceModel::computeSocialForce()] FINISH \r\n");
 
 	return (true);
 }
@@ -805,61 +854,35 @@ void SocialForceModel::setParameters() {
 Vector3 SocialForceModel::computeInternalForce(const Pose3 &actor_pose,
 		const Vector3 &actor_vel, const Vector3 &actor_target) {
 
-	printf("[SocialForceModel::computeInternalForce()] 1 \r\n");
-
 	// FIXME: a lot of allocations here
 	Vector3 to_goal_vector = (actor_target - actor_pose.Pos());
-	std::cout << "\tto_goal_vector: " << to_goal_vector << std::endl;
 	Vector3 to_goal_direction = to_goal_vector.Normalize();
-	std::cout << "\tto_goal_direction: " << to_goal_direction << std::endl;
 	Vector3 ideal_vel_vector = speed_desired_ * to_goal_direction;
-	std::cout << "\tideal_vel_vector: " << ideal_vel_vector << std::endl;
-	std::cout << "\trelaxation_time_: " << relaxation_time_ << std::endl;
-	std::cout << "\tactor_vel: " << actor_vel << std::endl;
-	std::cout << "\tcfg_ptr: " << cfg_ << std::endl;
-	std::cout << "\tmass: " << cfg_->mass << std::endl;
 	Vector3 f_alpha = cfg_->mass /*person_mass_*/ * (1/relaxation_time_) * (ideal_vel_vector - actor_vel);
-	std::cout << "\tf_alpha: " << f_alpha << std::endl;
 	f_alpha.Z(0.0);
 
-	printf("[SocialForceModel::computeInternalForce()] 2 \r\n");
+	debug_print_basic("\t to_goal_vector: %2.3f, %2.3f, %2.3f \r\n", to_goal_vector.X(), to_goal_vector.Y(), to_goal_vector.Z());
+	debug_print_basic("\t to_goal_direction: %2.3f, %2.3f, %2.3f \r\n", to_goal_direction.X(), to_goal_direction.Y(), to_goal_direction.Z());
+	debug_print_basic("\t ideal_vel_vector: %2.3f, %2.3f, %2.3f \r\n", ideal_vel_vector.X(), ideal_vel_vector.Y(), ideal_vel_vector.Z());
+	debug_print_basic("\t target - x=%2.3f, y=%2.3f, z=%2.3f \r\n", actor_target.X(), actor_target.Y(), actor_target.Z());
+	debug_print_basic("\t actor_vel: %2.3f, %2.3f, %2.3f \r\n", actor_vel.X(), actor_vel.Y(), actor_vel.Z());
+	debug_print_basic("\t mass: %2.3f \r\n", cfg_->mass);
+	debug_print_basic("\t relaxation_time: %2.3f \r\n", relaxation_time_);
+	debug_print_basic("\t f_alpha: %2.3f, %2.3f, %2.3f   |   multiplied: %2.3f, %2.3f, %2.3f \r\n",
+			f_alpha.X(), f_alpha.Y(), f_alpha.Z(),
+			(cfg_->internal_force_factor * f_alpha).X(),
+			(cfg_->internal_force_factor * f_alpha).Y(),
+			(cfg_->internal_force_factor * f_alpha).Z()
+	);
 
 	// internal force truncation (causes `overdrive` in close presence of
 	// another actor)
 	if ( f_alpha.Length() > 1100.0 ) {
-		std::cout << "\tINTERNAL FORCE TRUNCATED from: " << f_alpha.Length() << "\tto: 1100.0" << std::endl;
+		debug_print_err("INTERNAL FORCE TRUNCATED from %2.3f to 1100.0\r\n", f_alpha.Length());
 		f_alpha = f_alpha.Normalized() * 1100.0;
-		std::cout << "\tSFM" << std::endl;
 	}
 
-	printf("[SocialForceModel::computeInternalForce()] 3 \r\n");
-
-	// FIXME: debugging large vector length ----------------
-#ifdef SFM_DEBUG_LARGE_VECTOR_LENGTH
-	std::cout << "\t-  -  -  - internal force -  -  -  -  -  -  -  " << std::endl;
-	std::cout << "\ttarget: " << actor_target.X() << " " << actor_target.Y() << "\tposition: " << actor_pose.Pos().X() << " " << actor_pose.Pos().Y() << "\tto_goal_v: " << ideal_vel_vector.X() << " " << ideal_vel_vector.Y() << std::endl;
-	std::cout << "\tactor_vel: " << actor_vel.X() << " " << actor_vel.Y() << "\tideal_vel: " << ideal_vel_vector.X() << " " << ideal_vel_vector.Y() << "\tvec_diff: " << (ideal_vel_vector - actor_vel).X() << " " << (ideal_vel_vector - actor_vel).Y() << std::endl;
-	std::cout << "\ttotal: " << factor_force_internal_ * f_alpha.X() << " " << factor_force_internal_ * f_alpha.Y() << std::endl;
-	std::cout << std::endl;
-#endif
-	// ----------------------------------------------
-
-#ifdef DEBUG_INTERNAL_ACC
-//	if ( print_info ) {
-		std::cout << std::endl;
-		std::cout << "---------------------------------------------------------------------------------\n";
-		std::cout << "GetInternalAcceleration() - " << SfmDebugGetCurrentActorName() << std::endl;
-		std::cout << "\tactor_pos: " << _actor_pose.Pos();
-		std::cout << "\ttarget: " << _actor_target << "   to_goal_direction: " << to_goal_direction;
-		std::cout << "\n\tactor_vel: " << _actor_vel << "\tideal_vel_vector: " << ideal_vel_vector;
-		std::cout << "\tf_alpha: " << f_alpha * factor_force_internal_;
-		std::cout << std::endl;
-		std::cout << std::endl;
-//	}
-#endif
-
 	return f_alpha;
-
 }
 
 // ------------------------------------------------------------------- //
@@ -868,24 +891,18 @@ Vector3 SocialForceModel::computeInternalForce(const Pose3 &actor_pose,
 /// \return d_alpha_beta - distance vector pointing from `alpha` to `beta`
 /// \return theta_alpha_beta - angle	////// ? is this still needed?
 std::tuple<Vector3, Vector3, double>
-SocialForceModel::computeInteractionForce(const Pose3 &actor_pose,
-		const Vector3 &actor_vel, const Pose3 &object_pose,
-		const Vector3 &object_vel, const bool &is_actor)
+SocialForceModel::computeInteractionForce(
+		const Pose3 &actor_pose,
+		const Vector3 &actor_vel,
+		const Pose3 &object_pose,
+		const Vector3 &object_vel,
+		const Vector3 &d_alpha_beta,
+		const double &d_alpha_beta_length,
+		const RelativeLocation &beta_rel_location,
+		const double &beta_angle_rel,
+		const double &d_alpha_beta_angle,
+		const bool &is_actor)
 {
-
-	// Models' closest points already passed to this function - each bounding type
-	// already taken into consideration.
-	// `d_alpha_beta` is a vector between objects positions.
-	Vector3 d_alpha_beta = object_pose.Pos() - actor_pose.Pos();
-	d_alpha_beta.Z(0.0); // NOTE: in SFM calculations it is assumed that all objects are in the actor's plane
-	double d_alpha_beta_length = d_alpha_beta.Length(); // Length calculates vector's distance with each call
-
-#ifdef DEBUG_OSCILLATIONS
-	if ( SfmDebugGetCurrentObjectName() == "table1" && SfmDebugGetCurrentActorName() == "actor1" ) {
-		std::cout << "\n\n\t +++++++ ACTOR pos: " << _actor_pose.Pos() << "\tOBJECT pos: " << _object_closest_point << std::endl;
-	}
-#endif
-
 	/* actor's normal (based on velocity vector, whose direction could
 	 * be also acquired from his yaw angle */
 	Vector3 n_alpha = computeNormalAlphaDirection(actor_pose);
@@ -894,12 +911,6 @@ SocialForceModel::computeInteractionForce(const Pose3 &actor_pose,
 	// section from "GetObjectsInteractionForce()" function which is DEPRECATED now
 	//
 	//
-#ifdef DEBUG_INTERACTION_FORCE
-	if ( print_info ) {
-		std::cout << "GetObjectsInteractionForce(): ";
-	}
-#endif
-
 	// TODO: only 6 closest actors taken into consideration?
 	Vector3 f_alpha_beta(0.0, 0.0, 0.0);
 
@@ -937,10 +948,11 @@ SocialForceModel::computeInteractionForce(const Pose3 &actor_pose,
 	ignition::math::Angle object_yaw(getYawFromPose(object_pose));
 	object_yaw.Normalize();
 
-	RelativeLocation beta_rel_location = LOCATION_UNSPECIFIED;
-	double beta_angle_rel = 0.0;
-	double d_alpha_beta_angle = 0.0;
-	std::tie(beta_rel_location, beta_angle_rel, d_alpha_beta_angle) = computeObjectRelativeLocation(actor_yaw, d_alpha_beta);
+
+
+	// FIXME: here
+
+
 
 	/* FOV factor is used to make interaction of objects
 	 * that are behind the actor weaker */
@@ -1055,20 +1067,6 @@ SocialForceModel::computeInteractionForce(const Pose3 &actor_pose,
 
 	// save interaction force vector
 	f_alpha_beta = n_alpha_scaled + p_alpha_scaled;
-
-	// ---- fuzzylite-related
-	dir_alpha_ = convertActorToWorldOrientation(actor_pose.Rot().Yaw());
-	rel_loc_dynamic_v_.push_back(beta_angle_rel);
-	dist_angle_dynamic_v_.push_back(d_alpha_beta_angle);
-	dist_dynamic_v_.push_back(d_alpha_beta_length);
-
-	if ( is_actor ) {
-		dir_beta_dynamic_v_.push_back(convertActorToWorldOrientation(object_pose.Rot().Yaw()));
-	} else {
-		ignition::math::Angle angle(std::atan2(object_vel.Y(), object_vel.X()));
-		angle.Normalize();
-		dir_beta_dynamic_v_.push_back(angle.Radian());
-	}
 
 #ifdef DEBUG_FORCE_EACH_OBJECT
 
