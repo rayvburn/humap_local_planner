@@ -181,24 +181,30 @@ public:
 	bool getVelocityCommand(double& vx, double& vy, double& omega, int look_ahead_poses) const;
 
 	/**
+	 * @brief Performs evaluation of the goal reachment
+	 * @param pose
+	 * @param goal
+	 * @return
+	 */
+	bool checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal);
+
+	/**
 	 * @brief Evaluates whether goal is considered as reached
 	 * @return
 	 */
 	inline bool isGoalReached() const {
-		printf("[HuberoPlanner::isGoalReached] \r\n");
 		return goal_reached_;
 	}
 
-	bool checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal);
-
+	/**
+	 * @brief Retrieves motion data, i.e. forces and some environment information
+	 * @return
+	 */
 	inline MotionDriverData getMotionData() const {
 		return motion_data_;
 	}
 
 private:
-
-
-
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
 	double sim_period_; ///< @brief The number of seconds to use to compute max/min vels for the planner

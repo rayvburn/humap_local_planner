@@ -59,26 +59,6 @@ bool HuberoPlanner::compute(
 	);
 	force = converter::ignVectorToEigenV3f(force_result);
 
-//	double dt = 0.2;
-//	Vector3 result_vel = (force / cfg_->sfm.mass) * 0.2;
-//	std::cout << "\t\t\t human_action_force: " << human_action_force << std::endl;
-//	std::cout << "\t\t\t sfm comb: " << sfm_.getForceCombined() << std::endl;
-//	std::cout << "\t\t\t force: " << force << std::endl;
-//	std::cout << "\t\t\t result: " << result_vel << std::endl;
-//
-//	printf("[HuberoPlanner::compute()] 6 \r\n");
-//
-//	// transform force vector (expressed w.r.t. global frame) into odom frame
-//	tf::Matrix3x3 odom_rot_mat(pose_global.getRotation());
-//	double roll, pitch, yaw = 0.0;
-//	odom_rot_mat.getRPY(roll, pitch, yaw);
-//
-//	// orientation of the force vector
-//	Angle angle_force_v(std::atan2(force_total.Normalized().Y(), force_total.Normalized().X()));
-//	angle_force_v.Normalize();
-//
-//	Angle rot(angle_force_v - Angle(yaw));
-
 	// TODO: saturate
 
 	return true;
@@ -186,6 +166,8 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 }
 
 bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal) {
+	printf("[HuberoPlanner::checkGoalReached] \r\n");
+
 	// this is slightly modified base_local_planner::isGoalReached() method
 	double dist_xy = sqrt(
 		pow(pose.getOrigin().getX() - goal.getOrigin().getX(), 2) +
@@ -218,21 +200,6 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 
 	goal_reached_ = true;
 	return true;
-
-//	// TEB - check if global goal is reached
-//	tf::Stamped<tf::Pose> global_goal;
-//	tf::poseStampedMsgToTF(global_plan_.back(), global_goal);
-//	global_goal.setData( tf_plan_to_global * global_goal );
-//	double dx = global_goal.getOrigin().getX() - robot_pose_.x();
-//	double dy = global_goal.getOrigin().getY() - robot_pose_.y();
-//	double delta_orient = g2o::normalize_theta( tf::getYaw(global_goal.getRotation()) - robot_pose_.theta() );
-//	if(fabs(std::sqrt(dx*dx+dy*dy)) < cfg_.goal_tolerance.xy_goal_tolerance
-//	&& fabs(delta_orient) < cfg_.goal_tolerance.yaw_goal_tolerance
-//	&& (!cfg_.goal_tolerance.complete_global_plan || via_points_.size() == 0))
-//	{
-//	goal_reached_ = true;
-//	return true;
-//	}
 }
 
 }; // namespace hubero_local_planner

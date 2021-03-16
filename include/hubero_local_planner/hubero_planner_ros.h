@@ -96,6 +96,8 @@ protected:
 	 */
 	bool updateObstacleContainerWithCostmapConverter();
 
+	void computeTwist(const tf::Stamped<tf::Pose>& pose, const Eigen::Vector3f& force, geometry_msgs::Twist& cmd_vel) const;
+
 	/// @brief nav_core status
 	bool initialized_;
 
