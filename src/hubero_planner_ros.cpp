@@ -37,7 +37,7 @@ HuberoPlannerROS::HuberoPlannerROS():
 		cfg_(nullptr),
 		tf_(nullptr),
 		odom_helper_("odom"),
-		vis_("map") {
+		vis_("odom") {
 }
 
 HuberoPlannerROS::~HuberoPlannerROS(){
@@ -118,10 +118,19 @@ void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, c
 }
 
 bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
+
 	return planner_->setPlan(orig_global_plan);
 }
 
 bool HuberoPlannerROS::isGoalReached() {
+	//we assume the global goal is the last point in the global plan
+	tf::Stamped<tf::Pose> goal;
+	planner_util_->getGoal(goal);
+	tf::Stamped<tf::Pose> pose;
+	costmap_ros_->getRobotPose(pose);
+
+	planner_->checkGoalReached(pose, goal);
+	//planner_->checkGoalReached(converter::tfPoseToIgnPose(pose), converter::tfPoseToIgnPose(goal));
 	return planner_->isGoalReached();
 }
 
@@ -134,11 +143,6 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	ROS_INFO("[HuberoPlannerROS] computeVelocityCommands()");
 
 	// retrieve environment information and pass them to the HuBeRo planner
-
-	// initialize with dummy data
-	cmd_vel.linear.x = 0.25;
-	cmd_vel.linear.y = 0;
-	cmd_vel.angular.z = 0;
 
 	// Get robot pose
 	tf::Stamped<tf::Pose> robot_pose;
@@ -204,35 +208,36 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	Eigen::Vector3f force;
 	planner_->compute(robot_pose, robot_vel_, robot_goal, obstacles_, force);
 
-
-//	tf::StampedTransform transform;
-//	tf_->lookupTransform("base_link", "map", ros::Time(0), transform);
-//	tf::Matrix3x3 rot(transform.getRotation());
-//	double roll, pitch, yaw;
-//	rot.getRPY(roll, pitch, yaw);
-//	std::cout << "\t 1) transform: x=" << transform.getOrigin().x() << " y=" << transform.getOrigin().y() << " z=" << transform.getOrigin().z() << std::endl;
-//	std::cout << "\t 2) transform: yaw=" << yaw << " pitch=" << pitch << " roll=" << roll << std::endl;
-
-
+	/* ****************************************************** */
 	// orientation of the force vector in the odometry frame
 	Vector3 force_v(force[0], force[1], force[2]);
 	Angle angle_force_v(std::atan2(force_v.Normalized().Y(), force_v.Normalized().X()));
 	angle_force_v.Normalize();
 
-	tf::StampedTransform tf;
-	tf_->lookupTransform("base_link", "odom", ros::Time(0), tf);
-	tf::Matrix3x3 mat(tf.getRotation());
-	tfScalar r,p,y;
-	mat.getRPY(r,p,y);
-	Angle angle_base(y);
-	angle_base.Normalize();
-	Angle angle_diff(angle_force_v - angle_base);
+	Angle angle_diff(angle_force_v - tf::getYaw(robot_pose.getRotation()));
 	angle_diff.Normalize();
 
 	debug_print_basic("force orient: %2.4f, base link orient: %2.4f, diff: %2.4f \r\n",
 			angle_force_v.Degree(),
-			angle_base.Degree(),
+			tf::getYaw(robot_pose.getRotation()) * 180 / IGN_PI,
 			angle_diff.Degree()
+	);
+
+	double dt = cfg_->general.sim_period;
+
+	// V1
+	double angular_vel = 2.0 * angle_diff.Radian() * dt;
+	double linear_vel = cos(angle_diff.Radian()) * force_v.Normalized().Length() * dt;
+	//
+	// V2: based on twist marker
+	angular_vel = cfg_->limits.max_rot_vel * sin(angle_diff.Radian()) * dt;
+	linear_vel = cfg_->limits.max_vel_x * cos(angle_diff.Radian()) * dt;
+	//
+	debug_print_basic("angular = %2.4f (max = %2.4f), linear = %2.4f (max = %2.4f) \r\n",
+			angular_vel,
+			cfg_->limits.max_rot_vel,
+			linear_vel,
+			cfg_->limits.max_vel_x
 	);
 
 	/*
@@ -340,6 +345,10 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 //			cmd_vel.linear.x,
 //			cmd_vel.angular.z
 //	);
+
+
+	cmd_vel.linear.x = linear_vel;
+	cmd_vel.angular.z = angular_vel;
 
 	// visualization
 	auto vis_data = planner_->getMotionData();

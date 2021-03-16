@@ -2,6 +2,11 @@
 #include <hubero_common/converter.h>
 #include <math.h>
 
+// debugging macros
+#include <hubero_local_planner/debug.h>
+#define DEBUG_BASIC 1
+#define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
+
 namespace hubero_local_planner {
 
 HuberoPlanner::HuberoPlanner(std::string name, std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util):
@@ -92,7 +97,7 @@ bool HuberoPlanner::compute(
 			pose,
 			velocity, // TODO angular velocity!
 			goal.Pos(), // TODO:
-			0.2
+			cfg_->general.sim_period
 	);
 
 	// actual `social` vector
@@ -180,11 +185,39 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 	return planner_util_->setPlan(orig_global_plan);
 }
 
-// private
-void HuberoPlanner::checkGoalReached() {
-	//base_local_planner::isGoalReached();
+bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal) {
+	// this is slightly modified base_local_planner::isGoalReached() method
+	double dist_xy = sqrt(
+		pow(pose.getOrigin().getX() - goal.getOrigin().getX(), 2) +
+		pow(pose.getOrigin().getY() - goal.getOrigin().getY(), 2)
+	);
+	debug_print_basic("\t dist_xy = %2.4f, xy_goal_tolerance = %2.4f  /  cond: %d \r\n",
+			dist_xy,
+			cfg_->limits.xy_goal_tolerance,
+			!(dist_xy > cfg_->limits.xy_goal_tolerance)
+	);
 
-	goal_reached_ = false;
+	if (dist_xy > cfg_->limits.xy_goal_tolerance) {
+		goal_reached_ = false;
+		return false;
+	}
+
+	double dist_ang = angles::shortest_angular_distance(
+			tf::getYaw(goal.getRotation()), tf::getYaw(pose.getRotation())
+	);
+	debug_print_basic("\t dist_ang = %2.4f, yaw_tolerance = %2.4f  /  cond: %d \r\n",
+			dist_ang,
+			cfg_->limits.yaw_goal_tolerance,
+			!(std::abs(dist_ang) > cfg_->limits.yaw_goal_tolerance)
+	);
+
+	if (std::abs(dist_ang) > cfg_->limits.yaw_goal_tolerance) {
+		goal_reached_ = false;
+		return false;
+	}
+
+	goal_reached_ = true;
+	return true;
 
 //	// TEB - check if global goal is reached
 //	tf::Stamped<tf::Pose> global_goal;
