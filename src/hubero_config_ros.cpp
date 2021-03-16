@@ -15,24 +15,86 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("odom_topic", odom_topic, odom_topic);
 	nh.param("map_frame", map_frame, map_frame);
 
-	// GeneralParams
-	// subsection to delete?
-	nh.param("init_pose", general.init_pose, general.init_pose);
-	nh.param("init_target", general.init_target, general.init_target);
-	//
-	int general_init_stance = general.init_stance;
-	nh.param("init_stance", general_init_stance, general_init_stance);
-	general.init_stance = static_cast<unsigned short int>(general_init_stance);
+//	// GeneralParams
+//	// subsection to delete?
+//	nh.param("init_pose", general.init_pose, general.init_pose);
+//	nh.param("init_target", general.init_target, general.init_target);
+//	//
+//	int general_init_stance = general.init_stance;
+//	nh.param("init_stance", general_init_stance, general_init_stance);
+//	general.init_stance = static_cast<unsigned short int>(general_init_stance);
+//
+//	nh.param("global_frame_name", general.global_frame_name, general.global_frame_name);
+//	nh.param("animation_factor", general.animation_factor, general.animation_factor);
+//	nh.param("animation_speed_rotation", general.animation_speed_rotation, general.animation_speed_rotation);
+//	nh.param("target_tolerance", general.target_tolerance, general.target_tolerance);
+//	nh.param("target_reach_max_time", general.target_reach_max_time, general.target_reach_max_time);
+//	nh.param("target_reachable_check_period", general.target_reachable_check_period, general.target_reachable_check_period);
+//	nh.param("limit_actors_workspace", general.limit_actors_workspace, general.limit_actors_workspace);
+//	nh.param("world_bound_x", general.world_bound_x, general.world_bound_x);
+//	nh.param("world_bound_y", general.world_bound_y, general.world_bound_y);
 
-	nh.param("global_frame_name", general.global_frame_name, general.global_frame_name);
-	nh.param("animation_factor", general.animation_factor, general.animation_factor);
-	nh.param("animation_speed_rotation", general.animation_speed_rotation, general.animation_speed_rotation);
-	nh.param("target_tolerance", general.target_tolerance, general.target_tolerance);
-	nh.param("target_reach_max_time", general.target_reach_max_time, general.target_reach_max_time);
-	nh.param("target_reachable_check_period", general.target_reachable_check_period, general.target_reachable_check_period);
-	nh.param("limit_actors_workspace", general.limit_actors_workspace, general.limit_actors_workspace);
-	nh.param("world_bound_x", general.world_bound_x, general.world_bound_x);
-	nh.param("world_bound_y", general.world_bound_y, general.world_bound_y);
+	// GeneralParams
+	nh.param("sim_period", general.sim_period, general.sim_period);
+	nh.param("sim_time", general.sim_time, general.sim_time);
+	nh.param("sim_granularity", general.sim_granularity, general.sim_granularity);
+	nh.param("angular_sim_granularity", general.angular_sim_granularity, general.angular_sim_granularity);
+
+	// Limits
+	printf("Parameter section: `LIMITS` \r\n");
+	printf("\t - max_trans_vel: %5.5f \r\n", limits.max_trans_vel);
+	printf("\t - min_trans_vel: %5.5f \r\n", limits.min_trans_vel);
+	printf("\t - max_vel_x: %5.5f \r\n", limits.max_vel_x);
+	printf("\t - min_vel_x: %5.5f \r\n", limits.min_vel_x);
+	printf("\t - max_vel_y: %5.5f \r\n", limits.max_vel_y);
+	printf("\t - min_vel_y: %5.5f \r\n", limits.min_vel_y);
+	printf("\t - max_rot_vel: %5.5f \r\n", limits.max_rot_vel);
+	printf("\t - min_rot_vel: %5.5f \r\n", limits.min_rot_vel);
+	printf("\t - acc_lim_x: %5.5f \r\n", limits.acc_lim_x);
+	printf("\t - acc_lim_y: %5.5f \r\n", limits.acc_lim_y);
+	printf("\t - acc_lim_theta: %5.5f \r\n", limits.acc_lim_theta);
+	printf("\t - acc_limit_trans: %5.5f \r\n", limits.acc_limit_trans);
+	printf("\t - prune_plan: %d \r\n", limits.prune_plan);
+	printf("\t - xy_goal_tolerance: %5.5f \r\n", limits.xy_goal_tolerance);
+	printf("\t - yaw_goal_tolerance: %5.5f \r\n", limits.yaw_goal_tolerance);
+	printf("\t - trans_stopped_vel: %5.5f \r\n", limits.trans_stopped_vel);
+	printf("\t - rot_stopped_vel: %5.5f \r\n", limits.rot_stopped_vel);
+//	nh.param("max_trans_vel", limits.max_trans_vel, limits.max_trans_vel);
+//	nh.param("min_trans_vel", limits.min_trans_vel, limits.min_trans_vel);
+	nh.param("max_vel_x", limits.max_vel_x, limits.max_vel_x);
+	nh.param("min_vel_x", limits.min_vel_x, limits.min_vel_x);
+//	nh.param("max_vel_y", limits.max_vel_y, limits.max_vel_y);
+//	nh.param("min_vel_y", limits.min_vel_y, limits.min_vel_y);
+	nh.param("max_rot_vel", limits.max_rot_vel, limits.max_rot_vel);
+	nh.param("min_rot_vel", limits.min_rot_vel, limits.min_rot_vel);
+//	nh.param("acc_lim_x", limits.acc_lim_x, limits.acc_lim_x);
+//	nh.param("acc_lim_y", limits.acc_lim_y, limits.acc_lim_y);
+//	nh.param("acc_lim_theta", limits.acc_lim_theta, limits.acc_lim_theta);
+//	nh.param("acc_limit_trans", limits.acc_limit_trans, limits.acc_limit_trans);
+	nh.param("prune_plan", limits.prune_plan, limits.prune_plan);
+	nh.param("xy_goal_tolerance", limits.xy_goal_tolerance, limits.xy_goal_tolerance);
+	nh.param("yaw_goal_tolerance", limits.yaw_goal_tolerance, limits.yaw_goal_tolerance);
+	nh.param("trans_stopped_vel", limits.trans_stopped_vel, limits.trans_stopped_vel);
+	nh.param("rot_stopped_vel", limits.rot_stopped_vel, limits.rot_stopped_vel);
+
+	printf("Parameter section: `LIMITS` \r\n");
+	printf("\t - max_trans_vel: %5.5f \r\n", limits.max_trans_vel);
+	printf("\t - min_trans_vel: %5.5f \r\n", limits.min_trans_vel);
+	printf("\t - max_vel_x: %5.5f \r\n", limits.max_vel_x);
+	printf("\t - min_vel_x: %5.5f \r\n", limits.min_vel_x);
+	printf("\t - max_vel_y: %5.5f \r\n", limits.max_vel_y);
+	printf("\t - min_vel_y: %5.5f \r\n", limits.min_vel_y);
+	printf("\t - max_rot_vel: %5.5f \r\n", limits.max_rot_vel);
+	printf("\t - min_rot_vel: %5.5f \r\n", limits.min_rot_vel);
+	printf("\t - acc_lim_x: %5.5f \r\n", limits.acc_lim_x);
+	printf("\t - acc_lim_y: %5.5f \r\n", limits.acc_lim_y);
+	printf("\t - acc_lim_theta: %5.5f \r\n", limits.acc_lim_theta);
+	printf("\t - acc_limit_trans: %5.5f \r\n", limits.acc_limit_trans);
+	printf("\t - prune_plan: %d \r\n", limits.prune_plan);
+	printf("\t - xy_goal_tolerance: %5.5f \r\n", limits.xy_goal_tolerance);
+	printf("\t - yaw_goal_tolerance: %5.5f \r\n", limits.yaw_goal_tolerance);
+	printf("\t - trans_stopped_vel: %5.5f \r\n", limits.trans_stopped_vel);
+	printf("\t - rot_stopped_vel: %5.5f \r\n", limits.rot_stopped_vel);
 
 	// InflatorParams
 	// unsigned short int - needed reference so static_cast will not do

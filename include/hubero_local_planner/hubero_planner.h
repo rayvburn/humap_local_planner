@@ -189,6 +189,7 @@ public:
 		return goal_reached_;
 	}
 
+	bool checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal);
 
 	inline MotionDriverData getMotionData() const {
 		return motion_data_;
@@ -196,7 +197,7 @@ public:
 
 private:
 
-	void checkGoalReached();
+
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
