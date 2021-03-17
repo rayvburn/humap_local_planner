@@ -133,7 +133,7 @@ void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
 // ------------------------------------------------------------------- //
 
 bool SocialForceModel::computeSocialForce(
-		const hubero_local_planner::ObstContainerConstPtr obstacles,
+		const teb::ObstContainerConstPtr obstacles,
 		const Pose3 &pose,
 		const Vector3 &velocity,
 		const Vector3 &target,

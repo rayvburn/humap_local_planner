@@ -10,6 +10,7 @@ include_directories($ENV{HOME}/libraries/fuzzylite/fuzzylite)
 find_package(catkin REQUIRED
     COMPONENTS
         base_local_planner
+        teb_local_planner
         costmap_converter
         cmake_modules
         costmap_2d
@@ -51,6 +52,7 @@ catkin_package(
         nav_msgs
         pluginlib
         roscpp
+        teb_local_planner
         costmap_converter
         hubero_common
 )
@@ -122,11 +124,6 @@ set(HEADERS_CONFIG
     include/${PROJECT_NAME}/hubero_config.h
 )
 
-## External libraries (TEB Local Planner)
-add_library(obstacles include/${PROJECT_NAME}/external/obstacles.h src/external/obstacles.cpp)
-target_link_libraries(obstacles ${fuzzylite_LIBRARY} config ${EIGEN3_LIBRARIES})
-set_target_properties(obstacles PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-
 ## Custom libraries
 ### Config
 add_library(config ${HEADERS_CONFIG})
@@ -165,7 +162,7 @@ add_library(hubero_local_planner
     src/hubero_planner_ros.cpp
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES} obstacles ${hubero_common_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
 
 ## Executables
 add_executable(test_executable

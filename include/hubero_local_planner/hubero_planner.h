@@ -4,7 +4,7 @@
 #include <mutex>
 #include <memory>
 
-#include <hubero_local_planner/external/obstacles.h>
+#include <hubero_local_planner/external/teb_utils.h>
 
 #include <hubero_local_planner/hubero_config.h>
 #include <hubero_local_planner/sfm/social_force_model.h>
@@ -75,7 +75,11 @@ public:
 	 * @param name The name of the planner
 	 * @param planner_util A pointer to the initialized instance of the LocalPlannerUtil class
 	 */
-	HuberoPlanner(std::string name, std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util);
+	HuberoPlanner(
+			const std::string& name,
+			std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util,
+			teb::RobotFootprintModelPtr footprint_model
+	);
 
 	/**
 	 * @brief  Destructor for the planner
@@ -88,7 +92,7 @@ public:
     		const tf::Stamped<tf::Pose>& pose,
 			const geometry_msgs::Twist& velocity,
 			const tf::Stamped<tf::Pose>& goal,
-			ObstContainerConstPtr obstacles,
+			teb::ObstContainerConstPtr obstacles,
 			Eigen::Vector3f& force
 	);
 
@@ -96,7 +100,7 @@ public:
 			const Pose3& pose,
 			const Vector3& velocity,
 			const Pose3& goal,
-			ObstContainerConstPtr obstacles,
+			teb::ObstContainerConstPtr obstacles,
 			Vector3& force
 	);
 
@@ -214,7 +218,8 @@ private:
 	bool goal_reached_;
 
 	HuberoConfigConstPtr cfg_;
-	ObstContainerConstPtr obstacles_;
+	teb::ObstContainerConstPtr obstacles_;
+	teb::RobotFootprintModelPtr robot_model_;
 
 	sfm::SocialForceModel sfm_;
 	fuzz::Processor fuzzy_processor_; //!< produces segmentation fault in destructor when ran in a separated executable (Segmentation fault (core dumped))

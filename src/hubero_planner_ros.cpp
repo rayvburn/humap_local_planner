@@ -62,15 +62,23 @@ void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, c
 		planner_util_->initialize(tf, costmap, costmap_ros_->getGlobalFrameID());
 
 		// reserve some memory for obstacles
-		obstacles_ = std::make_shared<ObstContainer>();
+		obstacles_ = std::make_shared<teb::ObstContainer>();
 		obstacles_->reserve(500);
+
+		// create robot footprint/contour model for optimization
+		teb::RobotFootprintModelPtr robot_model =
+				teb::LocalPlannerROS::getRobotFootprintFromParamServer(private_nh);
+
+		debug_print_basic("Robot model - inscribed radius = %2.4f \r\n",
+				robot_model->getInscribedRadius()
+		);
 
 		// get parameters of HuberoConfig via the node handle and override the default config
 		cfg_ = std::make_shared<HuberoConfigROS>();
 		cfg_->loadFromParamServer(private_nh);
 
 		// local planner
-		planner_ = std::make_shared<HuberoPlanner>(name, planner_util_);
+		planner_ = std::make_shared<HuberoPlanner>(name, planner_util_, robot_model);
 		planner_->initialize(cfg_);
 
 		// visualization
@@ -251,26 +259,26 @@ bool HuberoPlannerROS::updateObstacleContainerWithCostmapConverter() {
 
 		if (polygon->points.size()==1 && obstacle->radius > 0) {
 			// Circle
-			obstacles_->push_back(ObstaclePtr(new CircularObstacle(polygon->points[0].x, polygon->points[0].y, obstacle->radius)));
+			obstacles_->push_back(teb::ObstaclePtr(new teb::CircularObstacle(polygon->points[0].x, polygon->points[0].y, obstacle->radius)));
 		} else if (polygon->points.size()==1) {
 			// Point
-			obstacles_->push_back(ObstaclePtr(new PointObstacle(polygon->points[0].x, polygon->points[0].y)));
+			obstacles_->push_back(teb::ObstaclePtr(new teb::PointObstacle(polygon->points[0].x, polygon->points[0].y)));
 		} else if (polygon->points.size()==2) {
 			// Line
-			obstacles_->push_back(ObstaclePtr(
-				new LineObstacle(
+			obstacles_->push_back(teb::ObstaclePtr(
+				new teb::LineObstacle(
 				polygon->points[0].x, polygon->points[0].y,
 				polygon->points[1].x, polygon->points[1].y)
 				)
 			);
 		} else if (polygon->points.size()>2) {
 			// Real polygon
-			PolygonObstacle* polyobst = new PolygonObstacle;
+			teb::PolygonObstacle* polyobst = new teb::PolygonObstacle;
 			for (std::size_t j=0; j<polygon->points.size(); ++j) {
 				polyobst->pushBackVertex(polygon->points[j].x, polygon->points[j].y);
 			}
 			polyobst->finalizePolygon();
-			obstacles_->push_back(ObstaclePtr(polyobst));
+			obstacles_->push_back(teb::ObstaclePtr(polyobst));
 		}
 
 		// Set velocity, if obstacle is moving
