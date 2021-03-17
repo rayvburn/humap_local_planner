@@ -9,12 +9,17 @@
 
 namespace hubero_local_planner {
 
-HuberoPlanner::HuberoPlanner(std::string name, std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util):
+HuberoPlanner::HuberoPlanner(
+		const std::string& name,
+		std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util,
+		teb::RobotFootprintModelPtr footprint_model
+):
 	planner_util_(planner_util),
 	// TODO: make it param
 	sim_period_(0.2),
 	goal_reached_(false),
-	obstacles_(nullptr)
+	obstacles_(nullptr),
+	robot_model_(footprint_model)
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
@@ -41,7 +46,7 @@ bool HuberoPlanner::compute(
 		const tf::Stamped<tf::Pose>& pose,
 		const geometry_msgs::Twist& velocity,
 		const tf::Stamped<tf::Pose>& goal,
-		ObstContainerConstPtr obstacles,
+		teb::ObstContainerConstPtr obstacles,
 		Eigen::Vector3f& force
 ) {
 	// NOTE: typical operations are available in `base_local_planner` ns as free functions
@@ -68,7 +73,7 @@ bool HuberoPlanner::compute(
 		const Pose3& pose,
 		const Vector3& velocity,
 		const Pose3& goal,
-		ObstContainerConstPtr obstacles,
+		teb::ObstContainerConstPtr obstacles,
 		Vector3& force
 ) {
 	// calculate `social` force (i.e. `internal` and `interaction` components)

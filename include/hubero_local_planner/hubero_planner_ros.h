@@ -116,7 +116,7 @@ protected:
 	/// @subsection Costmap converter
 	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
 	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
-	std::shared_ptr<ObstContainer> obstacles_;
+	std::shared_ptr<teb::ObstContainer> obstacles_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;

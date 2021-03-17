@@ -10,8 +10,10 @@
 #include <hubero_common/typedefs.h>
 #include <hubero_common/shift_register.h>
 
+// environment obstacle representation
+#include <hubero_local_planner/external/teb_utils.h>
+
 #include <hubero_local_planner/sfm/inflator.h>
-#include <hubero_local_planner/external/obstacles.h>
 #include <hubero_local_planner/hubero_config.h>
 
 // C++ STL
@@ -164,7 +166,7 @@ public:
 	/// for an actor taking whole world's objects
 	/// into consideration
 	bool computeSocialForce(
-			const hubero_local_planner::ObstContainerConstPtr obstacles,
+			const teb::ObstContainerConstPtr obstacles,
 			const ignition::math::Pose3d &pose,
 			const Vector3 &velocity,
 			const Vector3 &target,

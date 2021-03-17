@@ -54,7 +54,7 @@ public:
 			const Pose3& pos_current,
 			const Vector3& vel_current,
 			const Pose3& goal,
-			ObstContainerConstPtr obstacles,
+			teb::ObstContainerConstPtr obstacles,
 			HuberoPlanner& planner
 	);
 
