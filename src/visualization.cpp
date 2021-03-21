@@ -213,7 +213,7 @@ void Visualization::publishGrid(
 		const Pose3& pos_current,
 		const Vector3& vel_current,
 		const Pose3& goal,
-		teb::ObstContainerConstPtr obstacles,
+		ObstContainerConstPtr obstacles,
 		HuberoPlanner& planner
 ) {
 	if (pub_marker_array_.getNumSubscribers() == 0) {
