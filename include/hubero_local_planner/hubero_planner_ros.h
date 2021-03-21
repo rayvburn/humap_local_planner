@@ -92,9 +92,19 @@ protected:
 
 	/**
 	 * @brief Updates @ref obstacles_ with costmap converter's data
+	 *
 	 * @note This method is copied from TEB Local Planner
 	 */
 	bool updateObstacleContainerWithCostmapConverter();
+
+	/**
+	 * @brief Get the current robot footprint/contour model
+	 * @param nh const reference to the local ros::NodeHandle
+	 * @return Robot footprint model used for optimization
+	 *
+	 * @note This method is copied from TEB Local Planner
+	 */
+	RobotFootprintModelPtr getRobotFootprintFromParamServer(const ros::NodeHandle& nh);
 
 	void computeTwist(const tf::Stamped<tf::Pose>& pose, const Eigen::Vector3f& force, geometry_msgs::Twist& cmd_vel) const;
 
@@ -116,7 +126,7 @@ protected:
 	/// @subsection Costmap converter
 	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
 	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
-	std::shared_ptr<teb::ObstContainer> obstacles_;
+	ObstContainerPtr obstacles_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;

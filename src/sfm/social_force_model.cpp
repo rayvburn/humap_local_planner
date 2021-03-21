@@ -8,6 +8,7 @@
 // #include <actor/core/Target.h>	// isModelNegligible static function
 
 #include <hubero_local_planner/sfm/social_force_model.h>
+#include <hubero_common/converter.h>
 
 // additional headers
 #include <cmath>			// atan2()
@@ -28,7 +29,7 @@ static bool print_info = false;
 
 //
 
-#include <hubero_local_planner/debug.h>
+#include <hubero_local_planner/utils/debug.h>
 
 #define DEBUG_BASIC 0
 #define DEBUG_WARN 0
@@ -133,11 +134,13 @@ void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
 // ------------------------------------------------------------------- //
 
 bool SocialForceModel::computeSocialForce(
-		const teb::ObstContainerConstPtr obstacles,
+		const hubero_local_planner::ObstContainerConstPtr obstacles,
 		const Pose3 &pose,
+		const hubero_local_planner::RobotFootprintModelConstPtr footprint,
 		const Vector3 &velocity,
 		const Vector3 &target,
-		const double &dt) {
+		const double &dt
+) {
 	// reset internal state at the start of computations
 	reset();
 

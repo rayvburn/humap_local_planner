@@ -2,8 +2,8 @@
 #include <hubero_common/converter.h>
 #include <math.h>
 
+#include <hubero_local_planner/utils/debug.h>
 // debugging macros
-#include <hubero_local_planner/debug.h>
 #define DEBUG_BASIC 1
 #define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
 
@@ -12,7 +12,7 @@ namespace hubero_local_planner {
 HuberoPlanner::HuberoPlanner(
 		const std::string& name,
 		std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util,
-		teb::RobotFootprintModelPtr footprint_model
+		RobotFootprintModelPtr footprint_model
 ):
 	planner_util_(planner_util),
 	// TODO: make it param
@@ -46,7 +46,7 @@ bool HuberoPlanner::compute(
 		const tf::Stamped<tf::Pose>& pose,
 		const geometry_msgs::Twist& velocity,
 		const tf::Stamped<tf::Pose>& goal,
-		teb::ObstContainerConstPtr obstacles,
+		ObstContainerConstPtr obstacles,
 		Eigen::Vector3f& force
 ) {
 	// NOTE: typical operations are available in `base_local_planner` ns as free functions
@@ -73,13 +73,14 @@ bool HuberoPlanner::compute(
 		const Pose3& pose,
 		const Vector3& velocity,
 		const Pose3& goal,
-		teb::ObstContainerConstPtr obstacles,
+		ObstContainerConstPtr obstacles,
 		Vector3& force
 ) {
 	// calculate `social` force (i.e. `internal` and `interaction` components)
 	sfm_.computeSocialForce(
 			obstacles,
 			pose,
+			robot_model_,
 			velocity, // TODO angular velocity!
 			goal.Pos(), // TODO:
 			cfg_->general.sim_period

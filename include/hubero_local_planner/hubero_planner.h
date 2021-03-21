@@ -4,8 +4,6 @@
 #include <mutex>
 #include <memory>
 
-#include <hubero_local_planner/external/teb_utils.h>
-
 #include <hubero_local_planner/hubero_config.h>
 #include <hubero_local_planner/sfm/social_force_model.h>
 #include <hubero_local_planner/fuzz/processor.h>
@@ -34,6 +32,10 @@
 
 // MapGridVisualizer
 #include <base_local_planner/map_grid.h>
+
+#include <hubero_local_planner/obstacles.h>
+#include <hubero_local_planner/robot_footprint_model.h>
+#include <hubero_local_planner/utils/teb_utils.h>
 
 #include <nav_msgs/Path.h>
 
@@ -78,7 +80,7 @@ public:
 	HuberoPlanner(
 			const std::string& name,
 			std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util,
-			teb::RobotFootprintModelPtr footprint_model
+			RobotFootprintModelPtr footprint_model
 	);
 
 	/**
@@ -92,7 +94,7 @@ public:
     		const tf::Stamped<tf::Pose>& pose,
 			const geometry_msgs::Twist& velocity,
 			const tf::Stamped<tf::Pose>& goal,
-			teb::ObstContainerConstPtr obstacles,
+			ObstContainerConstPtr obstacles,
 			Eigen::Vector3f& force
 	);
 
@@ -100,7 +102,7 @@ public:
 			const Pose3& pose,
 			const Vector3& velocity,
 			const Pose3& goal,
-			teb::ObstContainerConstPtr obstacles,
+			ObstContainerConstPtr obstacles,
 			Vector3& force
 	);
 
@@ -218,8 +220,8 @@ private:
 	bool goal_reached_;
 
 	HuberoConfigConstPtr cfg_;
-	teb::ObstContainerConstPtr obstacles_;
-	teb::RobotFootprintModelPtr robot_model_;
+	ObstContainerConstPtr obstacles_;
+	RobotFootprintModelPtr robot_model_;
 
 	sfm::SocialForceModel sfm_;
 	fuzz::Processor fuzzy_processor_; //!< produces segmentation fault in destructor when ran in a separated executable (Segmentation fault (core dumped))
