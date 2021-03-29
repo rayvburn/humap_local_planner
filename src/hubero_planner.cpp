@@ -32,6 +32,7 @@ HuberoPlanner::~HuberoPlanner() {
 void HuberoPlanner::initialize(HuberoConfigConstPtr cfg) {
 	cfg_ = cfg;
 	sfm_.init(cfg);
+	social_conductor_.initialize(cfg);
 }
 
 bool HuberoPlanner::checkTrajectory(

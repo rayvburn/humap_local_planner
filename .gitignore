@@ -1,6 +1,6 @@
 # disable temporarily
-include/hubero_local_planner/fuzz/
-src/fuzz/
+include/hubero_local_planner/sfm/core/
+src/sfm/core/
 
 # libraries
 lib/
@@ -13,3 +13,4 @@ include/hubero_local_planner/trajectory_generator.h
 src/trajectory_generator.cpp
 
 test/
+debug/
