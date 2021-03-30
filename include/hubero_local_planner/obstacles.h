@@ -93,7 +93,7 @@ public:
 	}
 
 	virtual Eigen::Vector2d getShortestVector(const Eigen::Vector2d& position) const {
-		return (position - pos_);
+		return vector_point_to_point(pos_, position);
 	}
 	virtual Eigen::Vector2d getShortestVector(const Eigen::Vector2d& line_start, const Eigen::Vector2d& line_end) const {
 		return vector_point_to_segment_2d(pos_, line_start, line_end);
@@ -161,7 +161,7 @@ public:
 	}
 
 	virtual Eigen::Vector2d getShortestVector(const Eigen::Vector2d& position) const {
-		auto v = position - pos_;
+		auto v = vector_point_to_point(pos_, position);
 		return v - v.normalized() * radius_;
 	}
 	virtual Eigen::Vector2d getShortestVector(const Eigen::Vector2d& line_start, const Eigen::Vector2d& line_end) const {
