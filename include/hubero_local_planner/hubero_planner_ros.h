@@ -102,7 +102,7 @@ protected:
 	 * @param nh const reference to the local ros::NodeHandle
 	 * @return Robot footprint model used for optimization
 	 *
-	 * @note This method is copied from TEB Local Planner
+	 * @note This method is copied from TEB Local Planner. Aim is to avoid reinterpret cast to the higher-level class
 	 */
 	RobotFootprintModelPtr getRobotFootprintFromParamServer(const ros::NodeHandle& nh);
 
