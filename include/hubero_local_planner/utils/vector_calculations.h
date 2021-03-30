@@ -14,6 +14,12 @@
 namespace hubero_local_planner {
 
 // NOTE: these are modified teb_local_planner functions from `distance_calculations.h`
+inline Eigen::Vector2d vector_point_to_point(
+		const Eigen::Vector2d& position_ref,
+		const Eigen::Vector2d& position_distant
+) {
+	return (position_distant - position_ref);
+}
 
 inline Eigen::Vector2d vector_point_to_segment_2d(
 		const Eigen::Ref<const Eigen::Vector2d>& point,
