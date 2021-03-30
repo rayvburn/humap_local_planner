@@ -46,21 +46,6 @@ HuberoPlannerROS::~HuberoPlannerROS(){
 	delete dsrv_;
 }
 
-template<typename T>
-void do_release(typename boost::shared_ptr<T> const&, T*)
-{
-}
-
-template<typename T>
-typename std::shared_ptr<T> to_std(typename boost::shared_ptr<T> const& p)
-{
-    return
-        std::shared_ptr<T>(
-                p.get(),
-                boost::bind(&do_release<T>, p, _1));
-
-}
-
 void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros) {
 	// check if the plugin is already initialized
 	if (!isInitialized()) {
@@ -81,21 +66,7 @@ void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, c
 		obstacles_ = std::make_shared<ObstContainer>();
 		obstacles_->reserve(500);
 
-		// create robot footprint/contour model for optimization
-//		teb::RobotFootprintModelPtr robot_model =
-//				teb::LocalPlannerROS::getRobotFootprintFromParamServer(private_nh);
-//
-//		auto robot_model_std = to_std(robot_model);
-//		std::shared_ptr<RobotFootprintModelPtr> robot_footprint =
-//		               std::dynamic_pointer_cast<RobotFootprintModelPtr>(robot_model_std);
-
-//		RobotFootprintModelPtr robot_model =
-//				BaseRobotFootprintModel::create(teb::LocalPlannerROS::getRobotFootprintFromParamServer(private_nh));
-
-//		std::shared_ptr<teb::BaseRobotFootprintModel> robot_model_std = to_std(teb::LocalPlannerROS::getRobotFootprintFromParamServer(private_nh));
-//		std::shared_ptr<BaseRobotFootprintModel> ptr_shared = std::dynamic_pointer_cast<std::shared_ptr<teb::BaseRobotFootprintModel>>(robot_model_std);
-//		RobotFootprintModelPtr robot_model = ptr_shared;
-
+		// create robot footprint/contour model
 		RobotFootprintModelPtr robot_model = getRobotFootprintFromParamServer(private_nh);
 
 		debug_print_basic("Robot model - inscribed radius = %2.4f \r\n",
