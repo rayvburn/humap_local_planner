@@ -169,7 +169,7 @@ public:
 	bool computeSocialForce(
 			const hubero_local_planner::ObstContainerConstPtr obstacles,
 			const Pose3 &pose,
-			const hubero_local_planner::RobotFootprintModelConstPtr footprint,
+			const hubero_local_planner::RobotFootprintModelPtr footprint,
 			const Vector3 &velocity,
 			const Vector3 &target,
 			const double &dt
