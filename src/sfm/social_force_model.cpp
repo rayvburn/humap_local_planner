@@ -34,10 +34,12 @@ static bool print_info = false;
 #define DEBUG_BASIC 0
 #define DEBUG_WARN 0
 #define DEBUG_ERROR 0
+#define DEBUG_VERBOSE 0
 
 #define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
 #define debug_print_warn(fmt, ...) _template_debug_print_warn_(DEBUG_WARN, fmt, ##__VA_ARGS__)
 #define debug_print_err(fmt, ...) _template_debug_print_err_(DEBUG_ERROR, fmt, ##__VA_ARGS__)
+#define debug_print_verbose(fmt, ...) _template_debug_print_basic_(DEBUG_VERBOSE, fmt, ##__VA_ARGS__)
 
 // ----------------------------------------
 
@@ -136,7 +138,7 @@ void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
 bool SocialForceModel::computeSocialForce(
 		const hubero_local_planner::ObstContainerConstPtr obstacles,
 		const Pose3 &pose,
-		const hubero_local_planner::RobotFootprintModelConstPtr footprint,
+		const hubero_local_planner::RobotFootprintModelPtr footprint,
 		const Vector3 &velocity,
 		const Vector3 &target,
 		const double &dt
@@ -171,29 +173,44 @@ bool SocialForceModel::computeSocialForce(
 	// whether obstacle is moving or not (different computation method selected)
 	bool is_dynamic;
 
-	for (const auto& obstacle: *obstacles) {
+	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles) {
 		// check if the obstacle is static or dynamic (force calculation differs)
 		is_dynamic = obstacle->isDynamic();
 
 		// TODO: consider actor personal space even when he is standing!
 
-		// model_closest i.e. closest to a robot
+		// basic
 		Pose3 robot_closest_to_obstacle_pose = pose;
+		Pose3 obstacle_closest_to_robot_pose;/* = converter::ignVectorToPose(
+				converter::eigenV3fToIgnVector(
+					obstacle->getCentroid()
+				)
+		);*/
+		hubero_local_planner::BaseRobotFootprintModel::ClosestPoints pts = footprint->calculateClosestPoints(
+				//converter::ignPoseToPoseSE2(pose),
+				teb_local_planner::PoseSE2(pose.Pos().X(), pose.Pos().Y(), pose.Rot().Yaw()),
+				//teb_local_planner::PoseSE2(),
+				obstacle.get()
+		);
+		//robot_closest_to_obstacle_pose = converter::ignVectorToPose(converter::eigenV3fToIgnVector(pts.robot));
+		//obstacle_closest_to_robot_pose = converter::ignVectorToPose(converter::eigenV3fToIgnVector(pts.obstacle));
+		robot_closest_to_obstacle_pose = Pose3(pts.robot.x(), pts.robot.y(), 0.0, 0.0, 0.0, pts.robot.theta());
+		obstacle_closest_to_robot_pose = Pose3(pts.obstacle.x(), pts.obstacle.y(), 0.0, 0.0, 0.0, 0.0);
 
-		// no inflation, `closest points` are objects centers (done above)
-		Eigen::Vector2d obstacle_closest = obstacle->getClosestPoint(Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y()));
-//		std::cout << "\t obstacle_closest: " << obstacle_closest[0] << "  " << obstacle_closest[1] << std::endl;
-		Pose3 obstacle_closest_to_robot_pose = Pose3(obstacle_closest[0], obstacle_closest[1], 0.0, 0.0, 0.0, 0.0);
-//		std::cout << "\t obstacle_closest_to_robot_pose: " << obstacle_closest_to_robot_pose << std::endl;
-		auto distance_v_eig = obstacle_closest - Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y());
-//		std::cout << "\t distance_v_eig: " << distance_v_eig[0] << "  " << distance_v_eig[1] << std::endl;
+		auto distance_v_eig = Eigen::Vector2d(
+				obstacle_closest_to_robot_pose.Pos().X(), obstacle_closest_to_robot_pose.Pos().Y()
+				) - Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y()
+		);
 		Vector3 distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
-//		std::cout << "\t distance_v: " << distance_v << std::endl;
 		double distance = obstacle->getMinimumDistance(Eigen::Vector2d(pose.Pos().X(), pose.Pos().Y()));
-//		std::cout << "\t distance: " << distance << std::endl;
 		Vector3 model_vel = Vector3((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
-//		std::cout << "\t model_vel: " << model_vel << std::endl;
 		is_dynamic = model_vel.Length() > 1e-05;
+
+		debug_print_verbose("\t obstacle_closest_to_robot_pose: %2.3f,  %2.3f", obstacle_closest_to_robot_pose.Pos().X(), obstacle_closest_to_robot_pose.Pos().Y());
+		debug_print_verbose("\t distance_v_eig: %2.3f,  %2.3f", distance_v_eig[0], distance_v_eig[1]);
+		debug_print_verbose("\t distance_v: %2.3f,  %2.3f", distance_v.X(), distance_v.Y());
+		debug_print_verbose("\t distance: %2.3f", distance);
+		debug_print_verbose("\t model_vel: %2.3f,  %2.3f,  length: %2.3f,  is_dynamic: %d", model_vel.X(), model_vel.Y(), model_vel.Length(), is_dynamic);
 
 		if (is_dynamic) {
 			debug_print_basic(ANSI_COLOR_RED "DYNAMIC - obs: %d, vel-based: %d / vel: %2.4f, %2.4f" ANSI_COLOR_RESET "\r\n",
