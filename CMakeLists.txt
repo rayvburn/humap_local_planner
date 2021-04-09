@@ -92,11 +92,13 @@ set(HEADERS_SFM
     include/${PROJECT_NAME}/sfm/inflator.h
     include/${PROJECT_NAME}/sfm/social_force_model.h
     include/${PROJECT_NAME}/sfm/sfm_debug.h
+    include/${PROJECT_NAME}/sfm/world.h
 )
 set(SOURCES_SFM
     src/sfm/inflator.cpp
     src/sfm/social_force_model.cpp
     src/sfm/sfm_debug.cpp
+    src/sfm/world.cpp
 )
 
 set(HEADERS_VIS
@@ -205,5 +207,10 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_robot_footprint_extension test/test_robot_footprint_model_extension.cpp)
   if(TARGET test_robot_footprint_extension)
     target_link_libraries(test_robot_footprint_extension hubero_local_planner)
+  endif()
+
+  catkin_add_gtest(test_pose_addition test/test_pose_addition.cpp)
+  if(TARGET test_pose_addition)
+    target_link_libraries(test_pose_addition hubero_local_planner)
   endif()
 endif()
