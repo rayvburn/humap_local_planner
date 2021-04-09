@@ -123,7 +123,7 @@ void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
 //			continue;
 //		}
 //
-//		map_models_rel_locations_[ world_ptr->ModelByIndex(i)->GetName() ] = LOCATION_UNSPECIFIED;
+//		map_models_rel_locations_[ world_ptr->ModelByIndex(i)->GetName() ] = RelativeLocation::LOCATION_UNSPECIFIED;
 //
 //	}
 //
@@ -134,6 +134,59 @@ void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
 //}
 
 // ------------------------------------------------------------------- //
+
+bool SocialForceModel::computeSocialForce(const World& world, const double &dt) {
+	// reset internal state at the start of computations
+	reset();
+
+	auto robot = world.getRobotData();
+	auto objects_static = world.getStaticObjectsData();
+	auto objects_dynamic = world.getDynamicObjectsData();
+
+	// -----------------------------------------------------------------------------------------
+	// ------- internal force calculation ------------------------------------------------------
+	// -----------------------------------------------------------------------------------------
+	force_internal_ = computeInternalForce(robot);
+
+	// check whether it is needed to calculate interaction force or only the internal one
+	// should be considered
+	//if (disable_interaction_forces_ ) {
+	if (cfg_->disable_interaction_forces) {
+		factorInForceCoefficients(); 	// multiply force vector components by parameter values
+		return false;
+	}
+
+	// -----------------------------------------------------------------------------------------
+	// ------ interaction forces calculation (repulsive, attractive) ---------------------------
+	// -----------------------------------------------------------------------------------------
+	// added up to the `force_interaction_`
+	Vector3 f_alpha_beta;
+
+	// investigate STATIC objects of the environment
+	for (const StaticObject& object: objects_static) {
+		// TODO: dt is hard-coded now
+		f_alpha_beta = computeInteractionForce(robot, object, 0.2);
+		force_interaction_ += f_alpha_beta;
+	}
+
+	// investigate DYNAMIC objects of the environment
+	for (const DynamicObject& object: objects_dynamic) {
+		f_alpha_beta = computeInteractionForce(robot, object);
+		force_interaction_ += f_alpha_beta;
+	}
+
+	// multiply force vector components by parameter values
+	factorInForceCoefficients();
+	debug_print_basic("\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.X(), force_internal_.Y(), force_internal_.Z());
+	debug_print_basic("\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.X(), force_interaction_.Y(), force_interaction_.Z());
+
+	// extend or truncate force vectors if needed
+	applyNonlinearOperations(world.getDistanceClosestStaticObject(), world.getDistanceClosestDynamicObject());
+	debug_print_basic("\t\t\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.X(), force_internal_.Y(), force_internal_.Z());
+	debug_print_basic("\t\t\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.X(), force_interaction_.Y(), force_interaction_.Z());
+
+	return true;
+}
 
 bool SocialForceModel::computeSocialForce(
 		const hubero_local_planner::ObstContainerConstPtr obstacles,
@@ -231,7 +284,7 @@ bool SocialForceModel::computeSocialForce(
 		Angle robot_yaw(getYawFromPose(pose));
 		robot_yaw.Normalize();
 
-		RelativeLocation beta_rel_location = LOCATION_UNSPECIFIED;
+		RelativeLocation beta_rel_location = RelativeLocation::LOCATION_UNSPECIFIED;
 		double beta_angle_rel = 0.0;
 		double d_alpha_beta_angle = 0.0;
 		std::tie(beta_rel_location, beta_angle_rel, d_alpha_beta_angle) = computeObjectRelativeLocation(
@@ -871,6 +924,29 @@ void SocialForceModel::setParameters() {
 
 // ------------------------------------------------------------------- //
 
+Vector3 SocialForceModel::computeInternalForce(const Robot& robot) {
+	Vector3 to_goal_direction = robot.target.dist_v.Normalized();
+	Vector3 ideal_vel_vector = speed_desired_ * to_goal_direction;
+	Vector3 f_alpha = cfg_->mass /*person_mass_*/ * (1/relaxation_time_) * (ideal_vel_vector - robot.vel);
+	f_alpha.Z(0.0);
+
+	debug_print_basic("\t to_goal_vector: %2.3f, %2.3f, %2.3f \r\n", robot.target.dist_v.X(), robot.target.dist_v.Y(), robot.target.dist_v.Z());
+	debug_print_basic("\t to_goal_direction: %2.3f, %2.3f, %2.3f \r\n", to_goal_direction.X(), to_goal_direction.Y(), to_goal_direction.Z());
+	debug_print_basic("\t ideal_vel_vector: %2.3f, %2.3f, %2.3f \r\n", ideal_vel_vector.X(), ideal_vel_vector.Y(), ideal_vel_vector.Z());
+	debug_print_basic("\t target - x=%2.3f, y=%2.3f, z=%2.3f \r\n", robot.target.object.Pos().X(), robot.target.object.Pos().Y(), robot.target.object.Pos().Z());
+	debug_print_basic("\t actor_vel: %2.3f, %2.3f, %2.3f \r\n", robot.vel.X(), robot.vel.Y(), robot.vel.Z());
+	debug_print_basic("\t mass: %2.3f \r\n", cfg_->mass);
+	debug_print_basic("\t relaxation_time: %2.3f \r\n", relaxation_time_);
+	debug_print_basic("\t f_alpha: %2.3f, %2.3f, %2.3f   |   multiplied: %2.3f, %2.3f, %2.3f \r\n",
+			f_alpha.X(), f_alpha.Y(), f_alpha.Z(),
+			(cfg_->internal_force_factor * f_alpha).X(),
+			(cfg_->internal_force_factor * f_alpha).Y(),
+			(cfg_->internal_force_factor * f_alpha).Z()
+	);
+
+	return f_alpha;
+}
+
 Vector3 SocialForceModel::computeInternalForce(const Pose3 &actor_pose,
 		const Vector3 &actor_vel, const Vector3 &actor_target) {
 
@@ -906,6 +982,138 @@ Vector3 SocialForceModel::computeInternalForce(const Pose3 &actor_pose,
 }
 
 // ------------------------------------------------------------------- //
+
+Vector3 SocialForceModel::computeInteractionForce(
+		const Robot& robot,
+		const DynamicObject& object/*,
+		const Pose3 &object_pose,
+		const Vector3 &object_vel,
+		const Vector3 &d_alpha_beta,
+		const double &d_alpha_beta_length,
+		const RelativeLocation &beta_rel_location,
+		const double &beta_angle_rel,
+		const double &d_alpha_beta_angle,
+		const bool &is_actor*/)
+{
+	/* actor's normal (based on velocity vector, whose direction could
+	 * be also acquired from his yaw angle */
+	Vector3 n_alpha = computeNormalAlphaDirection(robot.centroid);
+
+	Vector3 f_alpha_beta(0.0, 0.0, 0.0);
+
+	// check length to other object (beta)
+	if (object.dist > 7.5) {
+		debug_print_verbose("object too far away, zeroing force (distance vector length: %2.4f) \r\n", object.dist);
+		return f_alpha_beta;
+	}
+
+	// compute heading directions of robot and object
+	Angle robot_yaw(robot.centroid.Rot().Yaw());
+	robot_yaw.Normalize();
+
+	Angle object_yaw(std::atan2(object.vel.Y(), object.vel.X()));
+	object_yaw.Normalize();
+
+	/* FOV factor is used to make interaction of objects
+	 * that are behind the actor weaker */
+	double fov_factor = 1.00;
+
+	/* check whether beta is within the field of view
+	 * to determine proper factor for force in case
+	 * beta is behind alpha */
+	if (isOutOfFOV(object.rel_loc_angle)) {
+		// exp function used: e^(-0.5*x)
+		fov_factor = std::exp(-0.5 * object.dist);
+		debug_print_verbose(
+				"dynamic obstacle out of FOV, distance: %2.3f, FOV factor: %2.3f \r\n",
+				object.dist,
+				fov_factor
+		);
+	}
+
+	double v_rel = computeRelativeSpeed(robot.vel, object.vel);
+	if (std::fabs(v_rel) < 1e-06) {
+		debug_print_verbose("abs. value of `v_rel` is close to ZERO (%2.3f), zeroing interaction force \r\n", v_rel);
+		return f_alpha_beta;
+	}
+
+	// speed of the Beta object
+	double speed_beta = object.vel.Length();
+
+	// store angle between objects' (in most cases) velocities
+	double theta_alpha_beta = 0.0;
+
+	// check parameter value - theta_alpha_beta issue there
+	switch (param_description_) {
+
+	case(PARAMETER_DESCRIPTION_2014):
+			theta_alpha_beta = computeThetaAlphaBetaAngle2014(n_alpha, object.dist_v);
+			break;
+
+	case(PARAMETER_DESCRIPTION_2011):
+	case(PARAMETER_DESCRIPTION_UNKNOWN):
+	default:
+			/* angle between velocities of alpha and beta */
+			theta_alpha_beta = computeThetaAlphaBetaAngle2011(robot, object);;
+			break;
+	}
+
+	// actual force calculations
+	//
+	/* For details see `Social force equation` in the articles listed in .h file */
+	// actor's perpendicular (based on velocity vector)
+	Vector3 p_alpha = computePerpendicularToNormal(n_alpha, object.rel_loc);
+
+	// original
+//	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
+//	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
+	// modded
+	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / (2.0 * v_rel) ) - 0.5 * Cn_ * object.dist;
+	double exp_perpendicular = ( (-0.1 * Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - 0.5 * Cp_ * object.dist;
+
+	// `fov_factor`: weaken the interaction force when beta is behind alpha
+	// original
+//	Vector3 n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
+//	Vector3 p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+	// modded
+	Vector3 n_alpha_scaled = n_alpha * (-4.0) * An_ * std::exp(exp_normal) * fov_factor;
+	Vector3 p_alpha_scaled = p_alpha * (+2.0) * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+
+	// -----------------------------------------------------
+	// debugging large vector length ----------------
+	debug_print_verbose("----interaction force----\r\n");
+	debug_print_verbose("\t robot yaw: %2.3f, object yaw: %2.3f \r\n", robot_yaw.Radian(), object_yaw.Radian());
+	debug_print_verbose("\t Θ_αß: %2.3f, v_rel: %2.3f, dist: %2.3f \r\n", theta_alpha_beta, v_rel, object.dist);
+	debug_print_verbose("\t expNORMAL: %2.3f, expPERP: %2.3f, FOV_factor: %2.3f \r\n",
+			exp_normal,
+			exp_perpendicular,
+			fov_factor
+	);
+	debug_print_verbose("\t NORMAL: %2.3f  %2.3f, PERP: %2.3f  %2.3f \r\n",
+			cfg_->interaction_force_factor * n_alpha_scaled.X(),
+			cfg_->interaction_force_factor * n_alpha_scaled.Y(),
+			cfg_->interaction_force_factor * p_alpha_scaled.X(),
+			cfg_->interaction_force_factor * p_alpha_scaled.Y()
+	);
+	debug_print_verbose("\t total: %2.3f  %2.3f \r\n",
+			cfg_->interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).X(),
+			cfg_->interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).Y()
+	);
+	debug_print_verbose("----\r\n");
+	// -----------------------------------------------------
+
+	// factor - applicable only for dynamic objects
+	// interaction strength exponentially decreases as distance between objects becomes bigger;
+	// it is also artificially strengthened when distance is small
+	double factor = 4.0 * std::exp(-2.0 * object.dist);
+	n_alpha_scaled *= factor;
+	p_alpha_scaled *= factor;
+
+	// save interaction force vector
+	f_alpha_beta = n_alpha_scaled + p_alpha_scaled;
+
+	return f_alpha_beta;
+}
 
 /// \return F_alpha_beta - repulsive force created by `beta` object
 /// \return d_alpha_beta - distance vector pointing from `alpha` to `beta`
@@ -1031,7 +1239,7 @@ SocialForceModel::computeInteractionForce(
 			break;
 
 	case(PARAMETER_DESCRIPTION_2014):
-			theta_alpha_beta = computeThetaAlphaBetaAngle(n_alpha, d_alpha_beta);
+			theta_alpha_beta = computeThetaAlphaBetaAngle2014(n_alpha, d_alpha_beta);
 			break;
 
 	case(PARAMETER_DESCRIPTION_UNKNOWN):
@@ -1105,15 +1313,15 @@ SocialForceModel::computeInteractionForce(
 		std::cout << "\texp_p: " << exp_perpendicular;
 
 		std::string location_str;
-		if ( beta_rel_location == LOCATION_FRONT ) {
+		if ( beta_rel_location == RelativeLocation::LOCATION_FRONT ) {
 			location_str = "FRONT";
-		} else if ( beta_rel_location == LOCATION_BEHIND ) {
+		} else if ( beta_rel_location == RelativeLocation::LOCATION_BEHIND ) {
 			location_str = "BEHIND";
-		} else if ( beta_rel_location == LOCATION_RIGHT ) {
+		} else if ( beta_rel_location == RelativeLocation::LOCATION_RIGHT ) {
 			location_str = "RIGHT SIDE";
-		} else if ( beta_rel_location == LOCATION_LEFT ) {
+		} else if ( beta_rel_location == RelativeLocation::LOCATION_LEFT ) {
 			location_str = "LEFT SIDE";
-		} else if ( beta_rel_location == LOCATION_UNSPECIFIED ) {
+		} else if ( beta_rel_location == RelativeLocation::LOCATION_UNSPECIFIED ) {
 			location_str = "UNKNOWN";
 		}
 		std::cout << "\t\trel_location: " << location_str << std::endl;
@@ -1167,6 +1375,64 @@ SocialForceModel::computeInteractionForce(
 }
 
 // ------------------------------------------------------------------- //
+
+Vector3 SocialForceModel::computeInteractionForce(const Robot& robot, const StaticObject& object, const double &dt) {
+	/* elliptical formulation - `14 article - equations (3) and (4) */
+
+	// distance vector
+	Vector3 d_alpha_i = -object.dist_v; // note the proper direction
+	d_alpha_i.Z(0.00); // planar
+	double d_alpha_i_len = object.dist;
+
+	// length (vβ * ∆t) of the stride (step size)
+	Vector3 y_alpha_i = robot.vel * dt;
+	y_alpha_i.Z(0.00); // planar
+
+	// semi-minor axis of the elliptic formulation
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()),2) -
+								   std::pow(y_alpha_i.Length(), 2) );
+
+	// division by ~0 prevention - returning zeros vector instead of NaNs
+	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i_len < 1e-08) ) {
+		debug_print_err("----static obstacle interaction error---- \r\n");
+		debug_print_err("\t d_alpha_i: %2.3f %2.3f, len: %2.3f \r\n", d_alpha_i.X(), d_alpha_i.Y(), d_alpha_i_len);
+		debug_print_err("\t y_alpha_i: %2.3f %2.3f, w_alpha_i: %2.3f \r\n", y_alpha_i.X(), y_alpha_i.Y(), w_alpha_i);
+		debug_print_err("\t FAIL w_alpha_i small: %d \r\n", std::fabs(w_alpha_i) < 1e-08);
+		debug_print_err("\t FAIL w_alpha_i NaN: %d \r\n", std::isnan(w_alpha_i));
+		debug_print_err("\t d_alpha_i Length FAIL: %d \r\n", d_alpha_i_len < 1e-08);
+		debug_print_err("\t returning ZERO force \r\n");
+		debug_print_err("---- \r\n");
+		return Vector3();
+	}
+
+	// ~force (acceleration) calculation
+	Vector3 f_alpha_i;
+	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).Length()) /
+			    2*w_alpha_i) * 0.5 * (d_alpha_i.Normalized() + (d_alpha_i - y_alpha_i).Normalized());
+
+	// setting the `strength` (numerator) too high produces noticeable accelerations around objects
+	double factor = 90.0/(std::exp(0.5 * d_alpha_i_len));
+	f_alpha_i *= factor;
+
+	debug_print_verbose("----static obstacle interaction \r\n");
+	debug_print_verbose("\t d_alpha_i: %2.3f %2.3f, len: %2.3f \r\n",
+			d_alpha_i.X(),
+			d_alpha_i.Y(),
+			d_alpha_i_len
+	);
+	debug_print_verbose("\t y_alpha_i: %2.3f %2.3f, w_alpha_i: %2.3f \r\n",
+			y_alpha_i.X(),
+			y_alpha_i.Y(),
+			w_alpha_i
+	);
+	debug_print_verbose("\t f_alpha_i (multiplied): %2.3f %2.3f \r\n",
+			cfg_->interaction_force_factor * f_alpha_i.X(),
+			cfg_->interaction_force_factor * f_alpha_i.Y()
+	);
+	debug_print_verbose("---- \r\n");
+
+	return f_alpha_i;
+}
 
 std::tuple<Vector3, Vector3, double>
 SocialForceModel::computeForceStaticObstacle(const Pose3 &actor_pose,
@@ -1258,6 +1524,23 @@ SocialForceModel::computeForceStaticObstacle(const Pose3 &actor_pose,
 }
 
 // ------------------------------------------------------------------- //
+
+double SocialForceModel::computeThetaAlphaBetaAngle2011(const Robot& robot, const DynamicObject& object
+		/*const ignition::math::Angle &actor_yaw, const Vector3 &object_vel,
+		const ignition::math::Angle &object_yaw, const Vector3 &d_alpha_beta, const bool &is_actor*/
+) {
+	/* 2011 - "θ αβ - angle between velocity of pedestrian α
+	 * and the displacement of pedestrian β" */
+	/* `d_alpha_beta` can be interpreted as `d_actor_object` */
+
+	// both velocities are expressed in world's coordinate system
+	// formula -> Section "Examples of spatial tasks" @ https://onlinemschool.com/math/library/vector/angl/
+	double cos_angle = robot.vel.Dot(object.vel) / (robot.vel.Length() * object.vel.Length());
+	Angle theta(std::acos(cos_angle));
+	theta.Normalize();
+
+	return theta.Radian();
+}
 
 /**
  *
@@ -1492,7 +1775,7 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const Vector3 &actor_vel,
 
 // ------------------------------------------------------------------- //
 
-double SocialForceModel::computeThetaAlphaBetaAngle(const Vector3 &n_alpha,
+double SocialForceModel::computeThetaAlphaBetaAngle2014(const Vector3 &n_alpha,
 		const Vector3 &d_alpha_beta) {
 
 	/* 2014 - "φ αβ is the angle between n α and d αβ"
@@ -1621,10 +1904,10 @@ Vector3 SocialForceModel::computePerpendicularToNormal(const Vector3 &n_alpha,
 
 	/*
 	Vector3 p_alpha;
-	if ( _beta_rel_location == LOCATION_RIGHT ) {
+	if ( _beta_rel_location == RelativeLocation::LOCATION_RIGHT ) {
 		p_alpha = _n_alpha.Perpendicular();
 		// return (_n_alpha.Perpendicular());
-	} else if ( _beta_rel_location == LOCATION_LEFT ) {
+	} else if ( _beta_rel_location == RelativeLocation::LOCATION_LEFT ) {
 
 		// Vector3 p_alpha;
 
@@ -1649,7 +1932,7 @@ Vector3 SocialForceModel::computePerpendicularToNormal(const Vector3 &n_alpha,
 	static const double sqr_zero = 1e-06 * 1e-06;
 	Vector3 to_cross;
 
-	if ( beta_rel_location == LOCATION_LEFT ) {
+	if ( beta_rel_location == RelativeLocation::LOCATION_LEFT ) {
 
 		// check parameter - n_alpha issue there
 		switch (param_description_) {
@@ -1666,7 +1949,7 @@ Vector3 SocialForceModel::computePerpendicularToNormal(const Vector3 &n_alpha,
 		}
 
 
-	} else if ( beta_rel_location == LOCATION_RIGHT ) {
+	} else if ( beta_rel_location == RelativeLocation::LOCATION_RIGHT ) {
 
 		// check parameter - n_alpha issue there
 		switch (param_description_) {
@@ -1719,11 +2002,12 @@ Vector3 SocialForceModel::computePerpendicularToNormal(const Vector3 &n_alpha,
 
 // ------------------------------------------------------------------- //
 
-std::tuple<RelativeLocation, double, double> SocialForceModel::computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
+std::tuple<RelativeLocation, double, double> SocialForceModel::computeObjectRelativeLocation(
+		const ignition::math::Angle &actor_yaw,
 		const Vector3 &d_alpha_beta)
 {
 
-	RelativeLocation rel_loc = LOCATION_UNSPECIFIED;
+	RelativeLocation rel_loc = RelativeLocation::LOCATION_UNSPECIFIED;
 	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
 	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
 
@@ -1775,28 +2059,28 @@ std::tuple<RelativeLocation, double, double> SocialForceModel::computeObjectRela
 	if ( std::fabs(angle_relative.Radian()) <= IGN_DTOR(9) ||
 		 std::fabs(angle_relative.Radian()) >= (IGN_PI - IGN_DTOR(9)) ) {
 
-		rel_loc = LOCATION_FRONT;
+		rel_loc = RelativeLocation::LOCATION_FRONT;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "FRONT";
 #endif
 	/* // LOCATION_BEHIND DEPRECATED HERE
 	} else if ( IsOutOfFOV(angle_relative.Radian() ) ) { // consider FOV
 
-		rel_loc = LOCATION_BEHIND;
+		rel_loc = RelativeLocation::LOCATION_BEHIND;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "BEHIND";
 #endif
 	*/
 	} else if ( angle_relative.Radian() <= 0.0 ) { // 0.0 ) {
 
-		rel_loc = LOCATION_RIGHT;
+		rel_loc = RelativeLocation::LOCATION_RIGHT;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "RIGHT";
 #endif
 
 	} else if ( angle_relative.Radian() > 0.0 ) { // 0.0 ) {
 
-		rel_loc = LOCATION_LEFT;
+		rel_loc = RelativeLocation::LOCATION_LEFT;
 #ifdef DEBUG_GEOMETRY_2
 		txt_dbg = "LEFT";
 #endif
@@ -1819,15 +2103,15 @@ std::tuple<RelativeLocation, double, double> SocialForceModel::computeObjectRela
 #ifdef DEBUG_OSCILLATIONS
 	if ( SfmDebugGetCurrentObjectName() == "table1" && SfmDebugGetCurrentActorName() == "actor1" ) {
 		std::string location_str;
-		if ( rel_loc == LOCATION_FRONT ) {
+		if ( rel_loc == RelativeLocation::LOCATION_FRONT ) {
 			location_str = "FRONT";
-		} else if ( rel_loc == LOCATION_BEHIND ) {
+		} else if ( rel_loc == RelativeLocation::LOCATION_BEHIND ) {
 			location_str = "BEHIND";
-		} else if ( rel_loc == LOCATION_RIGHT ) {
+		} else if ( rel_loc == RelativeLocation::LOCATION_RIGHT ) {
 			location_str = "RIGHT SIDE";
-		} else if ( rel_loc == LOCATION_LEFT ) {
+		} else if ( rel_loc == RelativeLocation::LOCATION_LEFT ) {
 			location_str = "LEFT SIDE";
-		} else if ( rel_loc == LOCATION_UNSPECIFIED ) {
+		} else if ( rel_loc == RelativeLocation::LOCATION_UNSPECIFIED ) {
 			location_str = "UNKNOWN";
 		}
 		std::cout << "\t" << SfmDebugGetCurrentObjectName() << "'s relative location: " << location_str <<  "\tactor: " << SfmDebugGetCurrentActorName();
@@ -1836,7 +2120,7 @@ std::tuple<RelativeLocation, double, double> SocialForceModel::computeObjectRela
 #endif
 
 	/* if the angle_relative is above few degrees value then the historical value may be discarded */
-	if ( rel_loc != LOCATION_FRONT ) {
+	if ( rel_loc != RelativeLocation::LOCATION_FRONT ) {
 		map_models_rel_locations_[SfmDebugGetCurrentObjectName()] = rel_loc;
 	} else {
 #ifdef DEBUG_OSCILLATIONS
