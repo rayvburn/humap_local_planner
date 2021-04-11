@@ -10,24 +10,35 @@
 namespace sfm {
 
 World::World(
-	const Pose3& robot_pose_centroid,
-	const Pose3& robot_pose,
-	const Pose3& target_pose,
-	const Vector3& robot_vel
+		const Pose3& robot_pose_centroid,
+		const Pose3& robot_pose,
+		const Pose3& target_pose,
+		const Vector3& robot_vel
 ) {
 	robot_.centroid = robot_pose_centroid;
 	robot_.vel = robot_vel;
+	robot_.heading_dir = std::atan2(robot_vel.Y(), robot_vel.X());
 
 	robot_.target.robot = robot_pose;
 	robot_.target.object = target_pose;
+	robot_.target.dist_v = target_pose.Pos() - robot_pose.Pos();
+	robot_.target.dist = robot_.target.dist_v.Length();
+}
+
+World::World(
+		const Pose3& robot_pose,
+		const Pose3& target_pose,
+		const Vector3& robot_vel
+): World(robot_pose, robot_pose, target_pose, robot_vel) {
 }
 
 void World::addObstacle(
 		const Pose3& robot_pose_closest,
 		const Pose3& obstacle_pose_closest,
-		const Vector3& obstacle_vel
+		const Vector3& obstacle_vel,
+		bool force_dynamic_type
 ) {
-	if (obstacle_vel.Length() <= 1e-06) {
+	if (obstacle_vel.Length() <= 1e-06 && !force_dynamic_type) {
 		addObstacleStatic(robot_pose_closest, obstacle_pose_closest);
 	} else {
 		addObstacleDynamic(robot_pose_closest, obstacle_pose_closest, obstacle_vel);
@@ -37,7 +48,8 @@ void World::addObstacle(
 void World::addObstacles(
 		const std::vector<Pose3>& robot_pose_closest,
 		const std::vector<Pose3>& obstacle_pose_closest,
-		const std::vector<Vector3>& obstacle_vel
+		const std::vector<Vector3>& obstacle_vel,
+		bool force_dynamic_type
 ) {
 	if ((robot_pose_closest.size() != obstacle_pose_closest.size())
 		|| (obstacle_pose_closest.size() != obstacle_vel.size())
@@ -45,8 +57,12 @@ void World::addObstacles(
 		printf("[World::addObstacles] vectors lengths are not equal! \r\n");
 		return;
 	}
+
+	obstacle_static_.clear();
+	obstacle_dynamic_.clear();
+
 	for (size_t i = 0; i < robot_pose_closest.size(); i++) {
-		addObstacle(robot_pose_closest.at(i), obstacle_pose_closest.at(i), obstacle_vel.at(i));
+		addObstacle(robot_pose_closest.at(i), obstacle_pose_closest.at(i), obstacle_vel.at(i), force_dynamic_type);
 	}
 }
 

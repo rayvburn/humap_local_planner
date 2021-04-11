@@ -166,7 +166,12 @@ public:
 	/// \brief Function which calculates social force
 	/// for an actor taking whole world's objects
 	/// into consideration
-	bool computeSocialForce(const World& world, const double &dt);
+	bool computeSocialForce(
+			const World& world,
+			const double &dt,
+			std::vector<size_t>& meaningful_static,
+			std::vector<size_t>& meaningful_dynamic
+	);
 	bool computeSocialForce(
 			const hubero_local_planner::ObstContainerConstPtr obstacles,
 			const Pose3 &pose,
