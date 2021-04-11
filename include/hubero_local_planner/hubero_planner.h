@@ -5,6 +5,7 @@
 #include <memory>
 
 #include <hubero_local_planner/hubero_config.h>
+#include <hubero_local_planner/sfm/world.h>
 #include <hubero_local_planner/sfm/social_force_model.h>
 #include <hubero_local_planner/fuzz/processor.h>
 #include <hubero_local_planner/fuzz/social_conductor.h>
@@ -94,7 +95,7 @@ public:
     		const tf::Stamped<tf::Pose>& pose,
 			const geometry_msgs::Twist& velocity,
 			const tf::Stamped<tf::Pose>& goal,
-			ObstContainerConstPtr obstacles,
+			const ObstContainerConstPtr obstacles,
 			Eigen::Vector3f& force
 	);
 
@@ -102,7 +103,7 @@ public:
 			const Pose3& pose,
 			const Vector3& velocity,
 			const Pose3& goal,
-			ObstContainerConstPtr obstacles,
+			const ObstContainerConstPtr obstacles,
 			Vector3& force
 	);
 
@@ -215,6 +216,13 @@ public:
 	}
 
 private:
+	// fills up the world model with static and dynamic obstacles
+	void createEnvironmentModel(
+			const teb_local_planner::PoseSE2& pose,
+			const ObstContainerConstPtr obstacles,
+			sfm::World& world
+	);
+
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
 	double sim_period_; ///< @brief The number of seconds to use to compute max/min vels for the planner
