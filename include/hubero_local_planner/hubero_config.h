@@ -58,21 +58,22 @@ public:
 		double 				max_speed 					= 1.50;
 		double 				mass				= 80.0;
 		/// \brief Determines maneuverability of the actor,
-		/// for more details see \ref computeYawMovementDirection
 		double 				maneuverability			= 0.0065;
 		double 				internal_force_factor 		= 100.0;
 		double 				interaction_force_factor 	= 3000.0;
 		double 				min_force 					= 300.0;
 		double 				max_force 					= 2000.0;
 		bool 				heterogenous_population 	= false;
-		unsigned short int 	static_obj_interaction 		= 1;
+		/// \brief Determines method of calculating force for static obstacles,
+		/// see \ref sfm::StaticObjectInteraction
+		unsigned short int 	static_obj_interaction 		= 0;
+		/// \brief Determines type of inflation figure
 		unsigned short int 	box_inflation_type 			= 0;
 		/// \brief Method of computing a new pose while force
 		/// of the opposite direction (relative to \f$\alpha\f$ is generated)
 		unsigned short int	opposite_force_method		= 0;
 		/// \brief Defines whether interaction forces should be calculated;
-		/// if set to false (parameter) will force actor to take the shortest
-		/// possible path.
+		/// setting to False will force robot to take the shortest possible path.
 		bool 				disable_interaction_forces	= false;
 
 	} sfm;
