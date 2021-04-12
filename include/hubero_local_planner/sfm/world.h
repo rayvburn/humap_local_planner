@@ -139,9 +139,16 @@ public:
 	inline std::vector<DynamicObject> getDynamicObjectsData() const {
 		return obstacle_dynamic_;
 	}
+
+	/// \brief Returns a distance to the closest
+	/// static obstacle based on the world configuration
+	/// valid in the last algorithm iteration.
 	inline double getDistanceClosestStaticObject() const {
 		return getDistanceClosest(obstacle_static_);
 	}
+	/// \brief Returns a distance to the closest
+	/// dynamic obstacle based on the world configuration
+	/// valid in the last algorithm iteration.
 	inline double getDistanceClosestDynamicObject() const {
 		return getDistanceClosest(obstacle_dynamic_);
 	}
@@ -159,6 +166,14 @@ protected:
 			const Vector3& obstacle_vel
 	);
 
+	/// \brief Helper function which calculates a relative
+	/// location of the investigated object based on actor's
+	/// facing direction (in this case it is equal to a movement
+	/// direction)
+	/// \return A 3-element tuple consisting of:
+	/// - relative location of the \beta object (relative to \f$\alpha\f$'s direction), see \ref RelativeLocation
+	/// - relative location expressed as an angle (radians)
+	/// - angle of the vector connecting \f$\alpha\f$ and \beta
 	void computeObjectRelativeLocation(
 			const Angle &actor_yaw,
 			const Vector3 &d_alpha_beta,
