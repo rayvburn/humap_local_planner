@@ -151,60 +151,64 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	std::lock_guard<std::mutex> lock(config_mutex_);
 	ROS_INFO("[HuberoConfigROS] reconfigure()");
 
-	// sfm_->disable_interaction_forces = cfg.groups.sfm_->disable_interaction_forces;
-
 	/*
-	general_->init_pose = cfg
-	general_->init_target;
-	general_->init_stance;
-
-	general_->global_frame_name				= "world";
-	general_->animation_factor 				= 4.5;				/// \brief Time scaling factor. Used to coordinate translational motion with the actor_ptr_'s walking animation.
-	general_->animation_speed_rotation 		= 0.007;
-	general_->target_tolerance 				= 1.25;
-	general_->target_reach_max_time 			= 60.0;
-	general_->target_reachable_check_period 	= 2.0;
-	general_->limit_actors_workspace			= true;
-	general_->world_bound_x					{-3.20, +3.80};
-	general_->world_bound_y					{-10.20, +3.80};
-
-	inflator_->bounding_type 					= 2;
-	inflator_->circle_radius					= 0.5;
+	inflator_->bounding_type 				= 2;
+	inflator_->circle_radius				= 0.5;
 	inflator_->box_size						{0.45, 0.45, 1.00};
-	inflator_->ellipse							{1.00, 0.80, 0.35, 0.00};
+	inflator_->ellipse						{1.00, 0.80, 0.35, 0.00};
 	inflator_->inflation_radius				= 0.45; // the `worst` case from the default values
-
-	sfm_->fov 						= 2.00;
-	sfm_->max_speed 					= 1.50;
-	sfm_->mass 						= 80.0;
-	sfm_->maneuverability				= 6.5;
-	sfm_->internal_force_factor 		= 100.0;
-	sfm_->interaction_force_factor 	= 3000.0;
-	sfm_->min_force 					= 300.0;
-	sfm_->max_force 					= 2000.0;
-	sfm_->heterogenous_population 	= false;
-	sfm_->static_obj_interaction 		= 1;
-	sfm_->box_inflation_type 			= 0;
-	sfm_->opposite_force				= 0;
-	sfm_->disable_interaction_forces	= false;
-
-	behaviour_->force_factor					= 1.0;
-	behaviour_->turn_left 						= 500.0;
-	behaviour_->turn_left_accelerate_turn 		= 500.0;
-	behaviour_->turn_left_accelerate_acc 		= 625.0;
-	behaviour_->accelerate 						= 500.0;
-	behaviour_->turn_right_accelerate_turn 		= 500.0;
-	behaviour_->turn_right_accelerate_acc 		= 625.0;
-	behaviour_->turn_right 						= 800.0;
-	behaviour_->turn_right_decelerate_turn 		= 500.0;
-	behaviour_->turn_right_decelerate_dec 		= 625.0;
-	behaviour_->stop 							= 500.0;
-	behaviour_->decelerate 						= 500.0;
 	*/
 
+	general_->angular_sim_granularity = cfg.angular_sim_granularity;
+	general_->sim_granularity = cfg.sim_granularity;
+	general_->sim_period = cfg.sim_period; // TODO: is this still useful?
+	general_->sim_time = cfg.sim_time;
+
+	sfm_->fov = cfg.fov;
+	sfm_->max_speed = cfg.max_speed;
+	sfm_->mass = cfg.mass;
+	sfm_->maneuverability = cfg.maneuverability;
+	sfm_->internal_force_factor = cfg.internal_force_factor;
+	sfm_->interaction_force_factor = cfg.interaction_force_factor;
+	sfm_->min_force = cfg.min_force;
+	sfm_->max_force = cfg.max_force;
+	// sfm_->heterogenous_population
 	sfm_->static_obj_interaction = cfg.static_object_interaction_type;
+	sfm_->box_inflation_type = cfg.inflation_type; // TODO: is this still useful?
 	sfm_->opposite_force_method = cfg.oppsite_force_method;
 	sfm_->disable_interaction_forces = cfg.disable_interaction_forces;
+
+	behaviour_->force_factor = cfg.force_factor;
+	behaviour_->turn_left = cfg.turn_left;
+	behaviour_->turn_left_accelerate_turn = cfg.turn_left_accelerate_turn;
+	behaviour_->turn_left_accelerate_acc = cfg.turn_left_accelerate_acc;
+	behaviour_->accelerate = cfg.accelerate;
+	behaviour_->turn_right_accelerate_turn = cfg.turn_right_accelerate_turn;
+	behaviour_->turn_right_accelerate_acc = cfg.turn_right_accelerate_acc;
+	behaviour_->turn_right = cfg.turn_right;
+	behaviour_->turn_right_decelerate_turn = cfg.turn_right_decelerate_turn;
+	behaviour_->turn_right_decelerate_dec = cfg.turn_right_decelerate_dec;
+	behaviour_->stop = cfg.stop;
+	behaviour_->decelerate = cfg.decelerate;
+
+	limits_->acc_lim_theta = cfg.acc_lim_theta;
+	limits_->acc_lim_x = cfg.acc_lim_x;
+	limits_->acc_lim_y = cfg.acc_lim_y;
+	limits_->acc_limit_trans = cfg.acc_limit_trans;
+	limits_->max_rot_vel = cfg.max_rot_vel;
+	limits_->max_trans_vel = cfg.max_trans_vel;
+	limits_->max_vel_x = cfg.max_vel_x;
+	limits_->max_vel_y = cfg.max_vel_y;
+	limits_->min_rot_vel = cfg.min_rot_vel;
+	limits_->min_trans_vel = cfg.min_trans_vel;
+	limits_->min_vel_x = cfg.min_vel_x;
+	limits_->min_vel_y = cfg.min_vel_y;
+	limits_->prune_plan = cfg.prune_plan;
+	// limits_->restore_defaults
+	limits_->rot_stopped_vel = cfg.rot_stopped_vel;
+	limits_->trans_stopped_vel = cfg.trans_stopped_vel;
+	limits_->xy_goal_tolerance = cfg.xy_goal_tolerance;
+	limits_->yaw_goal_tolerance = cfg.yaw_goal_tolerance;
 }
 
 } /* namespace hubero_local_planner */
