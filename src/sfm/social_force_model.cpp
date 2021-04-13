@@ -26,7 +26,7 @@ static bool print_info = false;
 
 #include <hubero_local_planner/utils/debug.h>
 
-#define DEBUG_BASIC 0
+#define DEBUG_BASIC 1
 #define DEBUG_WARN 1
 #define DEBUG_ERROR 1
 #define DEBUG_VERBOSE 0
@@ -79,7 +79,10 @@ bool SocialForceModel::computeSocialForce(
 	// check whether it is needed to calculate interaction force or only the internal one
 	// should be considered
 	if (cfg_->disable_interaction_forces) {
-		factorInForceCoefficients(); 	// multiply force vector components by parameter values
+		// multiply force vector components by parameter values
+		factorInForceCoefficients();
+		// artificially set obstacle distances to be very very big (in meters)
+		applyNonlinearOperations(100.0, 100.0);
 		return false;
 	}
 
@@ -185,14 +188,14 @@ Vector3 SocialForceModel::computeInternalForce(const Robot& robot) {
 	Vector3 f_alpha = cfg_->mass /*person_mass_*/ * (1/relaxation_time_) * (ideal_vel_vector - robot.vel);
 	f_alpha.Z(0.0);
 
-	debug_print_basic("\t to_goal_vector: %2.3f, %2.3f, %2.3f \r\n", robot.target.dist_v.X(), robot.target.dist_v.Y(), robot.target.dist_v.Z());
-	debug_print_basic("\t to_goal_direction: %2.3f, %2.3f, %2.3f \r\n", to_goal_direction.X(), to_goal_direction.Y(), to_goal_direction.Z());
-	debug_print_basic("\t ideal_vel_vector: %2.3f, %2.3f, %2.3f \r\n", ideal_vel_vector.X(), ideal_vel_vector.Y(), ideal_vel_vector.Z());
-	debug_print_basic("\t target - x=%2.3f, y=%2.3f, z=%2.3f \r\n", robot.target.object.Pos().X(), robot.target.object.Pos().Y(), robot.target.object.Pos().Z());
-	debug_print_basic("\t robot_vel: %2.3f, %2.3f, %2.3f \r\n", robot.vel.X(), robot.vel.Y(), robot.vel.Z());
-	debug_print_basic("\t mass: %2.3f \r\n", cfg_->mass);
-	debug_print_basic("\t relaxation_time: %2.3f \r\n", relaxation_time_);
-	debug_print_basic("\t f_alpha: %2.3f, %2.3f, %2.3f   |   multiplied: %2.3f, %2.3f, %2.3f \r\n",
+	debug_print_verbose("\t to_goal_vector: %2.3f, %2.3f, %2.3f \r\n", robot.target.dist_v.X(), robot.target.dist_v.Y(), robot.target.dist_v.Z());
+	debug_print_verbose("\t to_goal_direction: %2.3f, %2.3f, %2.3f \r\n", to_goal_direction.X(), to_goal_direction.Y(), to_goal_direction.Z());
+	debug_print_verbose("\t ideal_vel_vector: %2.3f, %2.3f, %2.3f \r\n", ideal_vel_vector.X(), ideal_vel_vector.Y(), ideal_vel_vector.Z());
+	debug_print_verbose("\t target - x=%2.3f, y=%2.3f, z=%2.3f \r\n", robot.target.object.Pos().X(), robot.target.object.Pos().Y(), robot.target.object.Pos().Z());
+	debug_print_verbose("\t robot_vel: %2.3f, %2.3f, %2.3f \r\n", robot.vel.X(), robot.vel.Y(), robot.vel.Z());
+	debug_print_verbose("\t mass: %2.3f \r\n", cfg_->mass);
+	debug_print_verbose("\t relaxation_time: %2.3f \r\n", relaxation_time_);
+	debug_print_verbose("\t f_alpha: %2.3f, %2.3f, %2.3f   |   multiplied: %2.3f, %2.3f, %2.3f \r\n",
 			f_alpha.X(), f_alpha.Y(), f_alpha.Z(),
 			(cfg_->internal_force_factor * f_alpha).X(),
 			(cfg_->internal_force_factor * f_alpha).Y(),
@@ -302,8 +305,12 @@ Vector3 SocialForceModel::computeInteractionForce(
 	// -----------------------------------------------------
 	// debugging large vector length ----------------
 	debug_print_verbose("----interaction force----\r\n");
-	debug_print_verbose("\t robot yaw: %2.3f, object yaw: %2.3f \r\n", robot_yaw.Radian(), object_yaw.Radian());
-	debug_print_verbose("\t Θ_αß: %2.3f, v_rel: %2.3f, dist: %2.3f \r\n", theta_alpha_beta, v_rel, object.dist);
+	debug_print_verbose("\t n_alpha: %2.3f,  %2.3f \r\n", n_alpha.X(), n_alpha.Y());
+	debug_print_verbose("\t robot_yaw: %2.3f, object_yaw: %2.3f \r\n", robot_yaw.Radian(), object_yaw.Radian());
+	debug_print_verbose("\t dist: %2.3f, fov_factor: %2.3f \r\n", object.dist, fov_factor);
+	debug_print_verbose("\t v_rel: %2.3f (robot: %2.3f %2.3f, object: %2.3f %2.3f) \r\n",
+		v_rel, robot.vel.X(), robot.vel.Y(), object.vel.X(), object.vel.Y());
+	debug_print_verbose("\t Θ_αß: %2.3f \r\n", theta_alpha_beta);
 	debug_print_verbose("\t expNORMAL: %2.3f, expPERP: %2.3f, FOV_factor: %2.3f \r\n",
 			exp_normal,
 			exp_perpendicular,
