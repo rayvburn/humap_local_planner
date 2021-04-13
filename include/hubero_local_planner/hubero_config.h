@@ -9,8 +9,6 @@
 
 namespace hubero_local_planner {
 
-class HuberoConfig {
-public:
 //	/// \brief Declaration of an ActorParams typedef'ed struct;
 //	/// default values are provided
 //	struct GeneralParams {
@@ -29,14 +27,14 @@ public:
 //	    std::vector<double> world_bound_x					{-3.20, +3.80};
 //	    std::vector<double> world_bound_y					{-10.20, +3.80};
 //
-//	} general;
+//	};
 
 	struct GeneralParams {
 		double sim_time										= 1.2;
 		double sim_granularity								= 0.025;
 		double angular_sim_granularity						= 0.1;
 		double sim_period									= 0.2;
-	} general;
+	};
 
 	/// \brief Declaration of an ActorParams typedef'ed struct;
 	/// default values are provided
@@ -48,7 +46,7 @@ public:
 		std::vector<double> ellipse							{1.00, 0.80, 0.35, 0.00};
 		double				inflation_radius			= 0.45; // the `worst` case from the default values
 
-	} inflator;
+	};
 
 	/// \brief Declaration of an SfmParams typedef'ed struct;
 	/// default values are provided
@@ -76,7 +74,7 @@ public:
 		/// setting to False will force robot to take the shortest possible path.
 		bool 				disable_interaction_forces	= false;
 
-	} sfm;
+	};
 
 	/// \brief Declaration of a BehaviourParams typedef'ed struct;
 	/// default values are provided
@@ -93,12 +91,46 @@ public:
 		double 			turn_right_decelerate_dec 		= 625.0;
 		double 			stop							= 500.0;
 		double			decelerate						= 500.0;
-	} behaviour;
+	};
 
-	base_local_planner::LocalPlannerLimits limits;
+class HuberoConfig {
+public:
+	HuberoConfig() {
+		limits_ = std::make_shared<base_local_planner::LocalPlannerLimits>();
+		general_ = std::make_shared<GeneralParams>();
+		inflator_ = std::make_shared<InflatorParams>();
+		sfm_ = std::make_shared<SfmParams>();
+		behaviour_ = std::make_shared<BehaviourParams>();
+	}
 
-	HuberoConfig() = default;
+	std::shared_ptr<const base_local_planner::LocalPlannerLimits> getLimits() const {
+		return limits_;
+	}
+
+	std::shared_ptr<const GeneralParams> getGeneral() const {
+		return general_;
+	}
+
+	std::shared_ptr<const InflatorParams> getInflator() const {
+		return inflator_;
+	}
+
+	std::shared_ptr<const SfmParams> getSfm() const {
+		return sfm_;
+	}
+
+	std::shared_ptr<const BehaviourParams> getBehaviour() const {
+		return behaviour_;
+	}
+
 	virtual ~HuberoConfig() = default;
+
+protected:
+	std::shared_ptr<base_local_planner::LocalPlannerLimits> limits_;
+	std::shared_ptr<GeneralParams> general_;
+	std::shared_ptr<InflatorParams> inflator_;
+	std::shared_ptr<SfmParams> sfm_;
+	std::shared_ptr<BehaviourParams> behaviour_;
 };
 
 typedef std::shared_ptr<const HuberoConfig> HuberoConfigConstPtr;
