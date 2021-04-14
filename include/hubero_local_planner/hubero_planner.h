@@ -210,6 +210,10 @@ public:
 		return motion_data_;
 	}
 
+	const RobotFootprintModelConstPtr getRobotFootprintModel() const {
+		return robot_model_;
+	}
+
 private:
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 

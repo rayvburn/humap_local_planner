@@ -19,6 +19,7 @@
 #include <hubero_local_planner/vis/grid_force.h>
 #include <hubero_local_planner/vis/line_list.h>
 #include <hubero_local_planner/vis/text.h>
+#include <hubero_local_planner/vis/footprint.h>
 
 #include <hubero_local_planner/hubero_planner.h>
 
@@ -26,9 +27,14 @@ namespace hubero_local_planner {
 
 class Visualization {
 public:
-	Visualization(const std::string& frame);
+	/**
+	 *
+	 * @param frame
+	 * @param marker_stack_height: TODO: make it param
+	 */
+	Visualization(const std::string& frame, const double& marker_stack_height = 1.30);
 	void initialize(ros::NodeHandle& nh);
-	void reconfigure(const double& max_force, const double& marker_stack_height);
+	void reconfigure(const double& max_force);
 	bool pubBounding();
 
 	/// @section Force vector marker publishing
@@ -58,6 +64,11 @@ public:
 			HuberoPlanner& planner
 	);
 
+	void publishRobotFootprint(
+			const Pose3& pos_current,
+			const RobotFootprintModelConstPtr footprint
+	);
+
 	virtual ~Visualization() = default;
 
 private:
@@ -77,6 +88,8 @@ private:
 	vis::GridForce marker_force_grid_;
 
 	double marker_stack_height_;
+
+	vis::Footprint marker_footprint_;
 };
 
 } /* namespace hubero_local_planner */
