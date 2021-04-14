@@ -260,6 +260,9 @@ void HuberoPlanner::createEnvironmentModel(
 		sfm::World& world
 ) {
 	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles) {
+		//
+		bool is_dynamic = obstacle->isDynamic();
+
 		// TODO: consider actor personal space even when he is standing!
 
 		// basic
@@ -282,15 +285,13 @@ void HuberoPlanner::createEnvironmentModel(
 		Vector3 distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
 		double distance = obstacle->getMinimumDistance(Eigen::Vector2d(pose.x(), pose.y()));
 		Vector3 model_vel = Vector3((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
+		is_dynamic = model_vel.Length() > 1e-05;
+		//
 
-		bool force_dynamic_object_interpretation =
-				cfg_->sfm.static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
-		world.addObstacle(
-			robot_closest_to_obstacle_pose,
-			obstacle_closest_to_robot_pose,
-			model_vel,
-			force_dynamic_object_interpretation
-		);
+		world.addObstacle(robot_closest_to_obstacle_pose, obstacle_closest_to_robot_pose, model_vel);
+		if (model_vel.Length() > 1e-06) {
+			std::cout << "DYNAMIC OBSTACLE DETECTED: vel: " << model_vel << std::endl;
+		}
 	}
 }
 
