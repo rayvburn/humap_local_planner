@@ -11,11 +11,11 @@
 #include <hubero_common/shift_register.h>
 
 // environment obstacle representation
-#include <hubero_local_planner/obstacles.h> // temp
-#include <hubero_local_planner/robot_footprint_model.h> // temp
+#include <hubero_local_planner/obstacles.h>
+#include <hubero_local_planner/robot_footprint_model.h>
 
+#include <hubero_local_planner/sfm/inflator.h>
 #include <hubero_local_planner/hubero_config.h>
-#include <hubero_local_planner/sfm/world.h>
 
 // C++ STL
 #include <vector>	// closest points
@@ -66,7 +66,7 @@ typedef enum {
 } InflationType;
 
 // ---------------------------------
-/*
+
 typedef enum {
 	LOCATION_FRONT = 0,
 	LOCATION_RIGHT,
@@ -74,7 +74,7 @@ typedef enum {
 	LOCATION_BEHIND,
 	LOCATION_UNSPECIFIED
 } RelativeLocation;
-*/
+
 // ---------------------------------
 
 /** 	φ_αβ issue
@@ -166,7 +166,6 @@ public:
 	/// \brief Function which calculates social force
 	/// for an actor taking whole world's objects
 	/// into consideration
-	bool computeSocialForce(const World& world, const double &dt);
 	bool computeSocialForce(
 			const hubero_local_planner::ObstContainerConstPtr obstacles,
 			const Pose3 &pose,
@@ -259,7 +258,6 @@ private:
 	/// \brief Helper function which calculates the internal force
 	/// term of an actor; this component describes a person's
 	/// motivation to reach its current goal
-	Vector3 computeInternalForce(const Robot& robot);
 	Vector3 computeInternalForce(const ignition::math::Pose3d &actor_pose, const Vector3 &actor_vel, const Vector3 &actor_target);
 
 	/// \brief Helper function which calculates interaction
@@ -273,7 +271,6 @@ private:
 //			const Vector3 &object_vel, const Vector3 &d_alpha_beta,
 //			const bool &is_actor);
 
-	Vector3 computeInteractionForce(const Robot& robot, const DynamicObject& object); // TODO: const?
 	std::tuple<Vector3, Vector3, double> computeInteractionForce(
 			const Pose3 &actor_pose,
 			const Vector3 &actor_vel,
@@ -296,7 +293,6 @@ private:
 	std::tuple<Vector3, Vector3, double> computeForceStaticObstacle(const ignition::math::Pose3d &actor_pose,
 			const Vector3 &actor_velocity, const ignition::math::Pose3d &object_pose,
 			const double &dt);
-	Vector3 computeInteractionForce(const Robot& robot, const StaticObject& object, const double &dt);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Section covering more of a geometry-related functions
@@ -309,7 +305,6 @@ private:
 	double computeThetaAlphaBetaAngle(const Vector3 &actor_vel, const ignition::math::Angle &actor_yaw,
 									  const Vector3 &object_vel, const ignition::math::Angle &object_yaw,
 									  const Vector3 &d_alpha_beta, const bool &is_actor);
-	double computeThetaAlphaBetaAngle2011(const Robot& robot, const DynamicObject& object);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// fits 2014 configuration, where this angle is defined
@@ -318,7 +313,7 @@ private:
 	/// vector)
 	/// \[param in] d_alpha_beta - vector between objects
 	/// positions
-	double computeThetaAlphaBetaAngle2014(const Vector3 &n_alpha, const Vector3 &d_alpha_beta);
+	double computeThetaAlphaBetaAngle(const Vector3 &n_alpha, const Vector3 &d_alpha_beta);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// works only for dynamically moving actors -
@@ -353,8 +348,7 @@ private:
 	/// - relative location of the \beta object (relative to \f$\alpha\f$'s direction), see \ref RelativeLocation
 	/// - relative location expressed as an angle (radians)
 	/// - angle of the vector connecting \f$\alpha\f$ and \beta
-	std::tuple<RelativeLocation, double, double> computeObjectRelativeLocation(
-			const ignition::math::Angle &actor_yaw,
+	std::tuple<RelativeLocation, double, double> computeObjectRelativeLocation(const ignition::math::Angle &actor_yaw,
 			const Vector3 &d_alpha_beta);
 
 	/// \brief Helper function which checks whether a given
@@ -563,7 +557,7 @@ private:
 
 	/// \brief Inflator class enlarges a surface around
 	/// person to provide some safe distance from the obstacles
-	//sfm::Inflator inflator_;
+	sfm::Inflator inflator_;
 
 	/// \brief ActorInfoDecoder is a helper class which helps
 	/// during decoding of some ActorPlugin instances
