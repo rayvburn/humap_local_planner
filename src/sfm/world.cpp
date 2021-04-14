@@ -38,10 +38,10 @@ void World::addObstacle(
 		const Vector3& obstacle_vel,
 		bool force_dynamic_type
 ) {
-	if (force_dynamic_type || obstacle_vel.Length() > 1e-06) {
-		addObstacleDynamic(robot_pose_closest, obstacle_pose_closest, obstacle_vel);
-	} else {
+	if (obstacle_vel.Length() <= 1e-06 && !force_dynamic_type) {
 		addObstacleStatic(robot_pose_closest, obstacle_pose_closest);
+	} else {
+		addObstacleDynamic(robot_pose_closest, obstacle_pose_closest, obstacle_vel);
 	}
 }
 
@@ -106,8 +106,6 @@ void World::addObstacleDynamic(
 	obstacle.rel_loc = beta_rel_location;
 	obstacle.rel_loc_angle = beta_angle_rel;
 	obstacle.dist_angle = d_alpha_beta_angle;
-
-	obstacle_dynamic_.push_back(obstacle);
 }
 
 void World::computeObjectRelativeLocation(

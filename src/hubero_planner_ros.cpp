@@ -221,7 +221,8 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 // protected
 void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
 	cfg_->reconfigure(config);
-	vis_.reconfigure(cfg_->getSfm()->max_force);
+	vis_.reconfigure(cfg_->sfm.max_force);
+	std::cout << "\n\n\n \t\t reconfigureCB! \n\n\n" << std::endl;
 }
 
 // protected

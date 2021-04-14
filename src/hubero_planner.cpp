@@ -91,6 +91,10 @@ bool HuberoPlanner::compute(
 		meaningful_interaction_dynamic
 	);
 
+	if (cfg_->getSfm()->disable_interaction_forces) {
+		std::cout << "\t disable_interaction_forces? " << cfg_->getSfm()->disable_interaction_forces << std::endl;
+	}
+
 	// actual `social` vector
 	Vector3 human_action_force;
 
