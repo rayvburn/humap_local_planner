@@ -47,7 +47,7 @@ bool HuberoPlanner::compute(
 		const tf::Stamped<tf::Pose>& pose,
 		const geometry_msgs::Twist& velocity,
 		const tf::Stamped<tf::Pose>& goal,
-		const ObstContainerConstPtr obstacles,
+		ObstContainerConstPtr obstacles,
 		Eigen::Vector3f& force
 ) {
 	// NOTE: typical operations are available in `base_local_planner` ns as free functions
@@ -74,64 +74,52 @@ bool HuberoPlanner::compute(
 		const Pose3& pose,
 		const Vector3& velocity,
 		const Pose3& goal,
-		const ObstContainerConstPtr obstacles,
+		ObstContainerConstPtr obstacles,
 		Vector3& force
 ) {
-	teb_local_planner::PoseSE2 pose_robot(pose.Pos().X(), pose.Pos().Y(), pose.Rot().Yaw());
-	sfm::World world(pose, goal, velocity);
-	createEnvironmentModel(pose_robot, obstacles, world);
-
-	// only for visualisation
-	std::vector<size_t> meaningful_interaction_static;
-	std::vector<size_t> meaningful_interaction_dynamic;
-
-	sfm_.computeSocialForce(world,
-		cfg_->general.sim_period,
-		meaningful_interaction_static,
-		meaningful_interaction_dynamic
+	// calculate `social` force (i.e. `internal` and `interaction` components)
+	sfm_.computeSocialForce(
+			obstacles,
+			pose,
+			robot_model_,
+			velocity, // TODO angular velocity!
+			goal.Pos(), // TODO:
+			cfg_->general.sim_period
 	);
 
 	// actual `social` vector
 	Vector3 human_action_force;
 
-	std::vector<sfm::StaticObject> objects_static = world.getStaticObjectsData();
-	std::vector<sfm::DynamicObject> objects_dynamic = world.getDynamicObjectsData();
-
 	// evaluate whether more complex forces are supposed to be calculated
 	// TODO: add param `disable fuzzy behaviours`
 	if (!cfg_->sfm.disable_interaction_forces) {
-		std::vector<double> dir_beta_dynamic;
-		std::vector<double> rel_loc_dynamic;
-		std::vector<double> dist_angle_dynamic;
-		std::vector<double> dist_dynamic;
-		double dir_alpha = world.getRobotData().heading_dir;
 
-		for (const sfm::DynamicObject& object: objects_dynamic) {
-			dir_beta_dynamic.push_back(object.dir_beta);
-			rel_loc_dynamic.push_back(object.rel_loc_angle);
-			dist_angle_dynamic.push_back(object.dist_angle);
-			dist_dynamic.push_back(object.dist);
-		}
+//		printf("DYNAMIC: %lu,  %lu,  %lu\r\n",
+//			sfm_.getDirectionBetaDynamic().size(),
+//			sfm_.getRelativeLocationDynamic().size(),
+//			sfm_.getDistanceAngleDynamic().size()
+//		);
 
 		// execute fuzzy operations block
 		fuzzy_processor_.load(
-			dir_alpha,
-			dir_beta_dynamic,
-			rel_loc_dynamic,
-			dist_angle_dynamic
+			sfm_.getDirectionAlpha(),
+			sfm_.getDirectionBetaDynamic(),
+			sfm_.getRelativeLocationDynamic(),
+			sfm_.getDistanceAngleDynamic()
 		);
 		fuzzy_processor_.process();
 
 		// create a force vector according to the activated `social behaviour`
 		social_conductor_.apply(
 			sfm_.getForceCombined(),
-			dir_alpha,
-			dist_dynamic,
+			sfm_.getDirectionAlpha(),
+			sfm_.getDistanceDynamic(),
 			fuzzy_processor_.getOutput()
 		);
 
 		// assign `social` vector
 		human_action_force = social_conductor_.getSocialVector();
+
 	}
 
 	force = sfm_.getForceCombined() + human_action_force;
@@ -140,17 +128,8 @@ bool HuberoPlanner::compute(
 	motion_data_.force_interaction = sfm_.getForceInternal();
 	motion_data_.force_social = social_conductor_.getSocialVector();
 	motion_data_.force_combined = force;
+	motion_data_.closest_points = sfm_.getClosestPointsVector();
 	motion_data_.behaviour_active = social_conductor_.getBehaviourActive();
-
-	motion_data_.closest_points.clear();
-	for (const size_t& index_static: meaningful_interaction_static) {
-		motion_data_.closest_points.push_back(objects_static.at(index_static).object);
-		motion_data_.closest_points.push_back(objects_static.at(index_static).robot);
-	}
-	for (const size_t& index_dynamic: meaningful_interaction_dynamic) {
-		motion_data_.closest_points.push_back(objects_dynamic.at(index_dynamic).object);
-		motion_data_.closest_points.push_back(objects_dynamic.at(index_dynamic).robot);
-	}
 
 	return true;
 }
@@ -228,47 +207,6 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 
 	goal_reached_ = true;
 	return true;
-}
-
-void HuberoPlanner::createEnvironmentModel(
-		const teb_local_planner::PoseSE2& pose,
-		const ObstContainerConstPtr obstacles,
-		sfm::World& world
-) {
-	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles) {
-		//
-		bool is_dynamic = obstacle->isDynamic();
-
-		// TODO: consider actor personal space even when he is standing!
-
-		// basic
-		Pose3 robot_closest_to_obstacle_pose(pose.x(), pose.y(), 0.0, 0.0, 0.0, pose.theta());
-		Pose3 obstacle_closest_to_robot_pose;
-
-		BaseRobotFootprintModel::ClosestPoints pts = robot_model_->calculateClosestPoints(pose, obstacle.get());
-
-		robot_closest_to_obstacle_pose = Pose3(pts.robot.x(), pts.robot.y(), 0.0, 0.0, 0.0, pts.robot.theta());
-		obstacle_closest_to_robot_pose = Pose3(pts.obstacle.x(), pts.obstacle.y(), 0.0, 0.0, 0.0, pts.obstacle.theta());
-
-		auto distance_v_eig =
-				Eigen::Vector2d(
-					obstacle_closest_to_robot_pose.Pos().X(),
-					obstacle_closest_to_robot_pose.Pos().Y())
-				- Eigen::Vector2d(
-					pose.x(),
-					pose.y()
-		);
-		Vector3 distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
-		double distance = obstacle->getMinimumDistance(Eigen::Vector2d(pose.x(), pose.y()));
-		Vector3 model_vel = Vector3((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
-		is_dynamic = model_vel.Length() > 1e-05;
-		//
-
-		world.addObstacle(robot_closest_to_obstacle_pose, obstacle_closest_to_robot_pose, model_vel);
-		if (model_vel.Length() > 1e-06) {
-			std::cout << "DYNAMIC OBSTACLE DETECTED: vel: " << model_vel << std::endl;
-		}
-	}
 }
 
 }; // namespace hubero_local_planner

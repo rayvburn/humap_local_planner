@@ -31,9 +31,9 @@ static bool print_info = false;
 
 #include <hubero_local_planner/utils/debug.h>
 
-#define DEBUG_BASIC 1
-#define DEBUG_WARN 1
-#define DEBUG_ERROR 1
+#define DEBUG_BASIC 0
+#define DEBUG_WARN 0
+#define DEBUG_ERROR 0
 #define DEBUG_VERBOSE 0
 
 #define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
@@ -135,12 +135,7 @@ void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
 
 // ------------------------------------------------------------------- //
 
-bool SocialForceModel::computeSocialForce(
-		const World& world,
-		const double &dt,
-		std::vector<size_t>& meaningful_static,
-		std::vector<size_t>& meaningful_dynamic
-) {
+bool SocialForceModel::computeSocialForce(const World& world, const double &dt) {
 	// reset internal state at the start of computations
 	reset();
 
@@ -169,20 +164,15 @@ bool SocialForceModel::computeSocialForce(
 
 	// investigate STATIC objects of the environment
 	for (const StaticObject& object: objects_static) {
-		f_alpha_beta = computeInteractionForce(robot, object, dt);
+		// TODO: dt is hard-coded now
+		f_alpha_beta = computeInteractionForce(robot, object, 0.2);
 		force_interaction_ += f_alpha_beta;
-		if (f_alpha_beta.Length() >= 1e-06) {
-			meaningful_static.push_back(&object - &objects_static[0]);
-		}
 	}
 
 	// investigate DYNAMIC objects of the environment
 	for (const DynamicObject& object: objects_dynamic) {
 		f_alpha_beta = computeInteractionForce(robot, object);
 		force_interaction_ += f_alpha_beta;
-		if (f_alpha_beta.Length() >= 1e-06) {
-			meaningful_dynamic.push_back(&object - &objects_dynamic[0]);
-		}
 	}
 
 	// multiply force vector components by parameter values
@@ -944,7 +934,7 @@ Vector3 SocialForceModel::computeInternalForce(const Robot& robot) {
 	debug_print_basic("\t to_goal_direction: %2.3f, %2.3f, %2.3f \r\n", to_goal_direction.X(), to_goal_direction.Y(), to_goal_direction.Z());
 	debug_print_basic("\t ideal_vel_vector: %2.3f, %2.3f, %2.3f \r\n", ideal_vel_vector.X(), ideal_vel_vector.Y(), ideal_vel_vector.Z());
 	debug_print_basic("\t target - x=%2.3f, y=%2.3f, z=%2.3f \r\n", robot.target.object.Pos().X(), robot.target.object.Pos().Y(), robot.target.object.Pos().Z());
-	debug_print_basic("\t robot_vel: %2.3f, %2.3f, %2.3f \r\n", robot.vel.X(), robot.vel.Y(), robot.vel.Z());
+	debug_print_basic("\t actor_vel: %2.3f, %2.3f, %2.3f \r\n", robot.vel.X(), robot.vel.Y(), robot.vel.Z());
 	debug_print_basic("\t mass: %2.3f \r\n", cfg_->mass);
 	debug_print_basic("\t relaxation_time: %2.3f \r\n", relaxation_time_);
 	debug_print_basic("\t f_alpha: %2.3f, %2.3f, %2.3f   |   multiplied: %2.3f, %2.3f, %2.3f \r\n",
@@ -953,13 +943,6 @@ Vector3 SocialForceModel::computeInternalForce(const Robot& robot) {
 			(cfg_->internal_force_factor * f_alpha).Y(),
 			(cfg_->internal_force_factor * f_alpha).Z()
 	);
-
-	/* FIXME: experimental
-	if (cfg_->internal_force_factor * f_alpha.Length() > 1100.0) {
-		debug_print_err("INTERNAL FORCE TRUNCATED from %2.3f to 1100.0\r\n", cfg_->internal_force_factor * f_alpha.Length());
-		f_alpha = f_alpha.Normalized() * (1100.0 / cfg_->internal_force_factor);
-	}
-	*/
 
 	return f_alpha;
 }

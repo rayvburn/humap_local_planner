@@ -76,7 +76,7 @@ struct Robot {
 class World {
 public:
 	/**
-	 * @brief This version is useful if one wants to move robot's edge point (instead of center) to the target
+	 *
 	 * @param robot_pose_centroid: pose of the center of the robot's footprint
 	 * @param robot_pose: robot pose that is closest to the target
 	 * @param target_pose: target pose
@@ -90,30 +90,15 @@ public:
 	);
 
 	/**
-	 *
-	 * @param robot_pose_centroid: pose of the center of the robot's footprint
-	 * @param robot_pose: robot pose that is closest to the target
-	 * @param target_pose: target pose
-	 * @param robot_vel
-	 */
-	World(
-			const Pose3& robot_pose,
-			const Pose3& target_pose,
-			const Vector3& robot_vel
-	);
-
-	/**
 	 * @brief Adds obstacle with given parameters and performs necessary calculations
 	 * @param robot_pose_closest
 	 * @param obstacle_pose_closest
 	 * @param obstacle_vel
-	 * @param force_dynamic_type: if set to True, obstacle interaction will be treated as dynamic one
 	 */
 	void addObstacle(
 			const Pose3& robot_pose_closest,
 			const Pose3& obstacle_pose_closest,
-			const Vector3& obstacle_vel,
-			bool force_dynamic_type = false
+			const Vector3& obstacle_vel
 	);
 
 	/**
@@ -121,13 +106,11 @@ public:
 	 * @param robot_pose_closest
 	 * @param obstacle_pose_closest
 	 * @param obstacle_vel
-	 * @param force_dynamic_type: if set to True, obstacle interaction will be treated as dynamic one
 	 */
 	void addObstacles(
 			const std::vector<Pose3>& robot_pose_closest,
 			const std::vector<Pose3>& obstacle_pose_closest,
-			const std::vector<Vector3>& obstacle_vel,
-			bool force_dynamic_type = false
+			const std::vector<Vector3>& obstacle_vel
 	);
 
 	inline Robot getRobotData() const {
