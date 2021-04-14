@@ -100,30 +100,10 @@ bool HuberoPlanner::compute(
 	// evaluate whether more complex forces are supposed to be calculated
 	// TODO: add param `disable fuzzy behaviours`
 	if (!cfg_->sfm.disable_interaction_forces) {
-		/// All multi-element data are vectors of the same
-		/// length whose corresponding elements are related
-		/// to the same \beta object (i.e. i-th index of
-		/// each vector variable is related to the same \beta
-		/// object).
-		/// \beta objects can be considered as obstacles,
-		/// whereas getters from this section are related
-		/// to dynamic obstacles only.
-		///
-		/// \brief Returns a vector of \beta objects direction
-		/// of motion
 		std::vector<double> dir_beta_dynamic;
-		/// \brief Returns a vector of \beta objects' relative
-		/// to \f$\alpha\f$ locations
 		std::vector<double> rel_loc_dynamic;
-		/// \brief Returns a set of dynamic objects vector
-		/// directions. Each of these vectors connect
-		/// \f$\alpha\f$ with \beta_i
 		std::vector<double> dist_angle_dynamic;
-		/// \brief Returns a set of lengths of vectors
-		/// described in \ref getDistanceAngleDynamic
 		std::vector<double> dist_dynamic;
-		/// \brief Returns \f$\alpha\f$'s direction of motion
-		/// expressed in world coordinate system
 		double dir_alpha = world.getRobotData().heading_dir;
 
 		for (const sfm::DynamicObject& object: objects_dynamic) {
@@ -162,10 +142,6 @@ bool HuberoPlanner::compute(
 	motion_data_.force_combined = force;
 	motion_data_.behaviour_active = social_conductor_.getBehaviourActive();
 
-	/// \brief Returns vector of poses of closest points between
-	/// actor and other objects; makes use out of bounding
-	/// boxes of world's objects and those boundings which
-	/// had been created for actors
 	motion_data_.closest_points.clear();
 	for (const size_t& index_static: meaningful_interaction_static) {
 		motion_data_.closest_points.push_back(objects_static.at(index_static).object);
