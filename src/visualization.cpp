@@ -9,22 +9,26 @@
 
 namespace hubero_local_planner {
 
-Visualization::Visualization(const std::string& frame): marker_stack_height_(0.0) {
+Visualization::Visualization(const std::string& frame, const double& marker_stack_height)
+	: marker_stack_height_(marker_stack_height) {
 	marker_force_.init(frame);
 	marker_behaviour_.init(frame);
 	marker_closest_pts_.init(frame);
 	marker_path_.header.frame_id = frame;
 	marker_force_grid_.init(frame);
+	marker_footprint_.init(frame);
 
 	marker_path_.header.frame_id = frame;
 
 	// const parameters
 	marker_behaviour_.setParameters(0.5f);
+	marker_footprint_.setHeight(1.2f);
 
 	// colors
 	marker_behaviour_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
 	marker_closest_pts_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 	marker_force_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
+	marker_footprint_.setColor(1.0f, 1.0f, 1.0f, 0.65f);
 }
 
 void Visualization::initialize(ros::NodeHandle& nh) {
@@ -36,12 +40,11 @@ void Visualization::initialize(ros::NodeHandle& nh) {
 	pub_closest_dist_ = nh.advertise<std_msgs::Float32>(PREFIX + "dist_obstacle", 3);
 }
 
-void Visualization::reconfigure(const double& max_force, const double& marker_stack_height) {
+void Visualization::reconfigure(const double& max_force) {
 	// let the force marker be always the same length
 	marker_force_.setParameters(1.0, max_force);
 	// grid resolution hard-coded here
 	marker_force_grid_.setParameters(1.0, max_force);
-	marker_stack_height_ = marker_stack_height;
 
 	marker_force_grid_.setParameters(1.0, max_force);
 }
@@ -251,6 +254,19 @@ void Visualization::publishGrid(
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.Pos(), force));
 	}
 	pub_marker_array_.publish(marker_force_grid_.getMarkerArray());
+}
+
+void Visualization::publishRobotFootprint(
+		const Pose3& pos_current,
+		const RobotFootprintModelConstPtr footprint
+) {
+	if (pub_marker_array_.getNumSubscribers() == 0) {
+		return;
+	}
+
+	marker_footprint_.setNamespace("footprint");
+	auto marker_array = marker_footprint_.create(pos_current, footprint);
+	pub_marker_array_.publish(marker_array);
 }
 
 } /* namespace hubero_local_planner */

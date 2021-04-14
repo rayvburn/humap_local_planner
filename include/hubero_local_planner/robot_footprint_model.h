@@ -74,6 +74,10 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
+	virtual void visualizeRobot(const teb_local_planner::PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const {
+		teb_local_planner::PointRobotFootprint::visualizeRobot(current_pose, markers, color);
+	}
+
 	virtual double getInscribedRadius() const {
 		return teb_local_planner::PointRobotFootprint::getInscribedRadius();
 	}
@@ -110,6 +114,10 @@ public:
 	}
 	virtual double estimateSpatioTemporalDistance(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle, double t) const {
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
+	}
+
+	virtual void visualizeRobot(const teb_local_planner::PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const {
+		teb_local_planner::CircularRobotFootprint::visualizeRobot(current_pose, markers, color);
 	}
 
 	virtual double getInscribedRadius() const {
@@ -157,6 +165,10 @@ public:
 	}
 	virtual double estimateSpatioTemporalDistance(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle, double t) const {
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
+	}
+
+	virtual void visualizeRobot(const teb_local_planner::PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const {
+		teb_local_planner::TwoCirclesRobotFootprint::visualizeRobot(current_pose, markers, color);
 	}
 
 	virtual double getInscribedRadius() const {
@@ -248,6 +260,10 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
+	virtual void visualizeRobot(const teb_local_planner::PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const {
+		teb_local_planner::LineRobotFootprint::visualizeRobot(current_pose, markers, color);
+	}
+
 	virtual double getInscribedRadius() const {
 		return teb_local_planner::LineRobotFootprint::getInscribedRadius();
 	}
@@ -302,6 +318,10 @@ public:
 	}
 	virtual double estimateSpatioTemporalDistance(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle, double t) const {
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
+	}
+
+	virtual void visualizeRobot(const teb_local_planner::PoseSE2& current_pose, std::vector<visualization_msgs::Marker>& markers, const std_msgs::ColorRGBA& color) const {
+		teb_local_planner::PolygonRobotFootprint::visualizeRobot(current_pose, markers, color);
 	}
 
 	virtual double getInscribedRadius() const {

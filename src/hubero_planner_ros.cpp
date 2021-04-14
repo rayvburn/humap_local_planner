@@ -83,8 +83,7 @@ void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, c
 
 		// visualization
 		vis_.initialize(private_nh);
-		// TODO: make it param
-		vis_.reconfigure(cfg_->sfm.max_force, 1.30);
+		vis_.reconfigure(cfg_->sfm.max_force);
 
 		// costmap converter - TEB-based section
 		try {
@@ -214,6 +213,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 			obstacles_,
 			*planner_
 	);
+	vis_.publishRobotFootprint(pose, planner_->getRobotFootprintModel());
 
 	return true;
 }
@@ -221,6 +221,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 // protected
 void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
 	cfg_->reconfigure(config);
+	vis_.reconfigure(cfg_->sfm.max_force);
 }
 
 // protected
