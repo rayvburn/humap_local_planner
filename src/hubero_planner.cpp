@@ -31,8 +31,8 @@ HuberoPlanner::~HuberoPlanner() {
 
 void HuberoPlanner::initialize(HuberoConfigConstPtr cfg) {
 	cfg_ = cfg;
-	sfm_.init(cfg->getSfm());
-	social_conductor_.initialize(cfg->getBehaviour());
+	sfm_.init(cfg);
+	social_conductor_.initialize(cfg);
 }
 
 bool HuberoPlanner::checkTrajectory(
@@ -86,14 +86,10 @@ bool HuberoPlanner::compute(
 	std::vector<size_t> meaningful_interaction_dynamic;
 
 	sfm_.computeSocialForce(world,
-		cfg_->getGeneral()->sim_period,
+		cfg_->general.sim_period,
 		meaningful_interaction_static,
 		meaningful_interaction_dynamic
 	);
-
-	if (cfg_->getSfm()->disable_interaction_forces) {
-		std::cout << "\t disable_interaction_forces? " << cfg_->getSfm()->disable_interaction_forces << std::endl;
-	}
 
 	// actual `social` vector
 	Vector3 human_action_force;
@@ -103,7 +99,7 @@ bool HuberoPlanner::compute(
 
 	// evaluate whether more complex forces are supposed to be calculated
 	// TODO: add param `disable fuzzy behaviours`
-	if (!cfg_->getSfm()->disable_interaction_forces) {
+	if (!cfg_->sfm.disable_interaction_forces) {
 		/// All multi-element data are vectors of the same
 		/// length whose corresponding elements are related
 		/// to the same \beta object (i.e. i-th index of
@@ -231,11 +227,11 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 	);
 	debug_print_basic("\t dist_xy = %2.4f, xy_goal_tolerance = %2.4f  /  cond: %d \r\n",
 			dist_xy,
-			cfg_->getLimits()->xy_goal_tolerance,
-			!(dist_xy > cfg_->getLimits()->xy_goal_tolerance)
+			cfg_->limits.xy_goal_tolerance,
+			!(dist_xy > cfg_->limits.xy_goal_tolerance)
 	);
 
-	if (dist_xy > cfg_->getLimits()->xy_goal_tolerance) {
+	if (dist_xy > cfg_->limits.xy_goal_tolerance) {
 		goal_reached_ = false;
 		return false;
 	}
@@ -245,11 +241,11 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 	);
 	debug_print_basic("\t dist_ang = %2.4f, yaw_tolerance = %2.4f  /  cond: %d \r\n",
 			dist_ang,
-			cfg_->getLimits()->yaw_goal_tolerance,
-			!(std::abs(dist_ang) > cfg_->getLimits()->yaw_goal_tolerance)
+			cfg_->limits.yaw_goal_tolerance,
+			!(std::abs(dist_ang) > cfg_->limits.yaw_goal_tolerance)
 	);
 
-	if (std::abs(dist_ang) > cfg_->getLimits()->yaw_goal_tolerance) {
+	if (std::abs(dist_ang) > cfg_->limits.yaw_goal_tolerance) {
 		goal_reached_ = false;
 		return false;
 	}
@@ -288,7 +284,7 @@ void HuberoPlanner::createEnvironmentModel(
 		Vector3 model_vel = Vector3((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
 
 		bool force_dynamic_object_interpretation =
-				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
+				cfg_->sfm.static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
 		world.addObstacle(
 			robot_closest_to_obstacle_pose,
 			obstacle_closest_to_robot_pose,

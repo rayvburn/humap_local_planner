@@ -18,6 +18,12 @@ SocialBehavioursDb::SocialBehavioursDb()
 
 // ------------------------------------------------------------------- //
 
+void SocialBehavioursDb::initialize(hubero_local_planner::HuberoConfigConstPtr cfg) {
+	cfg_ = cfg;
+}
+
+// ------------------------------------------------------------------- //
+
 SocialBehavioursDb::~SocialBehavioursDb() { }
 
 // ------------------------------------------------------------------- //
@@ -50,7 +56,7 @@ Vector3 SocialBehavioursDb::turnLeft() {
 	// create desired force vector
 	double dir_rot = findOrientation(dir_alpha_, 'l');
 	force_beh = createDirVector(dir_rot);
-	double magnitude = calculateVectorMagnitude(cfg_->turn_left);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_left);
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// make sure that SFM result added to the SocialConductor's result
@@ -73,11 +79,11 @@ Vector3 SocialBehavioursDb::turnLeftAccelerate() {
 	// rotation section (turning)
 	double dir_rot = findOrientation(dir_alpha_, 'l');
 	force_beh = createDirVector(dir_rot);
-	double magnitude = calculateVectorMagnitude(cfg_->turn_left_accelerate_turn);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_left_accelerate_turn);
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// acceleration section
-	magnitude = calculateVectorMagnitude(cfg_->turn_left_accelerate_acc);
+	magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_left_accelerate_acc);
 	force_beh = extendVector(force_beh, dir_alpha_, magnitude);
 
 //	force_beh = assertForceDirection(force_beh);
@@ -103,7 +109,7 @@ Vector3 SocialBehavioursDb::accelerate() {
 	Vector3 force_beh;
 
 	// acceleration section
-	double magnitude = calculateVectorMagnitude(cfg_->accelerate);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.accelerate);
 
 	force_beh = createDirVector(dir_alpha_);
 	force_beh = setVectorLength(force_beh, magnitude);
@@ -124,12 +130,12 @@ Vector3 SocialBehavioursDb::turnRightAccelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(cfg_->turn_right_accelerate_turn);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_right_accelerate_turn);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// acceleration section
-	magnitude = calculateVectorMagnitude(cfg_->turn_right_accelerate_acc);
+	magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_right_accelerate_acc);
 	force_beh = extendVector(force_beh, dir_alpha_, magnitude);
 
 //	force_beh = assertForceDirection(force_beh);
@@ -148,7 +154,7 @@ Vector3 SocialBehavioursDb::turnRight() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(cfg_->turn_right);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_right);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
@@ -169,13 +175,13 @@ Vector3 SocialBehavioursDb::turnRightDecelerate() {
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(cfg_->turn_right_decelerate_turn);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_right_decelerate_turn);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
 	// deceleration section
 	dir_rot = findOrientation(dir_alpha_, 'o');
-	magnitude = calculateVectorMagnitude(cfg_->turn_right_decelerate_dec);
+	magnitude = calculateVectorMagnitude(cfg_->behaviour.turn_right_decelerate_dec);
 	force_beh = extendVector(force_beh, dir_rot, magnitude);
 
 //	force_beh = assertForceDirection(force_beh);
@@ -195,7 +201,7 @@ Vector3 SocialBehavioursDb::stop() {
 	double dir_rot = findOrientation(dir_alpha_, 'o');
 	force_beh = createDirVector(dir_rot);
 
-	double magnitude = calculateVectorMagnitude(cfg_->stop);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.stop);
 
 	force_beh = setVectorLength(force_beh, magnitude);
 
@@ -213,7 +219,7 @@ Vector3 SocialBehavioursDb::decelerate() {
 	Vector3 force_beh;
 
 	// acceleration section
-	double magnitude = calculateVectorMagnitude(cfg_->decelerate);
+	double magnitude = calculateVectorMagnitude(cfg_->behaviour.decelerate);
 
 	double dir_opp = findOrientation(dir_alpha_, 'o');
 	force_beh = createDirVector(dir_opp);

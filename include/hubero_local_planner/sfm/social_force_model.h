@@ -138,9 +138,7 @@ public:
 	SocialForceModel();
 
 	/// \brief Function which sets internal parameters according to loaded parameters
-	inline void init(std::shared_ptr<const hubero_local_planner::SfmParams> cfg) {
-		cfg_ = cfg;
-	}
+	void init(hubero_local_planner::HuberoConfigConstPtr cfg);
 
 	/// \brief Function which calculates social force
 	/// for an actor taking whole world's objects
@@ -307,8 +305,7 @@ private:
 
 	/// \section Section: SFM parameters
 	/// \note substitute for a lot of parameters
-	std::shared_ptr<const hubero_local_planner::SfmParams> cfg_;
-
+	std::shared_ptr<const hubero_local_planner::HuberoConfig::SfmParams> cfg_;
 	///
 	/// \brief Related to an inconsistency in symbols
 	/// presented in the papers, see \ref ParameterDescription

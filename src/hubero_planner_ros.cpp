@@ -83,7 +83,7 @@ void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, c
 
 		// visualization
 		vis_.initialize(private_nh);
-		vis_.reconfigure(cfg_->getSfm()->max_force);
+		vis_.reconfigure(cfg_->sfm.max_force);
 
 		// costmap converter - TEB-based section
 		try {
@@ -222,7 +222,6 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
 	cfg_->reconfigure(config);
 	vis_.reconfigure(cfg_->sfm.max_force);
-	std::cout << "\n\n\n \t\t reconfigureCB! \n\n\n" << std::endl;
 }
 
 // protected
@@ -414,16 +413,16 @@ void HuberoPlannerROS::computeTwist(const tf::Stamped<tf::Pose>& pose, const Eig
 			angle_diff.Degree()
 	);
 
-	double dt = cfg_->getGeneral()->sim_period;
+	double dt = cfg_->general.sim_period;
 
-	cmd_vel.angular.z = cfg_->getLimits()->max_rot_vel * sin(angle_diff.Radian()) * dt;
-	cmd_vel.linear.x = cfg_->getLimits()->max_vel_x * cos(angle_diff.Radian()) * dt;
+	cmd_vel.angular.z = cfg_->limits.max_rot_vel * sin(angle_diff.Radian()) * dt;
+	cmd_vel.linear.x = cfg_->limits.max_vel_x * cos(angle_diff.Radian()) * dt;
 
 	debug_print_verbose("angular = %2.4f (max = %2.4f), linear = %2.4f (max = %2.4f) \r\n",
 			cmd_vel.angular.z,
-			cfg_->getLimits()->max_rot_vel,
+			cfg_->limits.max_rot_vel,
 			cmd_vel.linear.x,
-			cfg_->getLimits()->max_vel_x
+			cfg_->limits.max_vel_x
 	);
 }
 

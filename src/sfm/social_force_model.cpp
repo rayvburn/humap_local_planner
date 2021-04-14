@@ -26,7 +26,7 @@ static bool print_info = false;
 
 #include <hubero_local_planner/utils/debug.h>
 
-#define DEBUG_BASIC 0
+#define DEBUG_BASIC 1
 #define DEBUG_WARN 1
 #define DEBUG_ERROR 1
 #define DEBUG_VERBOSE 0
@@ -61,6 +61,12 @@ SocialForceModel::SocialForceModel():
 
 // ------------------------------------------------------------------- //
 
+void SocialForceModel::init(hubero_local_planner::HuberoConfigConstPtr cfg) {
+	cfg_ = std::make_shared<hubero_local_planner::HuberoConfig::SfmParams>(cfg->sfm);
+}
+
+// ------------------------------------------------------------------- //
+
 bool SocialForceModel::computeSocialForce(
 		const World& world,
 		const double &dt,
@@ -70,6 +76,8 @@ bool SocialForceModel::computeSocialForce(
 	reset();
 
 	auto robot = world.getRobotData();
+	auto objects_static = world.getStaticObjectsData();
+	auto objects_dynamic = world.getDynamicObjectsData();
 
 	// -----------------------------------------------------------------------------------------
 	// ------- internal force calculation ------------------------------------------------------
@@ -86,10 +94,6 @@ bool SocialForceModel::computeSocialForce(
 	// -----------------------------------------------------------------------------------------
 	// ------ interaction forces calculation (repulsive, attractive) ---------------------------
 	// -----------------------------------------------------------------------------------------
-	// environment model
-	auto objects_static = world.getStaticObjectsData();
-	auto objects_dynamic = world.getDynamicObjectsData();
-
 	// added up to the `force_interaction_`
 	Vector3 f_alpha_beta;
 

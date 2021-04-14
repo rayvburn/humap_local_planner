@@ -169,7 +169,7 @@ void SocialConductor::superpose(const std::vector<Vector3> &forces) {
 	}
 
 	// at the end, let's apply multiplier
-	sf_result_ *= this->cfg_->force_factor;
+	sf_result_ *= this->cfg_->behaviour.force_factor;
 
 }
 
