@@ -42,11 +42,9 @@ public:
 	// new obstacle representation class
 	virtual double estimateSpatioTemporalDistance(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle, double t) const = 0;
 
-	// new method, non-const due to the `getInscribedRadius` call (which is not marked as const, but could be)
-	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) = 0;
+	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const = 0;
 
-	// new method, non-const due to the `getInscribedRadius` call (which is not marked as const, but could be)
-	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) = 0;
+	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const = 0;
 }; // class BaseRobotFootprintModel
 
 //! Abbrev. for shared obstacle pointers
@@ -76,15 +74,15 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
-	virtual double getInscribedRadius() {
+	virtual double getInscribedRadius() const {
 		return teb_local_planner::PointRobotFootprint::getInscribedRadius();
 	}
 
-	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		return obstacle->getShortestVector(current_pose.position());
 	}
 
-	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		ClosestPoints pts;
 		pts.robot = current_pose;
 		pts.obstacle = teb_local_planner::PoseSE2(obstacle->getClosestPoint(current_pose.position()), 0.0);
@@ -114,16 +112,16 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
-	virtual double getInscribedRadius() {
+	virtual double getInscribedRadius() const {
 		return teb_local_planner::CircularRobotFootprint::getInscribedRadius();
 	}
 
-	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		auto v = obstacle->getShortestVector(current_pose.position());
 		return v - v.normalized() * getInscribedRadius();
 	}
 
-	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		ClosestPoints pts;
 		pts.obstacle = teb_local_planner::PoseSE2(obstacle->getClosestPoint(current_pose.position()), 0.0);
 		Eigen::Vector2d v = vector_point_to_point(current_pose.position(), pts.obstacle.position());
@@ -137,12 +135,7 @@ public:
 class TwoCirclesRobotFootprint: public BaseRobotFootprintModel, public teb_local_planner::TwoCirclesRobotFootprint {
 public:
 	TwoCirclesRobotFootprint(double front_offset, double front_radius, double rear_offset, double rear_radius)
-		: teb_local_planner::TwoCirclesRobotFootprint(front_offset, front_radius, rear_offset, rear_radius),
-		  // workaround
-		  front_offset__(front_offset),
-		  front_radius__(front_radius),
-		  rear_offset__(rear_offset),
-		  rear_radius__(rear_radius) {
+		: teb_local_planner::TwoCirclesRobotFootprint(front_offset, front_radius, rear_offset, rear_radius) {
 	}
 	virtual ~TwoCirclesRobotFootprint() {
 	}
@@ -150,10 +143,6 @@ public:
 	// workaround
 	void setParameters(double front_offset, double front_radius, double rear_offset, double rear_radius) {
 		teb_local_planner::TwoCirclesRobotFootprint::setParameters(front_offset, front_radius, rear_offset, rear_radius);
-		front_offset__ = front_offset;
-		front_radius__ = front_radius;
-		rear_offset__ = rear_offset;
-		rear_radius__ = rear_radius;
 	}
 
 	virtual double calculateDistance(const teb_local_planner::PoseSE2& current_pose, const teb_local_planner::Obstacle* obstacle) const {
@@ -170,36 +159,36 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
-	virtual double getInscribedRadius() {
+	virtual double getInscribedRadius() const {
 		return teb_local_planner::TwoCirclesRobotFootprint::getInscribedRadius();
 	}
 
-	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		// based on teb_local_planner::TwoCirclesRobotFootprint::calculateDistance
 	    Eigen::Vector2d dir = current_pose.orientationUnitVec();
-	    Eigen::Vector2d v_front = obstacle->getShortestVector(current_pose.position() + front_offset__ * dir);
-	    v_front -= v_front.normalized() * front_radius__;
-	    Eigen::Vector2d v_rear = obstacle->getShortestVector(current_pose.position() + rear_offset__ * dir);
-	    v_rear -= v_rear.normalized() * rear_radius__;
+	    Eigen::Vector2d v_front = obstacle->getShortestVector(current_pose.position() + front_offset_ * dir);
+	    v_front -= v_front.normalized() * front_radius_;
+	    Eigen::Vector2d v_rear = obstacle->getShortestVector(current_pose.position() + rear_offset_ * dir);
+	    v_rear -= v_rear.normalized() * rear_radius_;
 	    return (v_front.norm() >= v_rear.norm()) ? v_rear : v_front;
 	}
 
-	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		ClosestPoints pts;
 		// based on teb_local_planner::TwoCirclesRobotFootprint::calculateDistance
 		Eigen::Vector2d dir = current_pose.orientationUnitVec();
-		Eigen::Vector2d obs_pt_front = obstacle->getClosestPoint(current_pose.position() + front_offset__ * dir);
-		Eigen::Vector2d obs_pt_rear = obstacle->getClosestPoint(current_pose.position() + rear_offset__ * dir);
+		Eigen::Vector2d obs_pt_front = obstacle->getClosestPoint(current_pose.position() + front_offset_ * dir);
+		Eigen::Vector2d obs_pt_rear = obstacle->getClosestPoint(current_pose.position() + rear_offset_ * dir);
 
 		// compute robot bounds and then select closest pair of points
-		Eigen::Vector2d v = vector_point_to_point(current_pose.position() + front_offset__ * dir, obs_pt_front);
-		Eigen::Vector2d robot_pt_front_front = v - v.normalized() * front_radius__;
-		v = vector_point_to_point(current_pose.position() + front_offset__ * dir, obs_pt_rear);
-		Eigen::Vector2d robot_pt_front_rear = v - v.normalized() * front_radius__;
-		v = vector_point_to_point(current_pose.position() + rear_offset__ * dir, obs_pt_front);
-		Eigen::Vector2d robot_pt_rear_front = v - v.normalized() * rear_radius__;
-		v = vector_point_to_point(current_pose.position() + rear_offset__ * dir, obs_pt_rear);
-		Eigen::Vector2d robot_pt_rear_rear = v - v.normalized() * rear_radius__;
+		Eigen::Vector2d v = vector_point_to_point(current_pose.position() + front_offset_ * dir, obs_pt_front);
+		Eigen::Vector2d robot_pt_front_front = v - v.normalized() * front_radius_;
+		v = vector_point_to_point(current_pose.position() + front_offset_ * dir, obs_pt_rear);
+		Eigen::Vector2d robot_pt_front_rear = v - v.normalized() * front_radius_;
+		v = vector_point_to_point(current_pose.position() + rear_offset_ * dir, obs_pt_front);
+		Eigen::Vector2d robot_pt_rear_front = v - v.normalized() * rear_radius_;
+		v = vector_point_to_point(current_pose.position() + rear_offset_ * dir, obs_pt_rear);
+		Eigen::Vector2d robot_pt_rear_rear = v - v.normalized() * rear_radius_;
 
 		typedef std::tuple<double, Eigen::Vector2d, Eigen::Vector2d> ClosestPointsHypothesis;
 		std::vector<ClosestPointsHypothesis> v_norms;
@@ -220,13 +209,6 @@ public:
 		pts.robot = teb_local_planner::PoseSE2(std::get<1>(v_norms.at(0)), current_pose.theta());
 		return pts;
 	}
-
-protected:
-	// NOTE: these were marked as private in the original implementation
-	double front_offset__;
-	double front_radius__;
-	double rear_offset__;
-	double rear_radius__;
 }; // class TwoCirclesRobotFootprint
 
 
@@ -246,16 +228,10 @@ public:
 
 	void setLine(const geometry_msgs::Point& line_start, const geometry_msgs::Point& line_end) {
 		teb_local_planner::LineRobotFootprint::setLine(line_start, line_end);
-		line_start__.x() = line_start.x;
-		line_start__.y() = line_start.y;
-		line_end__.x() = line_end.x;
-		line_end__.y() = line_end.y;
 	}
 
 	void setLine(const Eigen::Vector2d& line_start, const Eigen::Vector2d& line_end) {
 		teb_local_planner::LineRobotFootprint::setLine(line_start, line_end);
-		line_start__ = line_start;
-		line_end__ = line_end;
 	}
 
 	virtual double calculateDistance(const teb_local_planner::PoseSE2& current_pose, const teb_local_planner::Obstacle* obstacle) const {
@@ -272,11 +248,11 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
-	virtual double getInscribedRadius() {
+	virtual double getInscribedRadius() const {
 		return teb_local_planner::LineRobotFootprint::getInscribedRadius();
 	}
 
-	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 	    // based on teb_local_planner::LineRobotFootprint::calculateDistance
 		Eigen::Vector2d line_start_world;
 	    Eigen::Vector2d line_end_world;
@@ -284,7 +260,7 @@ public:
 		return obstacle->getShortestVector(line_start_world, line_end_world);
 	}
 
-	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		ClosestPoints pts;
 
 		// TODO: this is a far-from-great solution
@@ -296,22 +272,7 @@ public:
 
 		return pts;
 	}
-protected:
-	// workaround - lack of access
-	// this is a copy of teb_local_planner::LineRobotFootprint::transformToWorld private method
-	void transformToWorld(const teb_local_planner::PoseSE2& current_pose, Eigen::Vector2d& line_start_world, Eigen::Vector2d& line_end_world) const {
-		double cos_th = std::cos(current_pose.theta());
-		double sin_th = std::sin(current_pose.theta());
-		line_start_world.x() = current_pose.x() + cos_th * line_start__.x() - sin_th * line_start__.y();
-		line_start_world.y() = current_pose.y() + sin_th * line_start__.x() + cos_th * line_start__.y();
-		line_end_world.x() = current_pose.x() + cos_th * line_end__.x() - sin_th * line_end__.y();
-		line_end_world.y() = current_pose.y() + sin_th * line_end__.x() + cos_th * line_end__.y();
-	}
-	// workaround - lack of access
-	Eigen::Vector2d line_start__;
-	Eigen::Vector2d line_end__;
 
-public:
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 }; // class LineRobotFootprint
 
@@ -320,7 +281,6 @@ class PolygonRobotFootprint: public BaseRobotFootprintModel, public teb_local_pl
 public:
 	PolygonRobotFootprint(const teb_local_planner::Point2dContainer& vertices)
 		: teb_local_planner::PolygonRobotFootprint(vertices) {
-		setVertices(vertices);
 	}
 	virtual ~PolygonRobotFootprint() {
 	}
@@ -328,7 +288,6 @@ public:
 	// workaround for lack of access
 	void setVertices(const teb_local_planner::Point2dContainer& vertices) {
 		teb_local_planner::PolygonRobotFootprint::setVertices(vertices);
-		vertices__ = vertices;
 	}
 
 	virtual double calculateDistance(const teb_local_planner::PoseSE2& current_pose, const teb_local_planner::Obstacle* obstacle) const {
@@ -345,33 +304,20 @@ public:
 		return estimateSpatioTemporalDistance(current_pose, obstacle, t);
 	}
 
-	virtual double getInscribedRadius() {
+	virtual double getInscribedRadius() const {
 		return teb_local_planner::PolygonRobotFootprint::getInscribedRadius();
 	}
 
-	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
-		return obstacle->getShortestVector(vertices__);
+	virtual Eigen::Vector2d calculateShortestVector(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
+		return obstacle->getShortestVector(vertices_);
 	}
 
-	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) {
+	virtual ClosestPoints calculateClosestPoints(const teb_local_planner::PoseSE2& current_pose, const Obstacle* obstacle) const {
 		ClosestPoints pts;
 		pts.robot = current_pose;
-		pts.obstacle = teb_local_planner::PoseSE2(obstacle->getShortestVector(vertices__), 0.0);
+		pts.obstacle = teb_local_planner::PoseSE2(obstacle->getShortestVector(vertices_), 0.0);
 		return pts;
 	}
-
-protected:
-	void transformToWorld(const teb_local_planner::PoseSE2& current_pose, teb_local_planner::Point2dContainer& polygon_world) const {
-		double cos_th = std::cos(current_pose.theta());
-		double sin_th = std::sin(current_pose.theta());
-		for (std::size_t i=0; i<vertices__.size(); ++i)
-		{
-			polygon_world[i].x() = current_pose.x() + cos_th * vertices__[i].x() - sin_th * vertices__[i].y();
-			polygon_world[i].y() = current_pose.y() + sin_th * vertices__[i].x() + cos_th * vertices__[i].y();
-		}
-	}
-	teb_local_planner::Point2dContainer vertices__;
-
 }; // class PolygonRobotFootprint
 
 
