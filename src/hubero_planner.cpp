@@ -96,7 +96,7 @@ bool HuberoPlanner::compute(
 
 	// prepare data for visualization
 	motion_data_.force_internal = sfm_.getForceInternal();
-	motion_data_.force_interaction = sfm_.getForceInternal();
+	motion_data_.force_interaction = sfm_.getForceInteraction();
 	motion_data_.force_social = social_conductor_.getSocialVector();
 	motion_data_.force_combined = force;
 	motion_data_.behaviour_active = social_conductor_.getBehaviourActive();
