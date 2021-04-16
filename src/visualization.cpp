@@ -17,18 +17,21 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 	marker_path_.header.frame_id = frame;
 	marker_force_grid_.init(frame);
 	marker_footprint_.init(frame);
+	marker_point_.init(frame);
 
 	marker_path_.header.frame_id = frame;
 
 	// const parameters
 	marker_behaviour_.setParameters(0.5f);
 	marker_footprint_.setHeight(1.2f);
+	marker_point_.setSize(0.25f);
 
 	// colors
 	marker_behaviour_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
 	marker_closest_pts_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 	marker_force_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 	marker_footprint_.setColor(1.0f, 1.0f, 1.0f, 0.65f);
+
 }
 
 void Visualization::initialize(ros::NodeHandle& nh) {
@@ -184,7 +187,7 @@ bool Visualization::publishVelocity(
 	return true;
 }
 
-void Visualization::publishPath(const Pose3& new_pos) {
+bool Visualization::publishPath(const Pose3& new_pos) {
 	marker_path_.header.seq++;
 	marker_path_.header.stamp = ros::Time::now();
 
@@ -203,16 +206,18 @@ void Visualization::publishPath(const Pose3& new_pos) {
 	marker_path_.poses.push_back(pose);
 
 	if (pub_path_.getNumSubscribers() == 0) {
-		return;
+		return false;
 	}
+
 	pub_path_.publish(marker_path_);
+	return true;
 }
 
 void Visualization::resetPath() {
 	marker_path_.poses.clear();
 }
 
-void Visualization::publishGrid(
+bool Visualization::publishGrid(
 		const Pose3& pos_current,
 		const Vector3& vel_current,
 		const Pose3& goal,
@@ -220,7 +225,7 @@ void Visualization::publishGrid(
 		HuberoPlanner& planner
 ) {
 	if (pub_marker_array_.getNumSubscribers() == 0) {
-		return;
+		return false;
 	}
 
 	// pose where `virtual` actor will be placed in
@@ -254,19 +259,46 @@ void Visualization::publishGrid(
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.Pos(), force));
 	}
 	pub_marker_array_.publish(marker_force_grid_.getMarkerArray());
+	return true;
 }
 
-void Visualization::publishRobotFootprint(
+bool Visualization::publishRobotFootprint(
 		const Pose3& pos_current,
 		const RobotFootprintModelConstPtr footprint
 ) {
 	if (pub_marker_array_.getNumSubscribers() == 0) {
-		return;
+		return false;
 	}
 
 	marker_footprint_.setNamespace("footprint");
 	auto marker_array = marker_footprint_.create(pos_current, footprint);
 	pub_marker_array_.publish(marker_array);
+	return true;
 }
+
+bool Visualization::publishGoalLocal(const Vector3& pos) {
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_local");
+	marker_point_.setColor(0.5f, 0.5f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::publishGoal(const Vector3& pos) {
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_global");
+	marker_point_.setColor(0.75f, 0.75f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
 
 } /* namespace hubero_local_planner */

@@ -26,7 +26,7 @@ static bool print_info = false;
 
 #include <hubero_local_planner/utils/debug.h>
 
-#define DEBUG_BASIC 1
+#define DEBUG_BASIC 0
 #define DEBUG_WARN 1
 #define DEBUG_ERROR 1
 #define DEBUG_VERBOSE 0

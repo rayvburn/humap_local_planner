@@ -215,6 +215,10 @@ public:
 		return robot_model_;
 	}
 
+	Pose3 getGoalLocal() const {
+		return goal_local_;
+	}
+
 private:
 	// fills up the world model with static and dynamic obstacles
 	void createEnvironmentModel(
@@ -223,7 +227,15 @@ private:
 			sfm::World& world
 	);
 
+	/**
+	 *
+	 * @param pose
+	 * @return True if given @ref goal was modified, False otherwise
+	 */
+	bool chooseGoalBasedOnGlobalPlan(const Pose3& pose, Pose3& goal);
+
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
+	Pose3 goal_local_;
 
 	double sim_period_; ///< @brief The number of seconds to use to compute max/min vels for the planner
 	base_local_planner::Trajectory result_traj_;
