@@ -20,6 +20,7 @@
 #include <hubero_local_planner/vis/line_list.h>
 #include <hubero_local_planner/vis/text.h>
 #include <hubero_local_planner/vis/footprint.h>
+#include <hubero_local_planner/vis/point.h>
 
 #include <hubero_local_planner/hubero_planner.h>
 
@@ -53,10 +54,10 @@ public:
 			const double& angular_z
 	);
 
-	void publishPath(const Pose3& new_pos);
+	bool publishPath(const Pose3& new_pos);
 	void resetPath();
 
-	void publishGrid(
+	bool publishGrid(
 			const Pose3& pos_current,
 			const Vector3& vel_current,
 			const Pose3& goal,
@@ -64,11 +65,13 @@ public:
 			HuberoPlanner& planner
 	);
 
-	void publishRobotFootprint(
+	bool publishRobotFootprint(
 			const Pose3& pos_current,
 			const RobotFootprintModelConstPtr footprint
 	);
 
+	bool publishGoalLocal(const Vector3& pos);
+	bool publishGoal(const Vector3& pos);
 	virtual ~Visualization() = default;
 
 private:
@@ -90,6 +93,7 @@ private:
 	double marker_stack_height_;
 
 	vis::Footprint marker_footprint_;
+	vis::Point marker_point_;
 };
 
 } /* namespace hubero_local_planner */

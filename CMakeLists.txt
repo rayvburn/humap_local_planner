@@ -111,6 +111,7 @@ set(HEADERS_VIS
     include/${PROJECT_NAME}/vis/marker_base.h
     include/${PROJECT_NAME}/vis/text.h
     include/${PROJECT_NAME}/vis/footprint.h
+    include/${PROJECT_NAME}/vis/point.h
 )
 set(SOURCES_VIS
     src/vis/arrow.cpp
@@ -122,6 +123,7 @@ set(SOURCES_VIS
     src/vis/marker_base.cpp
     src/vis/text.cpp
     src/vis/footprint.cpp
+    src/vis/point.cpp
 )
 
 set(HEADERS_CONFIG

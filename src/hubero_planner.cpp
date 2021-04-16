@@ -77,15 +77,19 @@ bool HuberoPlanner::compute(
 		const ObstContainerConstPtr obstacles,
 		Vector3& force
 ) {
+	goal_local_ = goal;
+	chooseGoalBasedOnGlobalPlan(pose, goal_local_);
+
 	teb_local_planner::PoseSE2 pose_robot(pose.Pos().X(), pose.Pos().Y(), pose.Rot().Yaw());
-	sfm::World world(pose, goal, velocity);
+	sfm::World world(pose, velocity, goal_local_, goal);
 	createEnvironmentModel(pose_robot, obstacles, world);
 
 	// only for visualisation
 	std::vector<size_t> meaningful_interaction_static;
 	std::vector<size_t> meaningful_interaction_dynamic;
 
-	sfm_.computeSocialForce(world,
+	sfm_.computeSocialForce(
+		world,
 		cfg_->getGeneral()->sim_period,
 		meaningful_interaction_static,
 		meaningful_interaction_dynamic
@@ -96,7 +100,6 @@ bool HuberoPlanner::compute(
 
 	std::vector<sfm::StaticObject> objects_static = world.getStaticObjectsData();
 	std::vector<sfm::DynamicObject> objects_dynamic = world.getDynamicObjectsData();
-
 	// evaluate whether more complex forces are supposed to be calculated
 	// TODO: add param `disable fuzzy behaviours`
 	if (!cfg_->getSfm()->disable_interaction_forces) {
@@ -213,7 +216,7 @@ bool HuberoPlanner::getCellCosts(int cx,
 }
 
 bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
-	printf("[HuberoPlanner::setPlan] \r\n");
+	printf("[HuberoPlanner::setPlan] length %lu \r\n", orig_global_plan.size());
 	return planner_util_->setPlan(orig_global_plan);
 }
 
@@ -292,6 +295,45 @@ void HuberoPlanner::createEnvironmentModel(
 			force_dynamic_object_interpretation
 		);
 	}
+}
+
+bool HuberoPlanner::chooseGoalBasedOnGlobalPlan(const Pose3& pose, Pose3& goal) {
+	tf::Stamped<tf::Pose> pose_tf;
+	pose_tf.frame_id_ = planner_util_->getGlobalFrame();
+	pose_tf.stamp_ = ros::Time::now();
+	tf::Vector3 origin(pose.Pos().X(), pose.Pos().Y(), pose.Pos().Z());
+	tf::Quaternion rot(pose.Rot().X(), pose.Rot().Y(), pose.Rot().Z(), pose.Rot().W());
+	pose_tf.setOrigin(origin);
+	pose_tf.setRotation(rot);
+
+	std::vector<geometry_msgs::PoseStamped> plan_local_pruned;
+	// this prunes plan if appropriate parameter is set
+	planner_util_->getLocalPlan(pose_tf, plan_local_pruned);
+
+	// NOTE: global_plan_ is not stored currently!
+	// base_local_planner::prunePlan(poseTf, plan_local_, global_plan_);
+
+	if (plan_local_pruned.size() > 0) {
+		// find a point far enough so the social force can drive the robot towards instead of produce oscillations
+		for (const auto& pose_plan : plan_local_pruned) {
+			double dist_x = pose_plan.pose.position.x - pose.Pos().X();
+			double dist_y = pose_plan.pose.position.y - pose.Pos().Y();
+			double dist_sq = dist_x * dist_x + dist_y * dist_y;
+			if (dist_sq > cfg_->getGeneral()->forward_point_distance) {
+				goal = Pose3(
+					pose_plan.pose.position.x,
+					pose_plan.pose.position.y,
+					pose_plan.pose.position.z,
+					pose_plan.pose.orientation.x,
+					pose_plan.pose.orientation.y,
+					pose_plan.pose.orientation.z,
+					pose_plan.pose.orientation.w
+				);
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 }; // namespace hubero_local_planner

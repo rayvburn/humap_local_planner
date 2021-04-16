@@ -125,11 +125,22 @@ void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, c
 }
 
 bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
-
+	if (!isInitialized()) {
+	  ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
+	  return false;
+	}
+	ROS_INFO("Got a new plan");
+	global_plan_ = orig_global_plan;
+	vis_.resetPath();
 	return planner_->setPlan(orig_global_plan);
 }
 
 bool HuberoPlannerROS::isGoalReached() {
+	if (!isInitialized()) {
+	  ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
+	  return false;
+	}
+
 	//we assume the global goal is the last point in the global plan
 	tf::Stamped<tf::Pose> goal;
 	planner_util_->getGoal(goal);
@@ -198,6 +209,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// visualization
 	auto vis_data = planner_->getMotionData();
 	Pose3 pose = converter::tfPoseToIgnPose(robot_pose);
+	Pose3 goal = converter::tfPoseToIgnPose(robot_goal);
 
 	vis_.publishForceInternal(pose.Pos(), vis_data.force_internal);
 	vis_.publishForceInteraction(pose.Pos(), vis_data.force_interaction);
@@ -206,15 +218,19 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishBehaviourActive(pose.Pos(), vis_data.behaviour_active);
 	vis_.publishClosestPoints(vis_data.closest_points);
 	vis_.publishPath(pose);
-	vis_.publishGrid(
-			pose,
-			converter::twistToIgnVector3(robot_vel_),
-			converter::tfPoseToIgnPose(robot_goal),
-			obstacles_,
-			*planner_
-	);
+//	vis_.publishGrid(
+//			pose,
+//			converter::twistToIgnVector3(robot_vel_),
+//			converter::tfPoseToIgnPose(robot_goal),
+//			obstacles_,
+//			*planner_
+//	);
 	vis_.publishRobotFootprint(pose, planner_->getRobotFootprintModel());
+	vis_.publishGoal(goal.Pos());
+	vis_.publishGoalLocal(planner_->getGoalLocal().Pos());
 
+	//publishLocalPlan(/*TODO*/);
+	publishGlobalPlan(global_plan_);
 	return true;
 }
 

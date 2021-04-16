@@ -63,8 +63,10 @@ struct Robot {
 	Pose3 centroid;
 	/// @brief Velocity of the robot
 	Vector3 vel;
-	/// @brief Stores target's pose and pose of the robot's footprint that is closest to the target
+	/// @brief Stores target pose and pose of the robot's footprint that is closest to the target
 	Target target;
+	/// @brief Stores global goal pose and pose of the robot's footprint that is closest to the target
+	Target goal;
 	/// @brief Heading direction of the robot, can be either deducted from velocity or orientation
 	double heading_dir;
 };
@@ -79,27 +81,30 @@ public:
 	 * @brief This version is useful if one wants to move robot's edge point (instead of center) to the target
 	 * @param robot_pose_centroid: pose of the center of the robot's footprint
 	 * @param robot_pose: robot pose that is closest to the target
+	 * @param robot_vel: velocity of the robot
 	 * @param target_pose: target pose
-	 * @param robot_vel
+	 * @param goal_pose: global goal pose
 	 */
 	World(
 			const Pose3& robot_pose_centroid,
 			const Pose3& robot_pose,
+			const Vector3& robot_vel,
 			const Pose3& target_pose,
-			const Vector3& robot_vel
+			const Pose3& goal_pose
 	);
 
 	/**
 	 *
-	 * @param robot_pose_centroid: pose of the center of the robot's footprint
-	 * @param robot_pose: robot pose that is closest to the target
+	 * @param robot_pose: pose of the center of the robot's footprint
+	 * @param robot_vel: velocity of the robot
 	 * @param target_pose: target pose
-	 * @param robot_vel
+	 * @param goal_pose: global goal pose
 	 */
 	World(
 			const Pose3& robot_pose,
+			const Vector3& robot_vel,
 			const Pose3& target_pose,
-			const Vector3& robot_vel
+			const Pose3& goal_pose
 	);
 
 	/**
@@ -156,15 +161,16 @@ public:
 	virtual ~World() = default;
 
 protected:
-	void addObstacleStatic(
+	StaticObject createObstacleStatic(
 			const Pose3& robot_pose_closest,
 			const Pose3& obstacle_pose_closest
-	);
-	void addObstacleDynamic(
+	) const;
+	DynamicObject createObstacleDynamic(
 			const Pose3& robot_pose_closest,
 			const Pose3& obstacle_pose_closest,
 			const Vector3& obstacle_vel
-	);
+	) const;
+	Target createTarget(const Pose3& robot_pose, const Pose3& target_pose) const;
 
 	/// \brief Helper function which calculates a relative
 	/// location of the investigated object based on actor's
@@ -180,7 +186,7 @@ protected:
 			RelativeLocation& beta_rel_location,
 			double& beta_angle_rel,
 			double& d_alpha_beta_angle
-	);
+	) const;
 
 	/// @brief Stores pose of point that belongs to the robot's footprint that is closest to the target
 	Robot robot_;

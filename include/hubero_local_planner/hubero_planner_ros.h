@@ -116,7 +116,8 @@ protected:
 	ros::Publisher g_plan_pub_;
 	/// @brief Local plan publisher (for visualisation)
 	ros::Publisher l_plan_pub_;
-
+	/// @section Global planning
+	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	/// @section Local planning
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 	HuberoPlannerPtr planner_; ///< @brief The trajectory controller

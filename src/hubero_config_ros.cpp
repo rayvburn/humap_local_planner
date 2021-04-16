@@ -41,7 +41,7 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("angular_sim_granularity", general_->angular_sim_granularity, general_->angular_sim_granularity);
 
 	// Limits
-	printf("Parameter section: `LIMITS` \r\n");
+	printf("Parameter section: `LIMITS` - default values \r\n");
 	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_trans_vel);
 	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_trans_vel);
 	printf("\t - max_vel_x: %5.5f \r\n", limits_->max_vel_x);
@@ -163,6 +163,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->sim_granularity = cfg.sim_granularity;
 	general_->sim_period = cfg.sim_period; // TODO: is this still useful?
 	general_->sim_time = cfg.sim_time;
+	general_->forward_point_distance = cfg.forward_point_distance;
 
 	sfm_->fov = cfg.fov;
 	sfm_->max_speed = cfg.max_speed;

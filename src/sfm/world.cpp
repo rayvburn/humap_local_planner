@@ -12,24 +12,24 @@ namespace sfm {
 World::World(
 		const Pose3& robot_pose_centroid,
 		const Pose3& robot_pose,
+		const Vector3& robot_vel,
 		const Pose3& target_pose,
-		const Vector3& robot_vel
+		const Pose3& goal_pose
 ) {
 	robot_.centroid = robot_pose_centroid;
 	robot_.vel = robot_vel;
 	robot_.heading_dir = std::atan2(robot_vel.Y(), robot_vel.X());
 
-	robot_.target.robot = robot_pose;
-	robot_.target.object = target_pose;
-	robot_.target.dist_v = target_pose.Pos() - robot_pose.Pos();
-	robot_.target.dist = robot_.target.dist_v.Length();
+	robot_.target = createTarget(robot_pose, target_pose);
+	robot_.goal = createTarget(robot_pose, goal_pose);
 }
 
 World::World(
 		const Pose3& robot_pose,
+		const Vector3& robot_vel,
 		const Pose3& target_pose,
-		const Vector3& robot_vel
-): World(robot_pose, robot_pose, target_pose, robot_vel) {
+		const Pose3& goal_pose
+): World(robot_pose, robot_pose, robot_vel, target_pose, goal_pose) {
 }
 
 void World::addObstacle(
@@ -39,9 +39,18 @@ void World::addObstacle(
 		bool force_dynamic_type
 ) {
 	if (force_dynamic_type || obstacle_vel.Length() > 1e-06) {
-		addObstacleDynamic(robot_pose_closest, obstacle_pose_closest, obstacle_vel);
+		obstacle_dynamic_.push_back(
+			createObstacleDynamic(
+				robot_pose_closest,
+				obstacle_pose_closest,
+				obstacle_vel)
+		);
 	} else {
-		addObstacleStatic(robot_pose_closest, obstacle_pose_closest);
+		obstacle_static_.push_back(
+			createObstacleStatic(
+				robot_pose_closest,
+				obstacle_pose_closest)
+		);
 	}
 }
 
@@ -66,10 +75,10 @@ void World::addObstacles(
 	}
 }
 
-void World::addObstacleStatic(
+StaticObject World::createObstacleStatic(
 		const Pose3& robot_pose_closest,
 		const Pose3& obstacle_pose_closest
-) {
+) const {
 	StaticObject obstacle;
 	obstacle.robot = robot_pose_closest;
 	obstacle.object = obstacle_pose_closest;
@@ -78,14 +87,23 @@ void World::addObstacleStatic(
 	obstacle.dist_v.Z(0.0);
 	obstacle.dist = obstacle.dist_v.Length();
 
-	obstacle_static_.push_back(obstacle);
+	return obstacle;
 }
 
-void World::addObstacleDynamic(
+Target World::createTarget(const Pose3& robot_pose, const Pose3& target_pose) const {
+	Target target;
+	target.robot = robot_pose;
+	target.object = target_pose;
+	target.dist_v = target_pose.Pos() - robot_pose.Pos();
+	target.dist = target.dist_v.Length();
+	return target;
+}
+
+DynamicObject World::createObstacleDynamic(
 		const Pose3& robot_pose_closest,
 		const Pose3& obstacle_pose_closest,
 		const Vector3& obstacle_vel
-) {
+) const {
 	DynamicObject obstacle;
 	obstacle.robot = robot_pose_closest;
 	obstacle.object = obstacle_pose_closest;
@@ -107,7 +125,7 @@ void World::addObstacleDynamic(
 	obstacle.rel_loc_angle = beta_angle_rel;
 	obstacle.dist_angle = d_alpha_beta_angle;
 
-	obstacle_dynamic_.push_back(obstacle);
+	return obstacle;
 }
 
 void World::computeObjectRelativeLocation(
@@ -116,7 +134,7 @@ void World::computeObjectRelativeLocation(
 			RelativeLocation& beta_rel_location,
 			double& beta_angle_rel,
 			double& d_alpha_beta_angle
-) {
+) const {
 	RelativeLocation rel_loc = LOCATION_UNSPECIFIED;
 	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
 	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
