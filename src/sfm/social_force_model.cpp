@@ -361,13 +361,22 @@ Vector3 SocialForceModel::computeInteractionForce(const Robot& robot, const Stat
 								   std::pow(y_alpha_i.Length(), 2) );
 
 	// division by ~0 prevention - returning zeros vector instead of NaNs
-	if ( (std::fabs(w_alpha_i) < 1e-08) || (std::isnan(w_alpha_i)) || (d_alpha_i_len < 1e-08) ) {
+	bool w_alpha_i_small = std::fabs(w_alpha_i) < 1e-08;
+	bool w_alpha_i_nan = std::isnan(w_alpha_i);
+	bool d_alpha_i_short = d_alpha_i_len < 1e-08;
+	if (w_alpha_i_small && !w_alpha_i_nan && !d_alpha_i_short) {
+		debug_print_verbose("----static obstacle interaction abort ---- \r\n");
+		debug_print_verbose("\t FAIL w_alpha_i small \r\n");
+		debug_print_verbose("---- \r\n");
+		return Vector3();
+	}
+	if (w_alpha_i_small || w_alpha_i_nan || d_alpha_i_short) {
 		debug_print_err("----static obstacle interaction error---- \r\n");
 		debug_print_err("\t d_alpha_i: %2.3f %2.3f, len: %2.3f \r\n", d_alpha_i.X(), d_alpha_i.Y(), d_alpha_i_len);
 		debug_print_err("\t y_alpha_i: %2.3f %2.3f, w_alpha_i: %2.3f \r\n", y_alpha_i.X(), y_alpha_i.Y(), w_alpha_i);
-		debug_print_err("\t FAIL w_alpha_i small: %d \r\n", std::fabs(w_alpha_i) < 1e-08);
-		debug_print_err("\t FAIL w_alpha_i NaN: %d \r\n", std::isnan(w_alpha_i));
-		debug_print_err("\t d_alpha_i Length FAIL: %d \r\n", d_alpha_i_len < 1e-08);
+		debug_print_err("\t FAIL w_alpha_i small: %d \r\n", w_alpha_i_small);
+		debug_print_err("\t FAIL w_alpha_i NaN: %d \r\n", w_alpha_i_nan);
+		debug_print_err("\t d_alpha_i Length FAIL: %d \r\n", d_alpha_i_short);
 		debug_print_err("\t returning ZERO force \r\n");
 		debug_print_err("---- \r\n");
 		return Vector3();

@@ -53,7 +53,8 @@ visualization_msgs::Marker Arrow::create(const Vector3 &pos, const Vector3 &vect
 
 	// scale
 	// arrow's length is calculated based on max allowable force `in SFM class`
-	marker.scale.x = max_length_ * vector.Length() / sfm_max_force_;
+	double length = max_length_ * vector.Length() / sfm_max_force_;
+	marker.scale.x = length > 0.001 ? length : 0.001;
 	marker.scale.y = 0.05;
 	marker.scale.z = 0.05;
 
