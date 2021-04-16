@@ -147,7 +147,11 @@ bool HuberoPlannerROS::isGoalReached() {
 	tf::Stamped<tf::Pose> pose;
 	costmap_ros_->getRobotPose(pose);
 
-	return planner_->checkGoalReached(pose, goal);
+	bool reached = planner_->checkGoalReached(pose, goal);
+	if (reached) {
+		ROS_INFO("Goal reached!");
+	}
+	return reached;
 }
 
 // based on TEB's `computeVelocityCommands`
@@ -218,13 +222,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishBehaviourActive(pose.Pos(), vis_data.behaviour_active);
 	vis_.publishClosestPoints(vis_data.closest_points);
 	vis_.publishPath(pose);
-//	vis_.publishGrid(
-//			pose,
-//			converter::twistToIgnVector3(robot_vel_),
-//			converter::tfPoseToIgnPose(robot_goal),
-//			obstacles_,
-//			*planner_
-//	);
+	vis_.publishGrid(pose, *planner_);
 	vis_.publishRobotFootprint(pose, planner_->getRobotFootprintModel());
 	vis_.publishGoal(goal.Pos());
 	vis_.publishGoalLocal(planner_->getGoalLocal().Pos());

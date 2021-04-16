@@ -71,12 +71,23 @@ struct Robot {
 	double heading_dir;
 };
 
+/// @brief Helper structure useful for marking closest points between robot and object
+struct Distance {
+	Pose3 robot;
+	Pose3 object;
+};
+
 /**
  * @brief Class named `world` as `environment` would not express clearly its contents.
  * World contains both environment and robot data.
  */
 class World {
 public:
+	/**
+	 * @brief Dummy constructor
+	 */
+	World() = default;
+
 	/**
 	 * @brief This version is useful if one wants to move robot's edge point (instead of center) to the target
 	 * @param robot_pose_centroid: pose of the center of the robot's footprint

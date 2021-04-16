@@ -107,6 +107,9 @@ public:
 			Vector3& force
 	);
 
+    // grid `visualization` version, ignores storing meaningful_interactions data
+    bool compute(const Pose3& pose, Vector3& force);
+
     bool plan();
 
 	/**
@@ -221,21 +224,21 @@ public:
 
 private:
 	// fills up the world model with static and dynamic obstacles
-	void createEnvironmentModel(
-			const teb_local_planner::PoseSE2& pose,
-			const ObstContainerConstPtr obstacles,
-			sfm::World& world
-	);
+	void createEnvironmentModel(const Pose3& pose_ref);
 
 	/**
-	 *
-	 * @param pose
-	 * @return True if given @ref goal was modified, False otherwise
+	 * @return True if given @ref goal_local_ was modified, False otherwise
 	 */
-	bool chooseGoalBasedOnGlobalPlan(const Pose3& pose, Pose3& goal);
+	bool chooseGoalBasedOnGlobalPlan();
+
+	bool compute(
+		const Pose3& pose,
+		Vector3& force,
+		std::vector<sfm::Distance>& meaningful_interaction_static,
+		std::vector<sfm::Distance>& meaningful_interaction_dynamic
+	);
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
-	Pose3 goal_local_;
 
 	double sim_period_; ///< @brief The number of seconds to use to compute max/min vels for the planner
 	base_local_planner::Trajectory result_traj_;
@@ -243,9 +246,22 @@ private:
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	bool goal_reached_;
 
+	/// @brief Parameters of the planner
 	HuberoConfigConstPtr cfg_;
+	/// @brief The most recent robot pose expressed in the planner's frame
+	Pose3 pose_;
+	/// @brief The most recent robot velocity expressed in the base frame
+	Vector3 vel_;
+	/// @brief Global goal expressed in the planner's frame
+	Pose3 goal_;
+	/// @brief Local goal expressed in the planner's frame
+	Pose3 goal_local_;
+	/// @brief The most recent environment (obstacles) model
 	ObstContainerConstPtr obstacles_;
+	/// @brief Robot footprint model
 	RobotFootprintModelPtr robot_model_;
+	/// @brief World model
+	sfm::World world_model_;
 
 	sfm::SocialForceModel sfm_;
 	fuzz::Processor fuzzy_processor_; //!< produces segmentation fault in destructor when ran in a separated executable (Segmentation fault (core dumped))

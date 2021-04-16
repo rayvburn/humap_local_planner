@@ -219,9 +219,6 @@ void Visualization::resetPath() {
 
 bool Visualization::publishGrid(
 		const Pose3& pos_current,
-		const Vector3& vel_current,
-		const Pose3& goal,
-		ObstContainerConstPtr obstacles,
 		HuberoPlanner& planner
 ) {
 	if (pub_marker_array_.getNumSubscribers() == 0) {
@@ -253,7 +250,7 @@ bool Visualization::publishGrid(
 		// calculate social force for actor located in current pose hard-coded time delta
 		Vector3 force;
 
-		planner.compute(pose, vel_current, goal, obstacles, force);
+		planner.compute(pose, force);
 
 		// pass a result to vector of grid forces
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.Pos(), force));
