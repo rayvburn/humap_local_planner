@@ -148,8 +148,8 @@ public:
 	bool computeSocialForce(
 			const World& world,
 			const double &dt,
-			std::vector<size_t>& meaningful_static,
-			std::vector<size_t>& meaningful_dynamic
+			std::vector<Distance>& meaningful_static,
+			std::vector<Distance>& meaningful_dynamic
 	);
 
 	/// \brief Returns internal force vector

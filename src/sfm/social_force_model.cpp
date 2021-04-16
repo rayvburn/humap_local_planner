@@ -64,8 +64,8 @@ SocialForceModel::SocialForceModel():
 bool SocialForceModel::computeSocialForce(
 		const World& world,
 		const double &dt,
-		std::vector<size_t>& meaningful_static,
-		std::vector<size_t>& meaningful_dynamic
+		std::vector<Distance>& meaningful_static,
+		std::vector<Distance>& meaningful_dynamic
 ) {
 	reset();
 
@@ -101,7 +101,7 @@ bool SocialForceModel::computeSocialForce(
 		f_alpha_beta = computeInteractionForce(robot, object, dt);
 		force_interaction_ += f_alpha_beta;
 		if (f_alpha_beta.Length() >= 1e-06) {
-			meaningful_static.push_back(&object - &objects_static[0]);
+			meaningful_static.push_back(Distance {.robot = object.robot, .object = object.object});
 		}
 	}
 
@@ -110,7 +110,7 @@ bool SocialForceModel::computeSocialForce(
 		f_alpha_beta = computeInteractionForce(robot, object);
 		force_interaction_ += f_alpha_beta;
 		if (f_alpha_beta.Length() >= 1e-06) {
-			meaningful_dynamic.push_back(&object - &objects_dynamic[0]);
+			meaningful_dynamic.push_back(Distance {.robot = object.robot, .object = object.object});
 		}
 	}
 
