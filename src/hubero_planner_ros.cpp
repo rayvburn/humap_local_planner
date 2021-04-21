@@ -15,7 +15,7 @@
 #include <hubero_local_planner/utils/debug.h>
 // debugging macros
 #define DEBUG_BASIC 1
-#define DEBUG_VERBOSE 0
+#define DEBUG_VERBOSE 1
 #define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
 #define debug_print_verbose(fmt, ...) _template_debug_print_basic_(DEBUG_VERBOSE, fmt, ##__VA_ARGS__)
 
@@ -181,14 +181,14 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// Get robot velocity
 	tf::Stamped<tf::Pose> robot_vel_tf;
 	odom_helper_.getRobotVel(robot_vel_tf);
-	geometry_msgs::Twist robot_vel_;
-	robot_vel_.linear.x = robot_vel_tf.getOrigin().getX();
-	robot_vel_.linear.y = robot_vel_tf.getOrigin().getY();
-	robot_vel_.angular.z = tf::getYaw(robot_vel_tf.getRotation());
+	geometry_msgs::Twist robot_vel;
+	robot_vel.linear.x = robot_vel_tf.getOrigin().getX();
+	robot_vel.linear.y = robot_vel_tf.getOrigin().getY();
+	robot_vel.angular.z = tf::getYaw(robot_vel_tf.getRotation());
 	debug_print_verbose("vel: x %2.4f / y %2.4f / yaw %2.4f \r\n",
-		robot_vel_.linear.x,
-		robot_vel_.linear.y,
-		robot_vel_.angular.z
+		robot_vel.linear.x,
+		robot_vel.linear.y,
+		robot_vel.angular.z
 	);
 
 	// Get robot goal
@@ -203,10 +203,12 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	// prepare obstacles
 	updateObstacleContainerWithCostmapConverter();
+	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
+	geometry_msgs::Twist robot_vel_glob = computeVelocityGlobal(robot_vel, robot_pose);
 
 	// compute force exerted on the particle (robot)
 	Eigen::Vector3f force;
-	planner_->compute(robot_pose, robot_vel_, robot_goal, obstacles_, force);
+	planner_->compute(robot_pose, robot_vel, robot_goal, obstacles_, force);
 
 	computeTwist(robot_pose, force, cmd_vel);
 
@@ -421,7 +423,7 @@ void HuberoPlannerROS::computeTwist(const tf::Stamped<tf::Pose>& pose, const Eig
 	Angle angle_diff(angle_force_v - tf::getYaw(pose.getRotation()));
 	angle_diff.Normalize();
 
-	debug_print_verbose("force orient: %2.4f, base link orient: %2.4f, diff: %2.4f \r\n",
+	debug_print_verbose("force orient: %2.4f°, base link orient: %2.4f°, diff: %2.4f° \r\n",
 			angle_force_v.Degree(),
 			tf::getYaw(pose.getRotation()) * 180 / IGN_PI,
 			angle_diff.Degree()
@@ -429,8 +431,43 @@ void HuberoPlannerROS::computeTwist(const tf::Stamped<tf::Pose>& pose, const Eig
 
 	double dt = cfg_->getGeneral()->sim_period;
 
+	double lin_x = cos(angle_diff.Radian());
+	if (lin_x >= 0.0) {
+		cmd_vel.linear.x = cfg_->getLimits()->max_vel_x * lin_x * dt;
+	} else {
+		// possibly apply negative velocity, based on `min_vel_x` parameter
+		// (if 0.0, then 0 linear velocity will be applied)
+		cmd_vel.linear.x = cfg_->getLimits()->min_vel_x * (-lin_x) * dt;
+		debug_print_basic("reverse linear velocity applied to the base, linear.x: %2.3f (`min_vel_x`: %2.3f) \r\n",
+			cmd_vel.linear.x,
+			cfg_->getLimits()->min_vel_x
+		);
+	}
+
+	// truncate linear component of velocity command
+	double result_lin_x = cmd_vel.linear.x;
+	cmd_vel.linear.x = std::min(
+		std::max(
+			cfg_->getLimits()->min_vel_x,
+			cmd_vel.linear.x),
+		cfg_->getLimits()->max_vel_x
+	);
+	if (result_lin_x != cmd_vel.linear.x) {
+		debug_print_basic("linear velocity truncated to `min_vel_x` (%2.3f) and `max_vel_x` (%2.3f) bounds from "
+			"%2.3f to %2.3f \r\n",
+			cfg_->getLimits()->min_vel_x,
+			cfg_->getLimits()->max_vel_x,
+			result_lin_x,
+			cmd_vel.linear.x
+		);
+	}
+
 	cmd_vel.angular.z = cfg_->getLimits()->max_rot_vel * sin(angle_diff.Radian()) * dt;
-	cmd_vel.linear.x = cfg_->getLimits()->max_vel_x * cos(angle_diff.Radian()) * dt;
+	// NOTE: for reversing angular velocity must be inverted (this allows robot to try
+	// to reach goal with pure reverse motion)
+	if (cmd_vel.linear.x < 0.0) {
+		//cmd_vel.angular.z *= -1.0;
+	}
 
 	debug_print_verbose("angular = %2.4f (max = %2.4f), linear = %2.4f (max = %2.4f) \r\n",
 			cmd_vel.angular.z,
@@ -438,6 +475,35 @@ void HuberoPlannerROS::computeTwist(const tf::Stamped<tf::Pose>& pose, const Eig
 			cmd_vel.linear.x,
 			cfg_->getLimits()->max_vel_x
 	);
+}
+
+geometry_msgs::Twist HuberoPlannerROS::computeVelocityGlobal(
+		const geometry_msgs::Twist& vel_local,
+		const tf::Stamped<tf::Pose>& pose
+) {
+	double yaw = tf::getYaw(pose.getRotation());
+
+	geometry_msgs::Twist vel_global;
+	vel_global.linear.x = (+cos(yaw) * vel_local.linear.x - sin(yaw) * vel_local.linear.y);
+	vel_global.linear.y = (+sin(yaw) * vel_local.linear.x + cos(yaw) * vel_local.linear.y);
+	vel_global.angular.z = 0.0;
+
+	debug_print_verbose("velocity local  : x: %2.4f, y: %2.4f, yaw: %2.4f   (yaw: %2.4f,  sin(yaw): %2.4f,  cos(yaw): %2.4f) \r\n",
+		vel_local.linear.x,
+		vel_local.linear.y,
+		vel_local.angular.z,
+		yaw,
+		sin(yaw),
+		cos(yaw)
+	);
+
+	debug_print_verbose("velocity global: x: %2.4f, y: %2.4f, yaw: %2.4f \r\n",
+		vel_global.linear.x,
+		vel_global.linear.y,
+		vel_global.angular.z
+	);
+
+	return vel_global;
 }
 
 }; // namespace hubero_local_planner

@@ -108,6 +108,8 @@ protected:
 
 	void computeTwist(const tf::Stamped<tf::Pose>& pose, const Eigen::Vector3f& force, geometry_msgs::Twist& cmd_vel) const;
 
+	geometry_msgs::Twist computeVelocityGlobal(const geometry_msgs::Twist& vel_local, const tf::Stamped<tf::Pose>& pose);
+
 	/// @brief nav_core status
 	bool initialized_;
 
