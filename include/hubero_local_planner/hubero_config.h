@@ -59,7 +59,7 @@ namespace hubero_local_planner {
 		/// \brief Determines maneuverability of the actor,
 		double 				maneuverability			= 0.0065;
 		double 				internal_force_factor 		= 100.0;
-		double 				interaction_force_factor 	= 3000.0;
+		double 				interaction_force_factor 	= 1200.0;
 		double 				min_force 					= 300.0;
 		double 				max_force 					= 2000.0;
 		bool 				heterogenous_population 	= false;

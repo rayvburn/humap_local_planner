@@ -11,9 +11,6 @@
 #include <hubero_common/shift_register.h>
 
 // environment obstacle representation
-#include <hubero_local_planner/obstacles.h> // temp
-#include <hubero_local_planner/robot_footprint_model.h> // temp
-
 #include <hubero_local_planner/hubero_config.h>
 #include <hubero_local_planner/sfm/world.h>
 

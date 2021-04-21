@@ -6,6 +6,7 @@
  */
 
 #include <hubero_local_planner/sfm/social_force_model.h>
+#include <hubero_common/converter.h>
 
 // additional headers
 #include <cmath>			// atan2()
@@ -231,7 +232,7 @@ Vector3 SocialForceModel::computeInteractionForce(
 	}
 
 	// compute heading directions of robot and object
-	Angle robot_yaw(robot.centroid.Rot().Yaw());
+	Angle robot_yaw(converter::yawFromIgnPose(robot.centroid));
 	robot_yaw.Normalize();
 
 	Angle object_yaw(std::atan2(object.vel.Y(), object.vel.X()));
@@ -414,8 +415,8 @@ Vector3 SocialForceModel::computeInteractionForce(const Robot& robot, const Stat
 // ------------------------------------------------------------------- //
 
 double SocialForceModel::computeThetaAlphaBetaAngle2011(const Robot& robot, const DynamicObject& object
-		/*const ignition::math::Angle &actor_yaw, const Vector3 &object_vel,
-		const ignition::math::Angle &object_yaw, const Vector3 &d_alpha_beta, const bool &is_actor*/
+		/*const Angle &actor_yaw, const Vector3 &object_vel,
+		const Angle &object_yaw, const Vector3 &d_alpha_beta, const bool &is_actor*/
 ) {
 	/* 2011 - "θ αβ - angle between velocity of pedestrian α
 	 * and the displacement of pedestrian β" */
@@ -449,13 +450,13 @@ double SocialForceModel::computeThetaAlphaBetaAngle2014(const Vector3 &n_alpha,
 	}
 #endif
 
-	ignition::math::Angle angle_n_alpha( std::atan2( n_alpha.Y(), n_alpha.X() ) );
+	Angle angle_n_alpha( std::atan2( n_alpha.Y(), n_alpha.X() ) );
 	angle_n_alpha.Normalize();
 
-	ignition::math::Angle angle_d_alpha_beta( std::atan2( d_alpha_beta.Y(), d_alpha_beta.X() ) );
+	Angle angle_d_alpha_beta( std::atan2( d_alpha_beta.Y(), d_alpha_beta.X() ) );
 	angle_d_alpha_beta.Normalize();
 
-	ignition::math::Angle phi_alpha_beta(angle_n_alpha.Radian() - angle_d_alpha_beta.Radian());
+	Angle phi_alpha_beta(angle_n_alpha.Radian() - angle_d_alpha_beta.Radian());
 	phi_alpha_beta.Normalize();
 
 #ifdef DEBUG_GEOMETRY_1
@@ -471,8 +472,8 @@ double SocialForceModel::computeThetaAlphaBetaAngle2014(const Vector3 &n_alpha,
 // ------------------------------------------------------------------- //
 
 // dynamic objects interaction
-double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Angle &actor_yaw,
-		const ignition::math::Angle &object_yaw) {
+double SocialForceModel::computeThetaAlphaBetaAngle(const Angle &actor_yaw,
+		const Angle &object_yaw) {
     /*
 	 *
 	 * NOTE: below method (very simple and naive) of calculating the angle is correct
@@ -490,7 +491,7 @@ double SocialForceModel::computeThetaAlphaBetaAngle(const ignition::math::Angle 
 	}
 #endif
 
-	ignition::math::Angle yaw_diff(actor_yaw.Radian() - object_yaw.Radian());
+	Angle yaw_diff(actor_yaw.Radian() - object_yaw.Radian());
 	yaw_diff.Normalize();
 
 #ifdef DEBUG_GEOMETRY_1
@@ -514,7 +515,7 @@ Vector3 SocialForceModel::computeNormalAlphaDirection(const Pose3 &actor_pose) {
 	/* all calculations here are performed on world coordinate system data -
 	 * n_alpha from actor's coordinate system is projected onto
 	 * world's coordinate system axes */
-	ignition::math::Angle yaw_norm(actor_pose.Rot().Yaw());
+	Angle yaw_norm(converter::yawFromIgnPose(actor_pose));
 	yaw_norm.Normalize();
 
 	// check parameter setting - n_alpha issue there
