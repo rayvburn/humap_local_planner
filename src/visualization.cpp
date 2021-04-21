@@ -36,11 +36,12 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 
 void Visualization::initialize(ros::NodeHandle& nh) {
 	static const std::string PREFIX = "vis/";
-	pub_marker_ = nh.advertise<visualization_msgs::Marker>(PREFIX + "marker", 3);
-	pub_marker_array_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "marker_array", 3);
+	pub_marker_ = nh.advertise<visualization_msgs::Marker>(PREFIX + "marker", 1);
+	pub_marker_array_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "marker_array", 1);
+	pub_grid_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "force_grid", 1);
 
 	pub_path_ = nh.advertise<nav_msgs::Path>(PREFIX + "path", 3);
-	pub_closest_dist_ = nh.advertise<std_msgs::Float32>(PREFIX + "dist_obstacle", 3);
+	pub_closest_dist_ = nh.advertise<std_msgs::Float32>(PREFIX + "dist_obstacle", 1);
 }
 
 void Visualization::reconfigure(const double& max_force) {
@@ -221,22 +222,21 @@ bool Visualization::publishGrid(
 		const Pose3& pos_current,
 		HuberoPlanner& planner
 ) {
-	if (pub_marker_array_.getNumSubscribers() == 0) {
+	if (pub_grid_.getNumSubscribers() == 0) {
 		return false;
 	}
 
 	// pose where `virtual` actor will be placed in
 	Pose3 pose;
-	Quaternion quat_dummy(0.0, 0.0, 0.0, 1.0);
 
 	marker_force_grid_.setNamespace("force_grid");
 
 	// grid dimensions similar to the local costmap's
 	marker_force_grid_.createGrid(
-			pos_current.Pos().X() - 2.5,
-			pos_current.Pos().X() + 2.5,
-			pos_current.Pos().Y() - 2.5,
-			pos_current.Pos().Y() + 2.5,
+			pos_current.Pos().X() - 2.0,
+			pos_current.Pos().X() + 2.0,
+			pos_current.Pos().Y() - 2.0,
+			pos_current.Pos().Y() + 2.0,
 			0.5
 	);
 
@@ -245,7 +245,7 @@ bool Visualization::publishGrid(
 
 	while (!marker_force_grid_.isWholeGridChecked()) {
 		// set an actor's virtual pose
-		pose = Pose3(marker_force_grid_.getNextGridElement(), quat_dummy);
+		pose = Pose3(marker_force_grid_.getNextGridElement(), pos_current.Rot());
 
 		// calculate social force for actor located in current pose hard-coded time delta
 		Vector3 force;
@@ -255,7 +255,7 @@ bool Visualization::publishGrid(
 		// pass a result to vector of grid forces
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.Pos(), force));
 	}
-	pub_marker_array_.publish(marker_force_grid_.getMarkerArray());
+	pub_grid_.publish(marker_force_grid_.getMarkerArray());
 	return true;
 }
 
