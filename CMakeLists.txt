@@ -36,6 +36,7 @@ include_directories(
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${IGNITION-MATH_INCLUDE_DIRS}
+    ${hubero_common_INCLUDE_DIRS}
 )
 add_definitions(${EIGEN3_DEFINITIONS})
 
