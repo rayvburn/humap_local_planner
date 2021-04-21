@@ -77,6 +77,10 @@ private:
 
 	ros::Publisher pub_marker_;
 	ros::Publisher pub_marker_array_;
+	/// \brief Separate publisher to @ref pub_marker_array_ as grid computations are quite heavy and
+	/// theirs execution is not disabled by simply unticking `grid` markers namespace in rViz (this would disable
+	/// all MarkerArray publications)
+	ros::Publisher pub_grid_;
 	ros::Publisher pub_path_;
 	ros::Publisher pub_closest_dist_;
 
