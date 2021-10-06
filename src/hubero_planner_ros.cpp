@@ -1,5 +1,5 @@
 #include <hubero_local_planner/hubero_planner_ros.h>
-#include <hubero_common/converter.h>
+#include <hubero_local_planner/utils/converter.h>
 
 #include <Eigen/Core>
 #include <cmath>
@@ -214,8 +214,8 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	// visualization
 	auto vis_data = planner_->getMotionData();
-	Pose3 pose = converter::tfPoseToIgnPose(robot_pose);
-	Pose3 goal = converter::tfPoseToIgnPose(robot_goal);
+	Pose3 pose = Converter::toIgnPose(robot_pose);
+	Pose3 goal = Converter::toIgnPose(robot_goal);
 
 	vis_.publishForceInternal(pose.Pos(), vis_data.force_internal);
 	vis_.publishForceInteraction(pose.Pos(), vis_data.force_interaction);

@@ -1,5 +1,5 @@
 #include <hubero_local_planner/hubero_planner.h>
-#include <hubero_common/converter.h>
+#include <hubero_local_planner/utils/converter.h>
 #include <math.h>
 
 #include <hubero_local_planner/utils/debug.h>
@@ -57,13 +57,13 @@ bool HuberoPlanner::compute(
 	//
 	Vector3 force_result;
 	bool status = compute(
-			converter::tfPoseToIgnPose(pose),
-			converter::twistToIgnVector3(velocity), // TODO angular velocity!
-			converter::tfPoseToIgnPose(goal),
+			Converter::toIgnPose(pose),
+			Converter::toIgnVector(velocity), // TODO angular velocity!
+			Converter::toIgnPose(goal),
 			obstacles,
 			force_result
 	);
-	force = converter::ignVectorToEigenV3f(force_result);
+	force = Converter::toEigenV3<Eigen::Vector3f>(force_result);
 
 	// TODO: saturate
 
