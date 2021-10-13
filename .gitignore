@@ -12,5 +12,9 @@ src/inflation/
 include/hubero_local_planner/trajectory_generator.h
 src/trajectory_generator.cpp
 
+build/
 test/
 debug/
+
+matlab/*.asv
+matlab/computeTwistMatrixVersion.m
