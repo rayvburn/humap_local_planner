@@ -210,7 +210,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	Eigen::Vector3f force;
 	planner_->compute(robot_pose, robot_vel, robot_goal, obstacles_, force);
 
-	computeTwist(robot_pose, force, cmd_vel);
+	computeTwist(robot_pose, force, robot_vel_glob, cmd_vel);
 
 	// visualization
 	auto vis_data = planner_->getMotionData();
@@ -414,13 +414,29 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 	return std::make_shared<PointRobotFootprint>();
 }
 
-void HuberoPlannerROS::computeTwist(const tf::Stamped<tf::Pose>& pose, const Eigen::Vector3f& force, geometry_msgs::Twist& cmd_vel) const {
+void HuberoPlannerROS::computeTwist(
+		const tf::Stamped<tf::Pose>& pose,
+		const Eigen::Vector3f& force,
+		const geometry_msgs::Twist& robot_vel_glob,
+		geometry_msgs::Twist& cmd_vel) const
+{
 	// orientation of the force vector in the odometry frame
 	Vector3 force_v(force[0], force[1], force[2]);
+
 	Angle angle_force_v(std::atan2(force_v.Normalized().Y(), force_v.Normalized().X()));
 	angle_force_v.Normalize();
 
-	Angle angle_diff(angle_force_v - tf::getYaw(pose.getRotation()));
+	double dt = cfg_->getGeneral()->sim_period;
+
+	// TODO: force to global velocity
+	Vector3 acc_v = force_v / cfg_->getSfm()->mass;
+	Vector3 vel_v(robot_vel_glob.linear.x, robot_vel_glob.linear.y, robot_vel_glob.angular.z);
+	Vector3 dvel_v = acc_v * dt;
+	Vector3 vel_v_new = vel_v + dvel_v;
+	Angle angle_vel_v_new(std::atan2(vel_v_new.Normalized().Y(), vel_v_new.Normalized().X()));
+	angle_vel_v_new.Normalize();
+
+	Angle angle_diff(angle_vel_v_new/*angle_force_v*/ - tf::getYaw(pose.getRotation()));
 	angle_diff.Normalize();
 
 	debug_print_verbose("force orient: %2.4f°, base link orient: %2.4f°, diff: %2.4f° \r\n",
@@ -429,7 +445,7 @@ void HuberoPlannerROS::computeTwist(const tf::Stamped<tf::Pose>& pose, const Eig
 			angle_diff.Degree()
 	);
 
-	double dt = cfg_->getGeneral()->sim_period;
+	// TODO: publish velocity marker
 
 	double lin_x = cos(angle_diff.Radian());
 	if (lin_x >= 0.0) {
