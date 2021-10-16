@@ -80,6 +80,41 @@ public:
       return initialized_;
     }
 
+	/**
+	 * @defgroup velocitytransformations Velocity Transformations
+	 * @{
+	 */
+	/**
+	 * @brief computeTwist's helper that actually performs all computations, explicitly taking necessary parameters
+	 *
+	 * @details Main reason to separate computeTwist from this helper method is unit testing
+	 */
+	static void computeTwist(
+		const tf::Stamped<tf::Pose>& pose,
+		const Eigen::Vector3f& force,
+		const geometry_msgs::Twist& robot_vel_glob,
+		const double& sim_period,
+		const double& robot_mass,
+		const double& min_vel_x,
+		const double& max_vel_x,
+		const double& max_rot_vel,
+		geometry_msgs::Twist& cmd_vel
+	);
+
+	/**
+	 * @brief Performs conversion from velocity expressed in local c.s. to global c.s. velocity vector
+	 *
+	 * @param vel_local input
+	 * @param pose input
+	 * @param vel_global output
+	 */
+	static void computeVelocityGlobal(
+		const geometry_msgs::Twist& vel_local,
+		const tf::Stamped<tf::Pose>& pose,
+		geometry_msgs::Twist& vel_global
+	);
+	/** @} */ // end of velocitytransformations
+
 protected:
 	/**
 	* @brief Callback to update the local planner's parameters based on dynamic reconfigure
@@ -112,8 +147,6 @@ protected:
 		const geometry_msgs::Twist& robot_vel_glob,
 		geometry_msgs::Twist& cmd_vel
 	) const;
-
-	geometry_msgs::Twist computeVelocityGlobal(const geometry_msgs::Twist& vel_local, const tf::Stamped<tf::Pose>& pose);
 
 	/// @brief nav_core status
 	bool initialized_;
