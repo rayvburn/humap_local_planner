@@ -18,7 +18,7 @@ ITERATIONS = 70;
 %%%%%%%%%%%%%%%%%%%%%%%% cases %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % NOTE: assertion function takes `vel_global` variable from workspace
 % 1
-fprintf("[CASE] 1\n");
+fprintf("\n\n[CASE] 1\n");
 pose_2d = [0.0, 0.0, deg2rad(90)];
 vel_local = [0.0, 0.0, 0.05];
 force = [+0.2, -0.1, 0.0];
@@ -26,7 +26,7 @@ run('compute_twist_sim.m');
 assertTwist(force, vel_global);
 
 % 2
-fprintf("[CASE] 2\n");
+fprintf("\n\n[CASE] 2\n");
 pose_2d = [0.0, 0.0, deg2rad(180)];
 vel_local = [0.0, 0.0, 0.05];
 force = [+0.2, -0.1, 0.0];
@@ -34,7 +34,7 @@ run('compute_twist_sim.m');
 assertTwist(force, vel_global);
 
 % 3
-fprintf("[CASE] 3\n");
+fprintf("\n\n[CASE] 3\n");
 pose_2d = [0.0, 0.0, deg2rad(90)];
 vel_local = [0.0, 0.0, 0.00];
 force = [+1.2, +0.2, 0.0];
@@ -42,13 +42,12 @@ run('compute_twist_sim.m');
 assertTwist(force, vel_global);
 
 % 4
-fprintf("[CASE] 4\n");
+fprintf("\n\n[CASE] 4\n");
 pose_2d = [0.0, 0.0, deg2rad(-90)];
 vel_local = [0.0, 0.0, 0.0];
 force = [+0.5, +0.25, 0.0];
 run('compute_twist_sim.m');
 assertTwist(force, vel_global);
-
 
 function [] = assertTwist(force, vel_global)
     % condition and message
