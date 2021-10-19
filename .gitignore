@@ -1,4 +1,5 @@
 # disable temporarily
+doc/
 include/hubero_local_planner/sfm/core/
 src/sfm/core/
 
