@@ -277,7 +277,7 @@ bool HuberoPlanner::compute(
 	std::vector<sfm::Distance>& meaningful_interaction_static,
 	std::vector<sfm::Distance>& meaningful_interaction_dynamic
 ) {
-	world_model_ = sfm::World(pose, vel_, goal_/*goal_local_*/, goal_);
+	world_model_ = sfm::World(pose, vel_, /*goal_*/goal_local_, goal_);
 	createEnvironmentModel(pose);
 
 	sfm_.computeSocialForce(
