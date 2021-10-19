@@ -18,6 +18,7 @@
 #define DEBUG_VERBOSE 1
 #define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
 #define debug_print_verbose(fmt, ...) _template_debug_print_basic_(DEBUG_VERBOSE, fmt, ##__VA_ARGS__)
+#define debug_print_warn(fmt, ...) _template_debug_print_warn_(1, fmt, ##__VA_ARGS__)
 
 //register this planner as a BaseLocalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(hubero_local_planner::HuberoPlannerROS, nav_core::BaseLocalPlanner)
@@ -246,76 +247,66 @@ void HuberoPlannerROS::computeTwist(
 	const double& max_rot_vel,
 	geometry_msgs::Twist& cmd_vel
 ) {
-	// orientation of the force vector in the odometry frame
-	Vector3 force_v(force[0], force[1], force[2]);
+	// convert 2D forces into robot forces with non-holonomic contraints
+	double yaw = tf::getYaw(pose.getRotation());
 
-	Angle angle_force_v(std::atan2(force_v.Normalized().Y(), force_v.Normalized().X()));
-	angle_force_v.Normalize();
-
+	// alias
 	double dt = sim_period;
 
-	// TODO: force to global velocity
+	// conversion
+	Vector3 force_v = Converter::toIgnVector(force);;
+
+	// global force affects global acceleration directly
 	Vector3 acc_v = force_v / robot_mass;
-	Vector3 vel_v(robot_vel_glob.linear.x, robot_vel_glob.linear.y, robot_vel_glob.angular.z);
-	Vector3 dvel_v = acc_v * dt;
-	Vector3 vel_v_new = vel_v + dvel_v;
-	Angle angle_vel_v_new(std::atan2(vel_v_new.Normalized().Y(), vel_v_new.Normalized().X()));
-	angle_vel_v_new.Normalize();
+	Vector3 vel_v_new = acc_v * dt;
 
-	Angle angle_diff(angle_vel_v_new/*angle_force_v*/ - tf::getYaw(pose.getRotation()));
-	angle_diff.Normalize();
+	// @url https://github.com/yinzixuan126/modified_dwa/blob/b379c01e37adc1f6414005750633b05e1a024ae5/iri_navigation/iri_akp_local_planner_companion/local_lib/src/scene_elements/robot.cpp#L91
+	// projection to robot pose (dot product)
+	double vv = +cos(yaw) * vel_v_new.X() + sin(yaw) * vel_v_new.Y();
+	// cross product theta x f
+	double vw = -sin(yaw) * vel_v_new.X() + cos(yaw) * vel_v_new.Y();
 
-	debug_print_verbose("force orient: %2.4f°, base link orient: %2.4f°, diff: %2.4f° \r\n",
-			angle_force_v.Degree(),
-			tf::getYaw(pose.getRotation()) * 180 / IGN_PI,
-			angle_diff.Degree()
+	// logging section
+	debug_print_verbose("force - x: %2.3f, y: %2.3f, th: %2.3f, mass - %2.3f\r\n",
+		force_v.X(), force_v.Y(), force_v.Z(), robot_mass
 	);
 
-	// TODO: publish velocity marker
+	debug_print_verbose("accel - x: %2.3f, y: %2.3f, th: %2.3f, vel - x: %2.3f, y: %2.3f, th: %2.3f\r\n",
+		acc_v.X(), acc_v.Y(), acc_v.Z(),
+		vel_v_new.X(), vel_v_new.Y(), vel_v_new.Z()
+	);
 
-	double lin_x = cos(angle_diff.Radian());
-	if (lin_x >= 0.0) {
-		cmd_vel.linear.x = max_vel_x * lin_x * dt;
-	} else {
-		// possibly apply negative velocity, based on `min_vel_x` parameter
-		// (if 0.0, then 0 linear velocity will be applied)
-		cmd_vel.linear.x = min_vel_x * (-lin_x) * dt;
-		debug_print_basic("reverse linear velocity applied to the base, linear.x: %2.3f (`min_vel_x`: %2.3f) \r\n",
-			cmd_vel.linear.x,
-			min_vel_x
+	debug_print_verbose("cmd_vel 'init'  - lin.x: %2.3f, ang.z: %2.3f\r\n", vv, vw);
+
+	// hard non-linearities section:
+	// check if within limits: try to maintain path, ignoring trajectory
+	if (vv > max_vel_x || vw > max_rot_vel) {
+		double excess_x = vv / max_vel_x;
+		double excess_z = vw / max_rot_vel;
+		double shortening_factor = 1 / std::max(excess_x, excess_z);
+		// shorten proportionally
+		vv *= shortening_factor;
+		vw *= shortening_factor;
+		debug_print_warn(
+			"Requested velocity not within limits! excess_x %2.3f, excess_z %2.3f, multiplier %2.3f"
+			"cmd_vel 'modded' lin.x: %2.3f, ang.z: %2.3f\r\n",
+			excess_x, excess_z, shortening_factor, vv, vw
 		);
 	}
 
-	// truncate linear component of velocity command
-	double result_lin_x = cmd_vel.linear.x;
-	cmd_vel.linear.x = std::min(
-		std::max(
-			min_vel_x,
-			cmd_vel.linear.x),
-		max_vel_x
-	);
-	if (result_lin_x != cmd_vel.linear.x) {
-		debug_print_basic("linear velocity truncated to `min_vel_x` (%2.3f) and `max_vel_x` (%2.3f) bounds from "
-			"%2.3f to %2.3f \r\n",
-			min_vel_x,
-			max_vel_x,
-			result_lin_x,
-			cmd_vel.linear.x
-		);
+	// trim minimum velocity to `min_vel_x`
+	if (vv < min_vel_x) {
+		vv = min_vel_x;
+		debug_print_warn("Requested velocity is smaller than min! 'modded' lin.x %2.3f\r\n", vv);
 	}
 
-	cmd_vel.angular.z = max_rot_vel * sin(angle_diff.Radian()) * dt;
-	// NOTE: for reversing angular velocity must be inverted (this allows robot to try
-	// to reach goal with pure reverse motion)
-	if (cmd_vel.linear.x < 0.0) {
-		//cmd_vel.angular.z *= -1.0;
-	}
+	// assign final values
+	cmd_vel.linear.x = vv;
+	cmd_vel.angular.z = vw;
 
-	debug_print_verbose("angular = %2.4f (max = %2.4f), linear = %2.4f (max = %2.4f) \r\n",
-			cmd_vel.angular.z,
-			max_rot_vel,
-			cmd_vel.linear.x,
-			max_vel_x
+	debug_print_verbose(
+		"cmd_vel 'final' - lin.x: %2.3f (min %2.3f, max %2.3f), ang.z: %2.3f (max %2.3f)\r\n",
+		cmd_vel.linear.x, min_vel_x, max_vel_x, cmd_vel.angular.z, max_rot_vel
 	);
 }
 

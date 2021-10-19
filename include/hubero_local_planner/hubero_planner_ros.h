@@ -87,7 +87,8 @@ public:
 	/**
 	 * @brief computeTwist's helper that actually performs all computations, explicitly taking necessary parameters
 	 *
-	 * @details Main reason to separate computeTwist from this helper method is unit testing
+	 * @details Converts 2D forces into robot forces with non-holonomic contraints.
+	 * Main reason to separate computeTwist from this helper method is unit testing
 	 */
 	static void computeTwist(
 		const tf::Stamped<tf::Pose>& pose,
