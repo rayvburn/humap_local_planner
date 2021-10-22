@@ -266,6 +266,11 @@ void HuberoPlannerROS::computeTwist(
 	// cross product theta x f
 	double vw = -sin(yaw) * vel_v_new.X() + cos(yaw) * vel_v_new.Y();
 
+	// EXPERIMENTAL
+	double ang_z_force_diff = std::atan2(force_v.Y(), force_v.X()) - yaw;
+    // strengthen rotation
+    vw += 0.6 * ang_z_force_diff;
+
 	// logging section
 	debug_print_verbose("force - x: %2.3f, y: %2.3f, th: %2.3f, mass - %2.3f\r\n",
 		force_v.X(), force_v.Y(), force_v.Z(), robot_mass
