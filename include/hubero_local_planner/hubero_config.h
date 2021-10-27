@@ -35,6 +35,7 @@ namespace hubero_local_planner {
 		double angular_sim_granularity						= 0.1;
 		double sim_period									= 0.2;
 		double forward_point_distance						= 0.5;
+		double twist_rotation_compensation					= 0.25;
 	};
 
 	/// \brief Declaration of an ActorParams typedef'ed struct;

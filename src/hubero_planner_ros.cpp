@@ -210,7 +210,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	// compute force exerted on the particle (robot)
 	Eigen::Vector3f force;
-	planner_->compute(robot_pose, robot_vel, robot_goal, obstacles_, force);
+	planner_->compute(robot_pose, robot_vel_glob, robot_goal, obstacles_, force);
 
 	computeTwist(robot_pose, force, robot_vel_glob, cmd_vel);
 
@@ -245,8 +245,16 @@ void HuberoPlannerROS::computeTwist(
 	const double& min_vel_x,
 	const double& max_vel_x,
 	const double& max_rot_vel,
+	const double& twist_rotation_compensation,
 	geometry_msgs::Twist& cmd_vel
 ) {
+	// no force - no movement (strain physical laws)
+	if (force.norm() <= 1e-08) {
+		cmd_vel.linear.x = 0.0;
+		cmd_vel.angular.z = 0.0;
+		return;
+	}
+
 	// convert 2D forces into robot forces with non-holonomic contraints
 	double yaw = tf::getYaw(pose.getRotation());
 
@@ -254,12 +262,14 @@ void HuberoPlannerROS::computeTwist(
 	double dt = sim_period;
 
 	// conversion
-	Vector3 force_v = Converter::toIgnVector(force);;
+	Vector3 force_v = Converter::toIgnVector(force);
+	Angle force_v_dir = std::atan2(force_v.Y(), force_v.X());
 
 	// global force affects global acceleration directly
 	Vector3 acc_v = force_v / robot_mass;
 	Vector3 vel_v_new = acc_v * dt;
 
+	// inverted rotation matrix expressed as 2 eqn
 	// @url https://github.com/yinzixuan126/modified_dwa/blob/b379c01e37adc1f6414005750633b05e1a024ae5/iri_navigation/iri_akp_local_planner_companion/local_lib/src/scene_elements/robot.cpp#L91
 	// projection to robot pose (dot product)
 	double vv = +cos(yaw) * vel_v_new.X() + sin(yaw) * vel_v_new.Y();
@@ -267,9 +277,10 @@ void HuberoPlannerROS::computeTwist(
 	double vw = -sin(yaw) * vel_v_new.X() + cos(yaw) * vel_v_new.Y();
 
 	// EXPERIMENTAL
-	double ang_z_force_diff = std::atan2(force_v.Y(), force_v.X()) - yaw;
+	Angle ang_z_force_diff(force_v_dir.Radian() - yaw);
+	ang_z_force_diff.Normalize();
     // strengthen rotation
-    vw += 0.6 * ang_z_force_diff;
+	double vw_mod = vw + twist_rotation_compensation * ang_z_force_diff.Radian();
 
 	// logging section
 	debug_print_verbose("force - x: %2.3f, y: %2.3f, th: %2.3f, mass - %2.3f\r\n",
@@ -549,6 +560,7 @@ void HuberoPlannerROS::computeTwist(
 		cfg_->getLimits()->min_vel_x,
 		cfg_->getLimits()->max_vel_x,
 		cfg_->getLimits()->max_rot_vel,
+		cfg_->getGeneral()->twist_rotation_compensation,
 		cmd_vel
 	);
 }
