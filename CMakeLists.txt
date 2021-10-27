@@ -203,18 +203,13 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 
 if (CATKIN_ENABLE_TESTING)
-  catkin_add_gtest(test_hubero_planner test/test_hubero_planner.cpp)
-  if(TARGET test_hubero_planner)
-     target_link_libraries(test_hubero_planner hubero_local_planner)
+  catkin_add_gtest(test_velocity_conversions test/test_velocity_conversions.cpp)
+  if(TARGET test_velocity_conversions)
+    target_link_libraries(test_velocity_conversions hubero_local_planner)
   endif()
 
-  catkin_add_gtest(test_robot_footprint_extension test/test_robot_footprint_model_extension.cpp)
-  if(TARGET test_robot_footprint_extension)
-    target_link_libraries(test_robot_footprint_extension hubero_local_planner)
-  endif()
-
-  catkin_add_gtest(test_pose_addition test/test_pose_addition.cpp)
-  if(TARGET test_pose_addition)
-    target_link_libraries(test_pose_addition hubero_local_planner)
+  catkin_add_gtest(test_world_generation test/test_world_generation.cpp)
+  if(TARGET test_world_generation)
+    target_link_libraries(test_world_generation hubero_local_planner)
   endif()
 endif()
