@@ -278,7 +278,7 @@ private:
 	/// This in turn can cause a very difference force vector
 	/// direction in 2 consecutive iterations.
 	/// \note This saves only each `Arg2`-th sample and stores `Arg1` samples
-	ShiftRegister<Vector3> sf_values_{25, 15};
+	ShiftRegister<Vector3> sf_values_{1, 0};
 
 	/// \section Section: Force vectors section
 	///
