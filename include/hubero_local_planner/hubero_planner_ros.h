@@ -99,6 +99,7 @@ public:
 		const double& min_vel_x,
 		const double& max_vel_x,
 		const double& max_rot_vel,
+		const double& twist_rotation_compensation,
 		geometry_msgs::Twist& cmd_vel
 	);
 

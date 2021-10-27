@@ -164,6 +164,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->sim_period = cfg.sim_period; // TODO: is this still useful?
 	general_->sim_time = cfg.sim_time;
 	general_->forward_point_distance = cfg.forward_point_distance;
+	general_->twist_rotation_compensation = cfg.twist_rotation_compensation;
 
 	sfm_->fov = cfg.fov;
 	sfm_->max_speed = cfg.max_speed;
