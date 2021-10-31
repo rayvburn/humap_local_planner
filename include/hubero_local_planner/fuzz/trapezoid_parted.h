@@ -8,8 +8,6 @@
 #ifndef INCLUDE_FUZZ_TRAPEZOIDPARTED_H_
 #define INCLUDE_FUZZ_TRAPEZOIDPARTED_H_
 
-#include <hubero_common/typedefs.h>
-
 #include <string>
 #include <stdint.h>
 #include <vector>

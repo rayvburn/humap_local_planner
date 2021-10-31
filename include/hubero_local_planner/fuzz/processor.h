@@ -11,7 +11,7 @@
 #include "fl/Headers.h"
 #include <hubero_local_planner/fuzz/trapezoid_loc_dep.h>
 #include <hubero_local_planner/fuzz/trapezoid_loc_indep.h>
-#include <hubero_common/typedefs.h>
+#include <hubero_local_planner/geometry/geometry.h>
 #include <vector>
 #include <tuple>
 #include <map>

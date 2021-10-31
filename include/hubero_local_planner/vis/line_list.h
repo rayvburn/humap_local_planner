@@ -25,17 +25,25 @@ public:
 	LineList();
 
 	/// \brief Method which wraps createLineList()
-	visualization_msgs::MarkerArray createArray(const std::vector<Pose3> &poses);
-	visualization_msgs::Marker create(const std::vector<Pose3> &poses);
+	visualization_msgs::MarkerArray createArray(const std::vector<hubero::geometry::Pose>& poses);
+	visualization_msgs::Marker create(const std::vector<hubero::geometry::Pose>& poses);
 
 	/// \brief Method that passes position components
 	/// of a poses to a createLineList() method which
-	/// takes Vector3
-	visualization_msgs::Marker create(const Pose3 &p1, const Pose3 &p2, const unsigned int &line_id) const;
+	/// takes hubero::geometry::Vector
+	visualization_msgs::Marker create(
+		const hubero::geometry::Pose& p1,
+		const hubero::geometry::Pose& p2,
+		const unsigned int& line_id
+	) const;
 
 	/// \brief Function that creates a line list;
 	/// each line could be created out of 2 points
-	visualization_msgs::Marker create(const Vector3 &p1, const Vector3 &p2, const unsigned int &line_id) const;
+	visualization_msgs::Marker create(
+		const hubero::geometry::Vector& p1,
+		const hubero::geometry::Vector& p2,
+		const unsigned int& line_id
+	) const;
 
 	/// \brief Default destructor
 	virtual ~LineList();

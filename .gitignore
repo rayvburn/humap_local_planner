@@ -18,3 +18,9 @@ debug/
 
 matlab/*.asv
 matlab/ignore/
+
+# WIP tests
+test/fuzzylite_test.cpp
+test/test_hubero_planner.cpp
+test/test_pose_addition.cpp
+test/test_robot_footprint_model_extension.cpp

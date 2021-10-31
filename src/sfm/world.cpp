@@ -10,35 +10,34 @@
 namespace sfm {
 
 World::World(
-		const Pose3& robot_pose_centroid,
-		const Pose3& robot_pose,
-		const Vector3& robot_vel,
-		const Pose3& target_pose,
-		const Pose3& goal_pose
+		const hubero::geometry::Pose& robot_pose_centroid,
+		const hubero::geometry::Pose& robot_pose,
+		const hubero::geometry::Vector& robot_vel,
+		const hubero::geometry::Pose& target_pose,
+		const hubero::geometry::Pose& goal_pose
 ) {
 	robot_.centroid = robot_pose_centroid;
 	robot_.vel = robot_vel;
-	robot_.heading_dir = std::atan2(robot_vel.Y(), robot_vel.X());
+	robot_.heading_dir = robot_vel.calculateDirection();
 
 	robot_.target = createTarget(robot_pose, target_pose);
 	robot_.goal = createTarget(robot_pose, goal_pose);
 }
 
 World::World(
-		const Pose3& robot_pose,
-		const Vector3& robot_vel,
-		const Pose3& target_pose,
-		const Pose3& goal_pose
-): World(robot_pose, robot_pose, robot_vel, target_pose, goal_pose) {
-}
+		const hubero::geometry::Pose& robot_pose,
+		const hubero::geometry::Vector& robot_vel,
+		const hubero::geometry::Pose& target_pose,
+		const hubero::geometry::Pose& goal_pose
+): World(robot_pose, robot_pose, robot_vel, target_pose, goal_pose) {}
 
 void World::addObstacle(
-		const Pose3& robot_pose_closest,
-		const Pose3& obstacle_pose_closest,
-		const Vector3& obstacle_vel,
+		const hubero::geometry::Pose& robot_pose_closest,
+		const hubero::geometry::Pose& obstacle_pose_closest,
+		const hubero::geometry::Vector& obstacle_vel,
 		bool force_dynamic_type
 ) {
-	if (force_dynamic_type || obstacle_vel.Length() > 1e-06) {
+	if (force_dynamic_type || obstacle_vel.calculateLength() > 1e-06) {
 		obstacle_dynamic_.push_back(
 			createObstacleDynamic(
 				robot_pose_closest,
@@ -55,9 +54,9 @@ void World::addObstacle(
 }
 
 void World::addObstacles(
-		const std::vector<Pose3>& robot_pose_closest,
-		const std::vector<Pose3>& obstacle_pose_closest,
-		const std::vector<Vector3>& obstacle_vel,
+		const std::vector<hubero::geometry::Pose>& robot_pose_closest,
+		const std::vector<hubero::geometry::Pose>& obstacle_pose_closest,
+		const std::vector<hubero::geometry::Vector>& obstacle_vel,
 		bool force_dynamic_type
 ) {
 	if ((robot_pose_closest.size() != obstacle_pose_closest.size())
@@ -76,51 +75,51 @@ void World::addObstacles(
 }
 
 StaticObject World::createObstacleStatic(
-		const Pose3& robot_pose_closest,
-		const Pose3& obstacle_pose_closest
+		const hubero::geometry::Pose& robot_pose_closest,
+		const hubero::geometry::Pose& obstacle_pose_closest
 ) const {
 	StaticObject obstacle;
 	obstacle.robot = robot_pose_closest;
 	obstacle.object = obstacle_pose_closest;
-	obstacle.dist_v = obstacle.object.Pos() - obstacle.robot.Pos();
+	obstacle.dist_v = hubero::geometry::Vector(obstacle.object.getPosition() - obstacle.robot.getPosition());
 	// NOTE: in SFM calculations it is assumed that all objects are in the actor's plane
-	obstacle.dist_v.Z(0.0);
-	obstacle.dist = obstacle.dist_v.Length();
+	obstacle.dist_v.setZ(0.0);
+	obstacle.dist = obstacle.dist_v.calculateLength();
 
 	return obstacle;
 }
 
-Target World::createTarget(const Pose3& robot_pose, const Pose3& target_pose) const {
+Target World::createTarget(const hubero::geometry::Pose& robot_pose, const hubero::geometry::Pose& target_pose) const {
 	Target target;
 	target.robot = robot_pose;
 	target.object = target_pose;
-	target.dist_v = target_pose.Pos() - robot_pose.Pos();
-	target.dist = target.dist_v.Length();
+	target.dist_v = hubero::geometry::Vector(target_pose.getPosition() - robot_pose.getPosition());
+	target.dist = target.dist_v.calculateLength();
 	return target;
 }
 
 DynamicObject World::createObstacleDynamic(
-		const Pose3& robot_pose_closest,
-		const Pose3& obstacle_pose_closest,
-		const Vector3& obstacle_vel
+		const hubero::geometry::Pose& robot_pose_closest,
+		const hubero::geometry::Pose& obstacle_pose_closest,
+		const hubero::geometry::Vector& obstacle_vel
 ) const {
 	DynamicObject obstacle;
 	obstacle.robot = robot_pose_closest;
 	obstacle.object = obstacle_pose_closest;
-	obstacle.dist_v = obstacle.object.Pos() - obstacle.robot.Pos();
+	obstacle.dist_v = hubero::geometry::Vector(obstacle.object.getPosition() - obstacle.robot.getPosition());
 	// it is assumed that all objects are located in the plane
-	obstacle.dist_v.Z(0.0);
-	obstacle.dist = obstacle.dist_v.Length();
+	obstacle.dist_v.setZ(0.0);
+	obstacle.dist = obstacle.dist_v.calculateLength();
 
-	Angle robot_yaw(robot_pose_closest.Rot().Yaw());
+	hubero::geometry::Angle robot_yaw(robot_pose_closest.getYaw());
 
 	RelativeLocation beta_rel_location = LOCATION_UNSPECIFIED;
-	double beta_angle_rel = 0.0;
-	double d_alpha_beta_angle = 0.0;
+	hubero::geometry::Angle beta_angle_rel;
+	hubero::geometry::Angle d_alpha_beta_angle;
 	computeObjectRelativeLocation(robot_yaw, obstacle.dist_v, beta_rel_location, beta_angle_rel, d_alpha_beta_angle);
 
 	obstacle.vel = obstacle_vel;
-	obstacle.dir_beta = std::atan2(obstacle.vel.Y(), obstacle.vel.X());
+	obstacle.dir_beta = obstacle_vel.calculateDirection();
 	obstacle.rel_loc = beta_rel_location;
 	obstacle.rel_loc_angle = beta_angle_rel;
 	obstacle.dist_angle = d_alpha_beta_angle;
@@ -129,40 +128,30 @@ DynamicObject World::createObstacleDynamic(
 }
 
 void World::computeObjectRelativeLocation(
-			const Angle &robot_yaw,
-			const Vector3 &d_alpha_beta,
+			const hubero::geometry::Angle& robot_yaw,
+			const hubero::geometry::Vector& d_alpha_beta,
 			RelativeLocation& beta_rel_location,
-			double& beta_angle_rel,
-			double& d_alpha_beta_angle
+			hubero::geometry::Angle &beta_angle_rel,
+			hubero::geometry::Angle &d_alpha_beta_angle
 ) const {
 	RelativeLocation rel_loc = LOCATION_UNSPECIFIED;
-	ignition::math::Angle angle_relative; 		// relative to actor's (alpha) direction
-	ignition::math::Angle angle_d_alpha_beta;	// stores yaw of d_alpha_beta
-
-	Vector3 d_alpha_beta_norm = d_alpha_beta;
-	d_alpha_beta_norm.Normalize();
-
-	// when normalized vector used with atan2 then division by euclidean distance not needed
-	angle_d_alpha_beta.Radian(std::atan2(d_alpha_beta_norm.Y(), d_alpha_beta_norm.X())); 	// V2
-	angle_d_alpha_beta.Normalize();
-
-	angle_relative.Radian(angle_d_alpha_beta.Radian() - robot_yaw.Radian());
-	angle_relative.Normalize(); // V4
+	hubero::geometry::Angle angle_d_alpha_beta(d_alpha_beta);				  // stores dir of d_alpha_beta
+	hubero::geometry::Angle angle_relative(angle_d_alpha_beta - robot_yaw); // relative to actor's (alpha) direction
 
 	/* SFM FRONT or SFM_BACK to be specific - added exponentially decreasing
 	 * interaction for objects that are behind so relative angle calculations
 	 * extended with close to Pi value case */
 	// TODO: static constexpr
-	if ( std::fabs(angle_relative.Radian()) <= IGN_DTOR(9) ||
-		 std::fabs(angle_relative.Radian()) >= (IGN_PI - IGN_DTOR(9)) ) {
+	if ( std::fabs(angle_relative.getRadian()) <= sfm::RELATIVE_LOCATION_FRONT_THRESHOLD ||
+		 std::fabs(angle_relative.getRadian()) >= (IGN_PI - sfm::RELATIVE_LOCATION_FRONT_THRESHOLD) ) {
 		rel_loc = LOCATION_FRONT;
 	/* // LOCATION_BEHIND DEPRECATED HERE
 	} else if (IsOutOfFOV(angle_relative.Radian())) { // consider FOV
 		rel_loc = LOCATION_BEHIND;
 	*/
-	} else if ( angle_relative.Radian() <= 0.0 ) { // 0.0 ) {
+	} else if ( angle_relative.getRadian() <= 0.0 ) { // 0.0 ) {
 		rel_loc = LOCATION_RIGHT;
-	} else if ( angle_relative.Radian() > 0.0 ) { // 0.0 ) {
+	} else if ( angle_relative.getRadian() > 0.0 ) { // 0.0 ) {
 		rel_loc = LOCATION_LEFT;
 	}
 
@@ -173,8 +162,8 @@ void World::computeObjectRelativeLocation(
 
 	// update outputs
 	beta_rel_location = rel_loc;
-	beta_angle_rel = angle_relative.Radian();
-	d_alpha_beta_angle = angle_d_alpha_beta.Radian();
+	beta_angle_rel = angle_relative;
+	d_alpha_beta_angle = angle_d_alpha_beta;
 }
 
 } /* namespace sfm */

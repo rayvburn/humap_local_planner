@@ -41,6 +41,9 @@
 #include <nav_msgs/Path.h>
 
 namespace hubero_local_planner {
+
+using namespace hubero::geometry;
+
 /**
  * @class HuberoPlanner
  * @brief A class implementing a local planner using the HuberoPlanner
@@ -49,20 +52,20 @@ class HuberoPlanner {
 public:
 	// both environmental and internal drivers
 	struct MotionDriverData {
-		Vector3 force_combined;
-		Vector3 force_internal;
-		Vector3 force_interaction;
-		Vector3 force_social;
-		std::vector<Pose3> closest_points;
+		Vector force_combined;
+		Vector force_internal;
+		Vector force_interaction;
+		Vector force_social;
+		std::vector<Pose> closest_points;
 		std::string behaviour_active;
 
 		MotionDriverData() {}
 		MotionDriverData(
-			const Vector3& force_combined,
-			const Vector3& force_internal,
-			const Vector3& force_interaction,
-			const Vector3& force_social,
-			const std::vector<Pose3>& closest_points,
+			const Vector& force_combined,
+			const Vector& force_internal,
+			const Vector& force_interaction,
+			const Vector& force_social,
+			const std::vector<Pose>& closest_points,
 			const std::string& behaviour_active):
 			force_combined(force_combined),
 			force_internal(force_internal),
@@ -92,23 +95,15 @@ public:
     void initialize(HuberoConfigConstPtr cfg);
 
     bool compute(
-    		const tf::Stamped<tf::Pose>& pose,
-			const geometry_msgs::Twist& velocity,
-			const tf::Stamped<tf::Pose>& goal,
+			const Pose& pose,
+			const Vector& velocity,
+			const Pose& goal,
 			const ObstContainerConstPtr obstacles,
-			Eigen::Vector3f& force
-	);
-
-    bool compute(
-			const Pose3& pose,
-			const Vector3& velocity,
-			const Pose3& goal,
-			const ObstContainerConstPtr obstacles,
-			Vector3& force
+			Vector& force
 	);
 
     // grid `visualization` version, ignores storing meaningful_interactions data
-    bool compute(const Pose3& pose, Vector3& force);
+    bool compute(const Pose& pose, Vector& force);
 
     bool plan();
 
@@ -125,7 +120,7 @@ public:
 		const Eigen::Vector3f vel_samples
 	);
 
-    Vector3 computeForce();
+    Vector computeForce();
 
 	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
@@ -218,13 +213,13 @@ public:
 		return robot_model_;
 	}
 
-	Pose3 getGoalLocal() const {
+	Pose getGoalLocal() const {
 		return goal_local_;
 	}
 
 private:
 	// fills up the world model with static and dynamic obstacles
-	void createEnvironmentModel(const Pose3& pose_ref);
+	void createEnvironmentModel(const Pose& pose_ref);
 
 	/**
 	 * @return True if given @ref goal_local_ was modified, False otherwise
@@ -232,8 +227,8 @@ private:
 	bool chooseGoalBasedOnGlobalPlan();
 
 	bool compute(
-		const Pose3& pose,
-		Vector3& force,
+		const Pose& pose,
+		Vector& force,
 		std::vector<sfm::Distance>& meaningful_interaction_static,
 		std::vector<sfm::Distance>& meaningful_interaction_dynamic
 	);
@@ -249,13 +244,13 @@ private:
 	/// @brief Parameters of the planner
 	HuberoConfigConstPtr cfg_;
 	/// @brief The most recent robot pose expressed in the planner's frame
-	Pose3 pose_;
+	Pose pose_;
 	/// @brief The most recent robot velocity expressed in the base frame
-	Vector3 vel_;
+	Vector vel_;
 	/// @brief Global goal expressed in the planner's frame
-	Pose3 goal_;
+	Pose goal_;
 	/// @brief Local goal expressed in the planner's frame
-	Pose3 goal_local_;
+	Pose goal_local_;
 	/// @brief The most recent environment (obstacles) model
 	ObstContainerConstPtr obstacles_;
 	/// @brief Robot footprint model

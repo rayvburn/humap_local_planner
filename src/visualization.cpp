@@ -53,7 +53,7 @@ void Visualization::reconfigure(const double& max_force) {
 	marker_force_grid_.setParameters(1.0, max_force);
 }
 
-bool Visualization::publishForceInternal(const Vector3& pos, const Vector3& force) {
+bool Visualization::publishForceInternal(const Vector& pos, const Vector& force) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -61,12 +61,12 @@ bool Visualization::publishForceInternal(const Vector3& pos, const Vector3& forc
 	// internal force vector - green
 	marker_force_.setNamespace("force_internal");
 	marker_force_.setColor(0.0f, 1.0f, 0.0f, 1.0f);
-	auto marker = marker_force_.create(Vector3(pos.X(), pos.Y(), marker_stack_height_ + 2 * MARKER_GAP), force);
+	auto marker = marker_force_.create(Vector(pos.getX(), pos.getY(), marker_stack_height_ + 2 * MARKER_GAP), force);
 	pub_marker_.publish(marker);
 
 	return true;
 }
-bool Visualization::publishForceInteraction(const Vector3& pos, const Vector3& force) {
+bool Visualization::publishForceInteraction(const Vector& pos, const Vector& force) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -74,12 +74,12 @@ bool Visualization::publishForceInteraction(const Vector3& pos, const Vector3& f
 	// interaction force vector - cyan
 	marker_force_.setNamespace("force_interaction");
 	marker_force_.setColor(0.0f, 0.8f, 1.0f, 1.0f);
-	auto marker = marker_force_.create(Vector3(pos.X(), pos.Y(), marker_stack_height_ + 3 * MARKER_GAP), force);
+	auto marker = marker_force_.create(Vector(pos.getX(), pos.getY(), marker_stack_height_ + 3 * MARKER_GAP), force);
 	pub_marker_.publish(marker);
 
 	return true;
 }
-bool Visualization::publishForceSocial(const Vector3& pos, const Vector3& force) {
+bool Visualization::publishForceSocial(const Vector& pos, const Vector& force) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -87,12 +87,12 @@ bool Visualization::publishForceSocial(const Vector3& pos, const Vector3& force)
 	// social force vector - orange
 	marker_force_.setNamespace("force_social");
 	marker_force_.setColor(1.0f, 0.6f, 0.0f, 1.0f);
-	auto marker = marker_force_.create(Vector3(pos.X(), pos.Y(), marker_stack_height_ + 4 * MARKER_GAP), force);
+	auto marker = marker_force_.create(Vector(pos.getX(), pos.getY(), marker_stack_height_ + 4 * MARKER_GAP), force);
 	pub_marker_.publish(marker);
 
 	return true;
 }
-bool Visualization::publishForceCombined(const Vector3& pos, const Vector3& force) {
+bool Visualization::publishForceCombined(const Vector& pos, const Vector& force) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -100,24 +100,24 @@ bool Visualization::publishForceCombined(const Vector3& pos, const Vector3& forc
 	// combined vector - red
 	marker_force_.setNamespace("force_combined");
 	marker_force_.setColor(1.0f, 0.0f, 0.0f, 1.0f);
-	auto marker = marker_force_.create(Vector3(pos.X(), pos.Y(), marker_stack_height_), force);
+	auto marker = marker_force_.create(Vector(pos.getX(), pos.getY(), marker_stack_height_), force);
 	pub_marker_.publish(marker);
 
 	return true;
 }
 
-bool Visualization::publishBehaviourActive(const Vector3& pos, const std::string& description) {
+bool Visualization::publishBehaviourActive(const Vector& pos, const std::string& description) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
 
 	marker_behaviour_.setNamespace("behaviour");
-	auto marker = marker_behaviour_.create(Vector3(pos.X(), pos.Y(), marker_stack_height_ + 7 * MARKER_GAP), description);
+	auto marker = marker_behaviour_.create(Vector(pos.getX(), pos.getY(), marker_stack_height_ + 7 * MARKER_GAP), description);
 	pub_marker_.publish(marker);
 	return true;
 }
 
-bool Visualization::publishClosestPoints(const std::vector<Pose3>& pts) {
+bool Visualization::publishClosestPoints(const std::vector<Pose>& pts) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -129,10 +129,10 @@ bool Visualization::publishClosestPoints(const std::vector<Pose3>& pts) {
 }
 
 bool Visualization::publishVelocity(
-		const Vector3& pos_start,
+		const Vector& pos_start,
 		const double& angle_lin,
 		const double& linear_x,
-		const Vector3& pos_lin_end,
+		const Vector& pos_lin_end,
 		const double& angle_ang,
 		const double& angular_z
 ) {
@@ -156,8 +156,8 @@ bool Visualization::publishVelocity(
 	marker.scale.z = 0.05;
 	marker.color = color;
 
-	marker.pose.position.x = pos_start.X();
-	marker.pose.position.y = pos_start.Y();
+	marker.pose.position.x = pos_start.getX();
+	marker.pose.position.y = pos_start.getY();
 	marker.pose.position.z = marker_stack_height_ - 1 * MARKER_GAP;
 
 	// convert to quaternion
@@ -172,8 +172,8 @@ bool Visualization::publishVelocity(
 
 	marker.scale.x = angular_z;
 
-	marker.pose.position.x = pos_lin_end.X();
-	marker.pose.position.y = pos_lin_end.Y();
+	marker.pose.position.x = pos_lin_end.getX();
+	marker.pose.position.y = pos_lin_end.getY();
 
 	Quaternion quaternion_ang(0.0, 0.0, angle_ang);
 	marker.pose.orientation.x = quaternion_ang.X();
@@ -188,21 +188,21 @@ bool Visualization::publishVelocity(
 	return true;
 }
 
-bool Visualization::publishPath(const Pose3& new_pos) {
+bool Visualization::publishPath(const Pose& new_pos) {
 	marker_path_.header.seq++;
 	marker_path_.header.stamp = ros::Time::now();
 
 	geometry_msgs::PoseStamped pose;
 	pose.header = marker_path_.header;
 
-	pose.pose.position.x = new_pos.Pos().X();
-	pose.pose.position.y = new_pos.Pos().Y();
-	pose.pose.position.z = new_pos.Pos().Z();
+	pose.pose.position.x = new_pos.getX();
+	pose.pose.position.y = new_pos.getY();
+	pose.pose.position.z = new_pos.getZ();
 
-	pose.pose.orientation.x = new_pos.Rot().X();
-	pose.pose.orientation.y = new_pos.Rot().Y();
-	pose.pose.orientation.z = new_pos.Rot().Z();
-	pose.pose.orientation.w = new_pos.Rot().W();
+	pose.pose.orientation.x = new_pos.getQuaternionX();
+	pose.pose.orientation.y = new_pos.getQuaternionY();
+	pose.pose.orientation.z = new_pos.getQuaternionZ();
+	pose.pose.orientation.w = new_pos.getQuaternionW();
 
 	marker_path_.poses.push_back(pose);
 
@@ -219,7 +219,7 @@ void Visualization::resetPath() {
 }
 
 bool Visualization::publishGrid(
-		const Pose3& pos_current,
+		const Pose& pos_current,
 		HuberoPlanner& planner
 ) {
 	if (pub_grid_.getNumSubscribers() == 0) {
@@ -227,17 +227,17 @@ bool Visualization::publishGrid(
 	}
 
 	// pose where `virtual` actor will be placed in
-	Pose3 pose;
+	Pose pose = pos_current;
 
 	marker_force_grid_.setNamespace("force_grid");
 
 	// grid dimensions similar to the local costmap's
 	marker_force_grid_.createGrid(
-			pos_current.Pos().X() - 2.0,
-			pos_current.Pos().X() + 2.0,
-			pos_current.Pos().Y() - 2.0,
-			pos_current.Pos().Y() + 2.0,
-			0.5
+		pos_current.getX() - 2.0,
+		pos_current.getX() + 2.0,
+		pos_current.getY() - 2.0,
+		pos_current.getY() + 2.0,
+		0.5
 	);
 
 	// before a start, reset a grid index
@@ -245,22 +245,22 @@ bool Visualization::publishGrid(
 
 	while (!marker_force_grid_.isWholeGridChecked()) {
 		// set an actor's virtual pose
-		pose = Pose3(marker_force_grid_.getNextGridElement(), pos_current.Rot());
+		pose.setPosition(marker_force_grid_.getNextGridElement());
 
 		// calculate social force for actor located in current pose hard-coded time delta
-		Vector3 force;
+		Vector force;
 
 		planner.compute(pose, force);
 
 		// pass a result to vector of grid forces
-		marker_force_grid_.addMarker(marker_force_grid_.create(pose.Pos(), force));
+		marker_force_grid_.addMarker(marker_force_grid_.create(pose.getPositionVector(), force));
 	}
 	pub_grid_.publish(marker_force_grid_.getMarkerArray());
 	return true;
 }
 
 bool Visualization::publishRobotFootprint(
-		const Pose3& pos_current,
+		const Pose& pos_current,
 		const RobotFootprintModelConstPtr footprint
 ) {
 	if (pub_marker_array_.getNumSubscribers() == 0) {
@@ -273,7 +273,7 @@ bool Visualization::publishRobotFootprint(
 	return true;
 }
 
-bool Visualization::publishGoalLocal(const Vector3& pos) {
+bool Visualization::publishGoalLocal(const Vector& pos) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -285,7 +285,7 @@ bool Visualization::publishGoalLocal(const Vector3& pos) {
 	return true;
 }
 
-bool Visualization::publishGoal(const Vector3& pos) {
+bool Visualization::publishGoal(const Vector& pos) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}

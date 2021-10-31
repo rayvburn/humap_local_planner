@@ -44,38 +44,11 @@ bool HuberoPlanner::checkTrajectory(
 }
 
 bool HuberoPlanner::compute(
-		const tf::Stamped<tf::Pose>& pose,
-		const geometry_msgs::Twist& velocity,
-		const tf::Stamped<tf::Pose>& goal,
+		const Pose& pose,
+		const Vector& velocity,
+		const Pose& goal,
 		const ObstContainerConstPtr obstacles,
-		Eigen::Vector3f& force
-) {
-	// NOTE: typical operations are available in `base_local_planner` ns as free functions
-	// base_local_planner::getGoalPose()
-	// NOTE: stick to ROS interface with base_local_planner functions,
-	// let Hubero Planner abstract from the actual tf conversions etc
-	//
-	Vector3 force_result;
-	bool status = compute(
-			Converter::toIgnPose(pose),
-			Converter::toIgnVector(velocity), // TODO angular velocity!
-			Converter::toIgnPose(goal),
-			obstacles,
-			force_result
-	);
-	force = Converter::toEigenV3<Eigen::Vector3f>(force_result);
-
-	// TODO: saturate
-
-	return true;
-}
-
-bool HuberoPlanner::compute(
-		const Pose3& pose,
-		const Vector3& velocity,
-		const Pose3& goal,
-		const ObstContainerConstPtr obstacles,
-		Vector3& force
+		Vector& force
 ) {
 	// assign, will likely be useful for planning
 	pose_ = pose;
@@ -114,7 +87,7 @@ bool HuberoPlanner::compute(
 	return true;
 }
 
-bool HuberoPlanner::compute(const Pose3& pose, Vector3& force) {
+bool HuberoPlanner::compute(const Pose& pose, Vector& force) {
 	std::vector<sfm::Distance> meaningful_interaction_static;
 	std::vector<sfm::Distance> meaningful_interaction_dynamic;
 	return compute(pose, force, meaningful_interaction_static, meaningful_interaction_dynamic);
@@ -124,8 +97,8 @@ bool HuberoPlanner::plan() {
 	return false;
 }
 
-Vector3 HuberoPlanner::computeForce() {
-	return Vector3();
+Vector HuberoPlanner::computeForce() {
+	return Vector();
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestPath(
@@ -194,32 +167,29 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 	return true;
 }
 
-void HuberoPlanner::createEnvironmentModel(const Pose3& pose_ref) {
-	teb_local_planner::PoseSE2 pose(pose_ref.Pos().X(), pose_ref.Pos().Y(), pose_ref.Rot().Yaw());
+void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
+	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
 
 	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles_) {
 		// TODO: consider actor personal space even when he is standing!
 
-		// basic
-		Pose3 robot_closest_to_obstacle_pose(pose.x(), pose.y(), 0.0, 0.0, 0.0, pose.theta());
-		Pose3 obstacle_closest_to_robot_pose;
-
 		BaseRobotFootprintModel::ClosestPoints pts = robot_model_->calculateClosestPoints(pose, obstacle.get());
 
-		robot_closest_to_obstacle_pose = Pose3(pts.robot.x(), pts.robot.y(), 0.0, 0.0, 0.0, pts.robot.theta());
-		obstacle_closest_to_robot_pose = Pose3(pts.obstacle.x(), pts.obstacle.y(), 0.0, 0.0, 0.0, pts.obstacle.theta());
+		Pose robot_closest_to_obstacle_pose(pts.robot);
+		Pose obstacle_closest_to_robot_pose(pts.obstacle);
 
+		// FIXME
 		auto distance_v_eig =
 				Eigen::Vector2d(
-					obstacle_closest_to_robot_pose.Pos().X(),
-					obstacle_closest_to_robot_pose.Pos().Y())
+					obstacle_closest_to_robot_pose.getX(),
+					obstacle_closest_to_robot_pose.getY())
 				- Eigen::Vector2d(
 					pose.x(),
 					pose.y()
 		);
-		Vector3 distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
+		Vector distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
 		double distance = obstacle->getMinimumDistance(Eigen::Vector2d(pose.x(), pose.y()));
-		Vector3 model_vel = Vector3((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
+		Vector model_vel = Vector((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
 
 		bool force_dynamic_object_interpretation =
 				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
@@ -233,13 +203,9 @@ void HuberoPlanner::createEnvironmentModel(const Pose3& pose_ref) {
 }
 
 bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
-	tf::Stamped<tf::Pose> pose_tf;
+	tf::Stamped<tf::Pose> pose_tf = pose_.getAsTfPose();
 	pose_tf.frame_id_ = planner_util_->getGlobalFrame();
 	pose_tf.stamp_ = ros::Time::now();
-	tf::Vector3 origin(pose_.Pos().X(), pose_.Pos().Y(), pose_.Pos().Z());
-	tf::Quaternion rot(pose_.Rot().X(), pose_.Rot().Y(), pose_.Rot().Z(), pose_.Rot().W());
-	pose_tf.setOrigin(origin);
-	pose_tf.setRotation(rot);
 
 	std::vector<geometry_msgs::PoseStamped> plan_local_pruned;
 	// this prunes plan if appropriate parameter is set
@@ -251,19 +217,11 @@ bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
 	if (plan_local_pruned.size() > 0) {
 		// find a point far enough so the social force can drive the robot towards instead of produce oscillations
 		for (const auto& pose_plan : plan_local_pruned) {
-			double dist_x = pose_plan.pose.position.x - pose_.Pos().X();
-			double dist_y = pose_plan.pose.position.y - pose_.Pos().Y();
+			double dist_x = pose_plan.pose.position.x - pose_.getX();
+			double dist_y = pose_plan.pose.position.y - pose_.getY();
 			double dist_sq = dist_x * dist_x + dist_y * dist_y;
 			if (dist_sq > cfg_->getGeneral()->forward_point_distance) {
-				goal_local_ = Pose3(
-					pose_plan.pose.position.x,
-					pose_plan.pose.position.y,
-					pose_plan.pose.position.z,
-					pose_plan.pose.orientation.x,
-					pose_plan.pose.orientation.y,
-					pose_plan.pose.orientation.z,
-					pose_plan.pose.orientation.w
-				);
+				goal_local_ = Pose(pose_plan.pose);
 				return true;
 			}
 		}
@@ -272,12 +230,12 @@ bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
 }
 
 bool HuberoPlanner::compute(
-	const Pose3& pose,
-	Vector3& force,
+	const Pose& pose,
+	Vector& force,
 	std::vector<sfm::Distance>& meaningful_interaction_static,
 	std::vector<sfm::Distance>& meaningful_interaction_dynamic
 ) {
-	world_model_ = sfm::World(pose, vel_, /*goal_*/goal_local_, goal_);
+	world_model_ = sfm::World(pose, vel_, goal_local_, goal_);
 	createEnvironmentModel(pose);
 
 	sfm_.computeSocialForce(
@@ -288,7 +246,7 @@ bool HuberoPlanner::compute(
 	);
 
 	// actual `social` vector
-	Vector3 human_action_force;
+	Vector human_action_force;
 
 	std::vector<sfm::StaticObject> objects_static = world_model_.getStaticObjectsData();
 	std::vector<sfm::DynamicObject> objects_dynamic = world_model_.getDynamicObjectsData();
@@ -308,12 +266,12 @@ bool HuberoPlanner::compute(
 		// set of lengths of vectors connecting \beta -s and \alpha -s
 		std::vector<double> dist_dynamic;
 		// \f$\alpha\f$'s direction of motion expressed in world coordinate system
-		double dir_alpha = world_model_.getRobotData().heading_dir;
+		double dir_alpha = world_model_.getRobotData().heading_dir.getRadian();
 
 		for (const sfm::DynamicObject& object: objects_dynamic) {
-			dir_beta_dynamic.push_back(object.dir_beta);
-			rel_loc_dynamic.push_back(object.rel_loc_angle);
-			dist_angle_dynamic.push_back(object.dist_angle);
+			dir_beta_dynamic.push_back(object.dir_beta.getRadian());
+			rel_loc_dynamic.push_back(object.rel_loc_angle.getRadian());
+			dist_angle_dynamic.push_back(object.dist_angle.getRadian());
 			dist_dynamic.push_back(object.dist);
 		}
 

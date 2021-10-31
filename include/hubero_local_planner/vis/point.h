@@ -15,8 +15,8 @@ namespace vis {
 class Point : public MarkerBase {
 public:
 	Point();
-	void setSize(const double &side_length);
-	virtual visualization_msgs::Marker create(const Vector3 &pos) const;
+	void setSize(const double& side_length);
+	virtual visualization_msgs::Marker create(const hubero::geometry::Vector& pos) const;
 	virtual ~Point() = default;
 
 protected:

@@ -17,7 +17,7 @@ HeatCell::HeatCell(): max_force_magnitude_(2000.0), min_force_magnitude_(250.0),
 
 // --------------------------------------------------------------
 
-void HeatCell::setParameters(const double &min_force_magnitude, const double &max_force_magnitude, const double &resolution) {
+void HeatCell::setParameters(const double& min_force_magnitude, const double& max_force_magnitude, const double& resolution) {
 
 	// range extended artificially (just in case of abnormal values)
 	min_force_magnitude_ = 0.8 * min_force_magnitude;
@@ -28,7 +28,7 @@ void HeatCell::setParameters(const double &min_force_magnitude, const double &ma
 
 // --------------------------------------------------------------
 
-visualization_msgs::Marker HeatCell::create(const Vector3 &pos, const double &force_magnitude) const {
+visualization_msgs::Marker HeatCell::create(const hubero::geometry::Vector& pos, const double& force_magnitude) const {
 
 	visualization_msgs::Marker marker;
 	// NOTE: header.stamp, ns, deprecated here
@@ -41,9 +41,9 @@ visualization_msgs::Marker HeatCell::create(const Vector3 &pos, const double &fo
 	marker.action = visualization_msgs::Marker::ADD;
 
 	// assign marker coordinates according to current point that is pointed by grid index
-	marker.pose.position.x = pos.X();
-	marker.pose.position.y = pos.Y();
-	marker.pose.position.z = pos.Z() + 0.1; // few cm above the `ground`
+	marker.pose.position.x = pos.getX();
+	marker.pose.position.y = pos.getY();
+	marker.pose.position.z = pos.getZ() + 0.1; // few cm above the `ground`
 
 	// default quaternion
 	ignition::math::Quaterniond quaternion(0.0, 0.0, 0.0);
@@ -79,7 +79,7 @@ HeatCell::~HeatCell() {}
 
 // --------------------------------------------------------------
 
-HeatCell::RgbColor HeatCell::HsvToRgb(const HsvColor &hsv) const {
+HeatCell::RgbColor HeatCell::HsvToRgb(const HsvColor& hsv) const {
 
 	RgbColor rgb;
 	unsigned char region, remainder, p, q, t;
@@ -127,7 +127,7 @@ HeatCell::RgbColor HeatCell::HsvToRgb(const HsvColor &hsv) const {
 
 // --------------------------------------------------------------
 
-HeatCell::HsvColor HeatCell::RgbToHsv(const RgbColor &rgb) const {
+HeatCell::HsvColor HeatCell::RgbToHsv(const RgbColor& rgb) const {
 
 	HsvColor hsv;
 	unsigned char rgbMin, rgbMax;
@@ -163,7 +163,7 @@ HeatCell::HsvColor HeatCell::RgbToHsv(const RgbColor &rgb) const {
 
 // --------------------------------------------------------------
 
-HeatCell::HsvColor HeatCell::convertMagnitudeToHSV(const double &magnitude) const {
+HeatCell::HsvColor HeatCell::convertMagnitudeToHSV(const double& magnitude) const {
 
 	// hsv color with components within the 0-255 range
 	HsvColor hsv;

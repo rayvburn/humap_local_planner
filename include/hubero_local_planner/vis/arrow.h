@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <hubero_common/typedefs.h>
 #include <hubero_local_planner/vis/marker_base.h>
 
 namespace vis {
@@ -24,14 +23,14 @@ public:
 	/// \param[in] SFM max force is a max allowable force
 	/// which SFM algorithm could return; used to scale
 	/// arrow's length
-	virtual void setParameters(const float &length_meters, const float &sfm_max_force);
+	virtual void setParameters(const float& length_meters, const float& sfm_max_force);
 
 	/// \brief Method that creates a simple arrow
 	/// of a previously set color
 	/// \param[in] Foothold of an arrow
 	/// \param[in] Force vector which is used to
 	/// determine a marker's orientation and length
-	virtual visualization_msgs::Marker create(const Vector3 &pos, const Vector3 &vector) const;
+	virtual visualization_msgs::Marker create(const hubero::geometry::Vector& pos, const hubero::geometry::Vector& vector) const;
 
 	/// \brief Default destructor
 	virtual ~Arrow();

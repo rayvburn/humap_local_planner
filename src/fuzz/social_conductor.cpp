@@ -16,18 +16,18 @@ SocialConductor::SocialConductor() {}
 
 // ------------------------------------------------------------------- //
 
-void SocialConductor::apply(const Vector3 &force_combined, const double &dir_alpha,
+void SocialConductor::apply(const Vector &force_combined, const double &dir_alpha,
 							const std::vector<double> &dist_v,
 							const std::vector<std::tuple<std::string, double> > &fuzz_output_v)
 {
 
 	// moved from reset
-	sf_result_ = Vector3();
+	sf_result_ = Vector();
 	behaviour_active_str_.clear();
 
 	this->setDirection(dir_alpha);
 	this->setForce(force_combined);
-	std::vector<Vector3> forces;
+	std::vector<Vector> forces;
 
 	for ( size_t i = 0; i < fuzz_output_v.size(); i++ ) {
 
@@ -107,12 +107,12 @@ void SocialConductor::apply(const Vector3 &force_combined, const double &dir_alp
 
 void SocialConductor::reset() {
 	behaviour_active_str_ = "idle";
-	sf_result_ = Vector3();
+	sf_result_ = Vector();
 }
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialConductor::getSocialVector() const {
+Vector SocialConductor::getSocialVector() const {
 	return (sf_result_);
 }
 
@@ -135,7 +135,7 @@ SocialConductor::~SocialConductor() { }
 
 // ------------------------------------------------------------------- //
 
-void SocialConductor::superpose(const std::vector<Vector3> &forces) {
+void SocialConductor::superpose(const std::vector<Vector> &forces) {
 
 	// save a max length of a component to know
 	// if there are few meaningful (i.e. non-zero length-ed)
@@ -146,10 +146,10 @@ void SocialConductor::superpose(const std::vector<Vector3> &forces) {
 
 	// TODO: add crowd support - actual superposition
 	// NOW: average value of vectors
-	Vector3 avg;
+	Vector avg;
 	for ( size_t i = 0; i < forces.size(); i++ ) {
 		avg += forces.at(i);
-		double len = forces.at(i).Length();
+		double len = forces.at(i).calculateLength();
 		if ( len > max_len ) { max_len = len; }
 	}
 	avg /= forces.size();
@@ -158,8 +158,8 @@ void SocialConductor::superpose(const std::vector<Vector3> &forces) {
 	sf_result_ = avg;
 
 	// check validity
-	if ( std::isnan(sf_result_.X()) || std::isnan(sf_result_.Y()) ) {
-		sf_result_ = Vector3();
+	if ( std::isnan(sf_result_.getX()) || std::isnan(sf_result_.getY()) ) {
+		sf_result_ = Vector();
 		max_len = 0.0;
 	}
 

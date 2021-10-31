@@ -28,7 +28,7 @@ public:
 	Grid();
 
 	/// \brief Creates a grid (std::vector
-	/// of an Vector3 instances)
+	/// of an Vector instances)
 	/// \note Method made virtual to allow derived classes
 	/// to perform some `initialization` operations
 	virtual void createGrid(const float &x_start, const float &x_end, const float &y_start, const float &y_end, const float &resolution);
@@ -48,7 +48,7 @@ public:
 	/// element using locally stored grid index;
 	/// NOTE: by invoking it twice one will omit
 	/// some grid points
-	Vector3 getNextGridElement();
+	hubero::geometry::Vector getNextGridElement();
 
 	/// \brief Sets grid index to 0; must be invoked after
 	/// each grid composition finish (or just before
@@ -65,7 +65,7 @@ public:
 private:
 
 	/// \brief A vector of grid points
-	std::vector<Vector3> grid_;
+	std::vector<hubero::geometry::Vector> grid_;
 
 	/// \brief Stores current grid point's index
 	/// in a vector

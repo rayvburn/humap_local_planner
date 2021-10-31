@@ -16,13 +16,13 @@ Text::Text(): text_size_(0.5) {}
 
 // ------------------------------------------------------------------- //
 
-void Text::setParameters(const float &text_size) {
+void Text::setParameters(const float& text_size) {
 	text_size_ = text_size;
 }
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Text::create(const ignition::math::Vector3d &pos, const int &number) const {
+visualization_msgs::Marker Text::create(const hubero::geometry::Vector& pos, const int& number) const {
 
 	return (create(pos, std::to_string(number)));
 
@@ -30,7 +30,7 @@ visualization_msgs::Marker Text::create(const ignition::math::Vector3d &pos, con
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Text::create(const ignition::math::Vector3d &pos, const std::string &text) const {
+visualization_msgs::Marker Text::create(const hubero::geometry::Vector& pos, const std::string& text) const {
 
 	visualization_msgs::Marker marker;
 
@@ -45,9 +45,9 @@ visualization_msgs::Marker Text::create(const ignition::math::Vector3d &pos, con
 	marker.action = visualization_msgs::Marker::ADD;
 
 	// assign marker coordinates according to current point that is pointed by grid index
-	marker.pose.position.x = pos.X();
-	marker.pose.position.y = pos.Y();
-	marker.pose.position.z = pos.Z();
+	marker.pose.position.x = pos.getX();
+	marker.pose.position.y = pos.getY();
+	marker.pose.position.z = pos.getZ();
 
 	// scale - height of the letter
 	marker.scale.z = text_size_;

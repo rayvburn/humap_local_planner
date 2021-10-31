@@ -15,7 +15,7 @@ LineList::LineList(): line_id_max_(0) {}
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray LineList::createArray(const std::vector<ignition::math::Pose3d> &poses) {
+visualization_msgs::MarkerArray LineList::createArray(const std::vector<hubero::geometry::Pose> &poses) {
 
 	visualization_msgs::MarkerArray array;
 
@@ -86,7 +86,7 @@ visualization_msgs::MarkerArray LineList::createArray(const std::vector<ignition
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker LineList::create(const std::vector<Pose3> &poses) {
+visualization_msgs::Marker LineList::create(const std::vector<hubero::geometry::Pose> &poses) {
 	visualization_msgs::Marker marker;
 
 	marker.header.frame_id = frame_;
@@ -103,9 +103,9 @@ visualization_msgs::Marker LineList::create(const std::vector<Pose3> &poses) {
 
 	geometry_msgs::Point pt;
 	for (const auto& pose: poses) {
-		pt.x = pose.Pos().X();
-		pt.y = pose.Pos().Y();
-		pt.z = pose.Pos().Z();
+		pt.x = pose.getX();
+		pt.y = pose.getY();
+		pt.z = pose.getZ();
 		marker.points.push_back(pt);
 	}
 	return marker;
@@ -113,13 +113,13 @@ visualization_msgs::Marker LineList::create(const std::vector<Pose3> &poses) {
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker LineList::create(const ignition::math::Pose3d &p1, const ignition::math::Pose3d &p2, const unsigned int &line_id) const {
-	return ( create(p1.Pos(), p2.Pos(), line_id) );
+visualization_msgs::Marker LineList::create(const hubero::geometry::Pose &p1, const hubero::geometry::Pose &p2, const unsigned int &line_id) const {
+	return ( create(p1.getPositionVector(), p2.getPositionVector(), line_id) );
 }
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker LineList::create(const ignition::math::Vector3d &p1, const ignition::math::Vector3d &p2, const unsigned int &line_id) const {
+visualization_msgs::Marker LineList::create(const hubero::geometry::Vector &p1, const hubero::geometry::Vector &p2, const unsigned int &line_id) const {
 
 	visualization_msgs::Marker marker;
 
@@ -141,14 +141,14 @@ visualization_msgs::Marker LineList::create(const ignition::math::Vector3d &p1, 
 
 	geometry_msgs::Point point;
 
-	point.x = p1.X();
-	point.y = p1.Y();
+	point.x = p1.getX();
+	point.y = p1.getY();
 	point.z = 0.0f;
 
 	marker.points.push_back(point);
 
-	point.x = p2.X();
-	point.y = p2.Y();
+	point.x = p2.getX();
+	point.y = p2.getY();
 	point.z = 0.0f;
 
 	marker.points.push_back(point);

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <hubero_common/typedefs.h>
+#include <hubero_local_planner/geometry/geometry.h>
 #include <hubero_common/shift_register.h>
 
 // environment obstacle representation
@@ -19,7 +19,7 @@
 #include <tuple>	// rel_loc
 #include <chrono>
 
-// Actor's data sto	rage
+using namespace hubero::geometry;
 
 // ----------------------------------------------------------------------------------------------- //
 /*
@@ -150,23 +150,23 @@ public:
 	);
 
 	/// \brief Returns internal force vector
-	inline Vector3 getForceInternal() const {
+	inline Vector getForceInternal() const {
 		return (force_internal_);
 	}
 	/// \brief Returns interaction force vector
-	inline Vector3 getForceInteraction() const {
+	inline Vector getForceInteraction() const {
 		return (force_interaction_);
 	}
 	/// \brief Returns combined force vector (internal
 	/// and interaction components summed up)
-	inline Vector3 getForceCombined() const {
+	inline Vector getForceCombined() const {
 		return (force_combined_);
 	}
 
 	/// \brief Default destructor
 	virtual ~SocialForceModel() = default;
 
-private:
+protected:
 
 	/// \brief Helper function which assigns randomly
 	/// generated numbers (with a proper mean and std. dev)
@@ -180,7 +180,10 @@ private:
 	/// \brief Helper function which calculates the internal force
 	/// term of an actor; this component describes a person's
 	/// motivation to reach its current goal
-	Vector3 computeInternalForce(const Robot& robot);
+	Vector computeInternalForce(const Robot& robot);
+
+	/// @ref computeInternalForce, static, parameterized version created for unit testing
+	static Vector computeInternalForce(const Vector& vel_robot, const Vector& d_robot_object, const double& mass, const double& speed_desired, const double& relaxation_time);
 
 	/// \brief Helper function which calculates interaction
 	/// force which another object (static or dynamic)
@@ -188,12 +191,12 @@ private:
 	/// Additionally, a distance vector to the currently
 	/// considered obstacle is returned as the tuple's second
 	/// element. Third element is a length of that vector.
-	Vector3 computeInteractionForce(const Robot& robot, const DynamicObject& object); // TODO: const?
+	Vector computeInteractionForce(const Robot& robot, const DynamicObject& object); // TODO: const?
 
 	/// \brief Helper function which computes a repulsive
 	/// force which static obstacle exerts on the actor;
 	/// fits 2014 configuration and used only in this case.
-	Vector3 computeInteractionForce(const Robot& robot, const StaticObject& object, const double &dt);
+	Vector computeInteractionForce(const Robot& robot, const StaticObject& object, const double &dt);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	// Section covering more of a geometry-related functions
@@ -203,7 +206,7 @@ private:
 	/// fits 2011 configuration, where this angle is defined
 	/// as: "an angle between velocity of pedestrian α and
 	/// the displacement of pedestrian β"
-	double computeThetaAlphaBetaAngle2011(const Robot& robot, const DynamicObject& object);
+	static Angle computeThetaAlphaBetaAngle2011(const Vector& robot_vel, const Vector& object_vel);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// fits 2014 configuration, where this angle is defined
@@ -212,14 +215,12 @@ private:
 	/// vector)
 	/// \[param in] d_alpha_beta - vector between objects
 	/// positions
-	double computeThetaAlphaBetaAngle2014(const Vector3 &n_alpha, const Vector3 &d_alpha_beta);
+	static Angle computeThetaAlphaBetaAngle2014(const Vector& n_alpha, const Vector& d_alpha_beta);
 
 	/// \brief Helper function which computes theta_αβ angle;
 	/// works only for dynamically moving actors -
 	/// NOT RECOMMENDED
-	double computeThetaAlphaBetaAngle(const ignition::math::Angle &actor_yaw,
-			const ignition::math::Angle &object_yaw
-	);
+	static Angle computeThetaAlphaBetaAngle(const Angle& actor_yaw, const Angle& object_yaw);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	/* Resultative vector components calculation - normal (n_alpha)
@@ -229,24 +230,35 @@ private:
 	/// that is normal to alpha's direction vector;
 	/// depending on the `parameter description` set
 	/// the vector is calculated differently
-	Vector3 computeNormalAlphaDirection(const ignition::math::Pose3d &actor_pose);
+	Vector computeNormalAlphaDirection(const Pose &actor_pose);
+
+	/// @ref computeNormalAlphaDirection, static, parameterized version created for unit testing
+	static Vector computeNormalAlphaDirection(const Angle &robot_yaw, ParameterDescription param_description);
 
 	/// \brief Helper function which takes a given n_alpha
 	/// vector and based on currently investigated object's
 	/// relative to the actor location calculates a perpendicular
 	/// to n_alpha vector
-	Vector3 computePerpendicularToNormal(const Vector3 &n_alpha,
+	Vector computePerpendicularToNormal(const Vector &n_alpha,
 			const RelativeLocation &beta_rel_location);
+
+	/// @ref computePerpendicularToNormal, static, parameterized version created for unit testing
+	static Vector computePerpendicularToNormal(
+			const Vector &n_alpha,
+			const RelativeLocation &beta_rel_location,
+			ParameterDescription param_description
+	);
 
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 	/* General functions section (still geometry-related) */
 	/// \brief Helper function which checks whether a given
 	/// angle is within actor's field of view bounds
-	inline bool isOutOfFOV(const double &angle_relative);
+	inline bool isOutOfFOV(const Angle& angle_relative);
 
 	/// \brief Helper function which calculates relative
 	/// speed based on 2 given velocity vectors
-	double computeRelativeSpeed(const Vector3 &actor_vel, const Vector3 &object_vel);
+	/// \details It assigns 0 to Z component of the vector (in case rotational velocity is stored there)
+	static double computeRelativeSpeed(const Vector& actor_vel, const Vector& object_vel);
 
 	/// \brief Multiplies force components by a factor parameters
 	/// and computes the combined force vector (summation).
@@ -278,21 +290,21 @@ private:
 	/// This in turn can cause a very difference force vector
 	/// direction in 2 consecutive iterations.
 	/// \note This saves only each `Arg2`-th sample and stores `Arg1` samples
-	ShiftRegister<Vector3> sf_values_{1, 0};
+	ShiftRegister<Vector> sf_values_{1, 0};
 
 	/// \section Section: Force vectors section
 	///
 	/// \brief Internal force vector (a.k.a. f_alpha)
-	Vector3 force_internal_;
+	Vector force_internal_;
 	///
 	/// \brief Interaction force vector created from
 	/// a set of single interactions from static and dynamic
 	/// obstacles (a.k.a sum of f_alpha_beta's)
-	Vector3 force_interaction_;
+	Vector force_interaction_;
 	///
 	/// \brief Result of summation of internal
 	/// and interaction force vectors.
-	Vector3 force_combined_;
+	Vector force_combined_;
 
 	/// \section Section: Social Force Model parameters
 	///

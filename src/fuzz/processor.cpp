@@ -8,6 +8,10 @@
 #include <hubero_local_planner/fuzz/regions.h>
 #include <hubero_local_planner/fuzz/processor.h>
 
+#include <hubero_local_planner/geometry/angle.h>
+
+using namespace hubero::geometry;
+
 // ------------------------------------------------------------------- //
 
 namespace fuzz {
@@ -268,8 +272,7 @@ void Processor::process() {
 
 		// calculate the gamma angle for the current alpha-beta configuration
 		Angle gamma(d_alpha_beta_angle_.at(i) - alpha_dir_ - beta_dir_.at(i));
-		gamma.Normalize();
-		direction_.setValue(fl::scalar(gamma.Radian()));
+		direction_.setValue(fl::scalar(gamma.getRadian()));
 
 		// execute fuzzy calculations
 		engine_.process();
@@ -332,9 +335,9 @@ Processor::~Processor() {}
 void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, const double &d_alpha_beta_angle, const double &rel_loc) {
 
 	// calculate threshold angle values, normalize
-	Angle gamma_eq(d_alpha_beta_angle - 2 * alpha_dir); gamma_eq.Normalize();
-	Angle gamma_opp(gamma_eq.Radian() - IGN_PI); 		gamma_opp.Normalize();
-	Angle gamma_cc(IGN_PI - alpha_dir);					gamma_cc.Normalize();
+	Angle gamma_eq(d_alpha_beta_angle - 2 * alpha_dir);
+	Angle gamma_opp(gamma_eq.getRadian() - IGN_PI);
+	Angle gamma_cc(IGN_PI - alpha_dir);
 
 	// compute relative location (`side`)
 	char side = decodeRelativeLocation(rel_loc); // decodeRelativeLocation(gamma_eq, gamma_opp, gamma_cc);
@@ -359,7 +362,7 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 	// - - - - - - print meaningful data
 	// calculate the gamma angle for the current alpha-beta configuration
 	// FIXME: debugging only
-	Angle gamma(d_alpha_beta_angle - alpha_dir - beta_dir);	gamma.Normalize();
+	Angle gamma(d_alpha_beta_angle - alpha_dir - beta_dir);
 
 #ifdef PROCESSOR_PRINT_DEBUG_INFO
 	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;

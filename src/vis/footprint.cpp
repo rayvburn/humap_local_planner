@@ -17,10 +17,10 @@ void Footprint::setHeight(const double& height) {
 }
 
 visualization_msgs::MarkerArray Footprint::create(
-		const Pose3& pos_current,
+		const hubero::geometry::Pose& pos_current,
 		const hubero_local_planner::RobotFootprintModelConstPtr footprint) const
 {
-	teb_local_planner::PoseSE2 pose(pos_current.Pos().X(), pos_current.Pos().Y(), pos_current.Rot().Yaw());
+	teb_local_planner::PoseSE2 pose = pos_current.getAsTebPose();
 	visualization_msgs::MarkerArray markers;
 	footprint->visualizeRobot(pose, markers.markers, color_);
 

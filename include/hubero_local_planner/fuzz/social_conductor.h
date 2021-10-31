@@ -9,8 +9,13 @@
 #define INCLUDE_FUZZ_SOCIALCONDUCTOR_H_
 
 #include <hubero_local_planner/fuzz/social_behaviours_db.h>
-#include <hubero_common/typedefs.h>
+#include <hubero_local_planner/geometry/vector.h>
+
 #include <vector>
+#include <string>
+#include <tuple>
+
+using namespace hubero::geometry;
 
 namespace fuzz {
 
@@ -32,7 +37,7 @@ public:
 	/// \brief Updates `actual` social force vector stored internally.
 	/// \param term_name is an output (verbose) of the defuzzification block
 	//
-	void apply(	const Vector3 &force_combined,	const double &dir_alpha,
+	void apply(	const Vector &force_combined,	const double &dir_alpha,
 				const std::vector<double> &dist_v, const std::vector<std::tuple<std::string, double> > &fuzz_output_v);
 
 	/// \brief Sets social vector and active behaviour to default values
@@ -40,7 +45,7 @@ public:
 
 	/// \brief Returns the superposed social force vector.
 	/// \return Superposed social force vector
-	Vector3 getSocialVector() const;
+	Vector getSocialVector() const;
 
 	/// \brief Returns the last active behaviour expressed in verbal way
 	/// \return
@@ -52,7 +57,7 @@ public:
 private:
 	/// \brief Social force vector (the actual `social`;
 	/// after superposition procedure)
-	Vector3 sf_result_;
+	Vector sf_result_;
 
 	/// \brief Stores active behaviour list as a string (each activated
 	/// behaviour is placed in a new line).
@@ -60,7 +65,7 @@ private:
 
 	/// \brief Calculates the superposed vector according to the summed one
 	/// considering truncation if its magnitude is too big.
-	void superpose(const std::vector<Vector3> &forces);
+	void superpose(const std::vector<Vector> &forces);
 
 	/// \brief Updates `behaviour_active_str_` according to its length
 	/// and given behaviour name (method argument)
