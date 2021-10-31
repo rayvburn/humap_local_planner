@@ -25,27 +25,27 @@ SocialBehavioursDb::~SocialBehavioursDb() { }
 // -------PROTECTED-MEMBERS-SECTION----------------------------------- //
 // ------------------------------------------------------------------- //
 // ------------------------------------------------------------------- //
-void SocialBehavioursDb::setDistance(const double &d_alpha_beta) {
+void SocialBehavioursDb::setDistance(const double& d_alpha_beta) {
 	d_alpha_beta_length_ = d_alpha_beta;
 }
 
  // ------------------------------------------------------------------- //
 
-void SocialBehavioursDb::setDirection(const double &dir) {
+void SocialBehavioursDb::setDirection(const double& dir) {
 	dir_alpha_ = dir;
 }
 
 // ------------------------------------------------------------------- //
 
-void SocialBehavioursDb::setForce(const Vector3 &force) {
+void SocialBehavioursDb::setForce(const Vector& force) {
 	force_ = force;
 }
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::turnLeft() {
+Vector SocialBehavioursDb::turnLeft() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// create desired force vector
 	double dir_rot = findOrientation(dir_alpha_, 'l');
@@ -66,9 +66,9 @@ Vector3 SocialBehavioursDb::turnLeft() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::turnLeftAccelerate() {
+Vector SocialBehavioursDb::turnLeftAccelerate() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// rotation section (turning)
 	double dir_rot = findOrientation(dir_alpha_, 'l');
@@ -89,18 +89,18 @@ Vector3 SocialBehavioursDb::turnLeftAccelerate() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::goAlong() {
+Vector SocialBehavioursDb::goAlong() {
 
 	// do nothing
-	return (Vector3());
+	return (Vector());
 
 }
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::accelerate() {
+Vector SocialBehavioursDb::accelerate() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// acceleration section
 	double magnitude = calculateVectorMagnitude(cfg_->accelerate);
@@ -116,9 +116,9 @@ Vector3 SocialBehavioursDb::accelerate() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::turnRightAccelerate() {
+Vector SocialBehavioursDb::turnRightAccelerate() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// rotation section (turning)
 	double dir_rot = findOrientation(dir_alpha_, 'r');
@@ -141,9 +141,9 @@ Vector3 SocialBehavioursDb::turnRightAccelerate() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::turnRight() {
+Vector SocialBehavioursDb::turnRight() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	double dir_rot = findOrientation(dir_alpha_, 'r');
 	force_beh = createDirVector(dir_rot);
@@ -161,9 +161,9 @@ Vector3 SocialBehavioursDb::turnRight() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::turnRightDecelerate() {
+Vector SocialBehavioursDb::turnRightDecelerate() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// rotation section (turning)
 	double dir_rot = findOrientation(dir_alpha_, 'r');
@@ -187,9 +187,9 @@ Vector3 SocialBehavioursDb::turnRightDecelerate() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::stop() {
+Vector SocialBehavioursDb::stop() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// TODO: resulting force vector is needed
 	double dir_rot = findOrientation(dir_alpha_, 'o');
@@ -208,9 +208,9 @@ Vector3 SocialBehavioursDb::stop() {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::decelerate() {
+Vector SocialBehavioursDb::decelerate() {
 
-	Vector3 force_beh;
+	Vector force_beh;
 
 	// acceleration section
 	double magnitude = calculateVectorMagnitude(cfg_->decelerate);
@@ -232,13 +232,13 @@ Vector3 SocialBehavioursDb::decelerate() {
 // -------PRIVATE-MEMBERS-SECTION------------------------------------- //
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::createDirVector(const double &direction) const {
+Vector SocialBehavioursDb::createDirVector(const double& direction) const {
 
 	// X = 1.0, Y = 0.0
-	Vector3 v;
-	v.X(cos(direction));
-	v.Y(sin(direction));
-	v.Z(0.0);
+	Vector v;
+	v.setX(cos(direction));
+	v.setY(sin(direction));
+	v.setZ(0.0);
 
 	return (v);
 
@@ -246,10 +246,10 @@ Vector3 SocialBehavioursDb::createDirVector(const double &direction) const {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::setVectorLength(const Vector3 &v,
-		const double &magnitude) const {
+Vector SocialBehavioursDb::setVectorLength(const Vector& v,
+		const double& magnitude) const {
 
-	Vector3 v_new = v.Normalized();
+	Vector v_new = v.normalized();
 	v_new *= magnitude;
 	return (v_new);
 
@@ -257,11 +257,11 @@ Vector3 SocialBehavioursDb::setVectorLength(const Vector3 &v,
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::extendVector(const Vector3 &v, const double &dir,
-		const double &magnitude) const {
+Vector SocialBehavioursDb::extendVector(const Vector& v, const double& dir,
+		const double& magnitude) const {
 
 	// create unit vector pointing in the direction according to `dir`
-	Vector3 v_ext = createDirVector(dir);
+	Vector v_ext = createDirVector(dir);
 
 	// extend the vector according to magnitude
 	v_ext *= magnitude;
@@ -273,26 +273,25 @@ Vector3 SocialBehavioursDb::extendVector(const Vector3 &v, const double &dir,
 
 // ------------------------------------------------------------------- //
 
-double SocialBehavioursDb::findOrientation(const double &dir, const char &side) const {
+double SocialBehavioursDb::findOrientation(const double& dir, const char& side) const {
 
 	Angle dir_new(dir);
 
 	if ( side == 'l' ) {			// LEFT
-		dir_new.Radian(dir_new.Radian() + IGN_PI_2);
+		dir_new.setRadian(dir_new.getRadian() + IGN_PI_2);
 	} else if ( side == 'r' ) {		// RIGHT
-		dir_new.Radian(dir_new.Radian() - IGN_PI_2);
+		dir_new.setRadian(dir_new.getRadian() - IGN_PI_2);
 	} else if ( side == 'o' ) {		// OPPOSITE
-		dir_new.Radian(dir_new.Radian() + IGN_PI);
+		dir_new.setRadian(dir_new.getRadian() + IGN_PI);
 	}
 
-	dir_new.Normalize();
-	return (dir_new.Radian());
+	return dir_new.getRadian();
 
 }
 
 // ------------------------------------------------------------------- //
 
-double SocialBehavioursDb::calculateVectorMagnitude(const double &max) const {
+double SocialBehavioursDb::calculateVectorMagnitude(const double& max) const {
 
 	const double X_SOCIAL_RANGE = 4.0; 					// in meters
 
@@ -310,20 +309,20 @@ double SocialBehavioursDb::calculateVectorMagnitude(const double &max) const {
 
 // ------------------------------------------------------------------- //
 
-Vector3 SocialBehavioursDb::assertForceDirection(const Vector3 &force_beh) const {
+Vector SocialBehavioursDb::assertForceDirection(const Vector& force_beh) const {
 
-	Vector3 result = force_beh + force_;
-	Vector3 force_beh_strengthened = force_beh;
+	Vector result = force_beh + force_;
+	Vector force_beh_strengthened = force_beh;
 	Angle angle_res;
 	Angle angle_beh;
 
 	for ( size_t i = 0; i < 10; i++ ) {
 
 		result = force_beh_strengthened + force_;
-		angle_res.Radian(std::atan2(result.Y(), result.X()));
-		angle_beh.Radian(std::atan2(force_beh.Y(), force_beh.X()));
+		angle_res = Angle(result);
+		angle_beh = Angle(force_beh);
 
-		if ( std::fabs(angle_res.Radian() - angle_beh.Radian()) < IGN_PI_2 ) {
+		if ( std::abs(angle_res.getRadian() - angle_beh.getRadian()) < IGN_PI_2 ) {
 			break;
 		} else {
 			force_beh_strengthened *= 1.20;

@@ -9,6 +9,8 @@
 #define INCLUDE_FUZZ_TRAPEZOIDLOCDEP_H_
 
 #include <hubero_local_planner/fuzz/trapezoid_parted.h>
+#include <hubero_local_planner/geometry/angle.h>
+using namespace hubero::geometry;
 
 namespace fuzz {
 
@@ -18,13 +20,14 @@ public:
 
 	TrapezoidLocDep(std::string name, double intersection_deg);
 
+	// FIXME: side as enum/use LOCATION
 	/// @brief TODO: some image needed to illustrate the situation
 	/// @param name
 	/// @param side
 	/// @param gamma_start
 	/// @param gamma_end
 	/// @return
-	bool update(const char &side, const Angle &gamma_start, const Angle &gamma_end);
+	bool update(const char &side, const Angle& gamma_start, const Angle& gamma_end);
 
 	virtual ~TrapezoidLocDep();
 

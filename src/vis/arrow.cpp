@@ -13,14 +13,14 @@ Arrow::Arrow(): max_length_(1.0f), sfm_max_force_(2000.0) {}
 
 // ------------------------------------------------------------------- //
 
-void Arrow::setParameters(const float &length_meters, const float &sfm_max_force) {
+void Arrow::setParameters(const float& length_meters, const float& sfm_max_force) {
 	max_length_ = length_meters;
 	sfm_max_force_ = sfm_max_force;
 }
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Arrow::create(const Vector3 &pos, const Vector3 &vector) const {
+visualization_msgs::Marker Arrow::create(const hubero::geometry::Vector& pos, const hubero::geometry::Vector& vector) const {
 
 	visualization_msgs::Marker marker;
 
@@ -35,16 +35,15 @@ visualization_msgs::Marker Arrow::create(const Vector3 &pos, const Vector3 &vect
 	marker.action = visualization_msgs::Marker::ADD;
 
 	// assign marker coordinates according to current point that is pointed by grid index
-	marker.pose.position.x = pos.X();
-	marker.pose.position.y = pos.Y();
-	marker.pose.position.z = pos.Z();
+	marker.pose.position.x = pos.getX();
+	marker.pose.position.y = pos.getY();
+	marker.pose.position.z = pos.getZ();
 
 	// marker orientation is based on force vector direction
-	ignition::math::Angle yaw(std::atan2(vector.Y(), vector.X()));
-	yaw.Normalize();
+	hubero::geometry::Angle yaw(vector);
 
 	// convert to quaternion
-	ignition::math::Quaterniond quaternion(0.0, 0.0, yaw.Radian());
+	ignition::math::Quaterniond quaternion(0.0, 0.0, yaw.getRadian());
 
 	marker.pose.orientation.x = quaternion.X();
 	marker.pose.orientation.y = quaternion.Y();
@@ -53,7 +52,7 @@ visualization_msgs::Marker Arrow::create(const Vector3 &pos, const Vector3 &vect
 
 	// scale
 	// arrow's length is calculated based on max allowable force `in SFM class`
-	double length = max_length_ * vector.Length() / sfm_max_force_;
+	double length = max_length_ * vector.calculateLength() / sfm_max_force_;
 	marker.scale.x = length > 0.001 ? length : 0.001;
 	marker.scale.y = 0.05;
 	marker.scale.z = 0.05;

@@ -13,11 +13,11 @@ Point::Point():
 	size_(0.1) {
 }
 
-void Point::setSize(const double &side_length) {
+void Point::setSize(const double& side_length) {
 	size_ = side_length;
 }
 
-visualization_msgs::Marker Point::create(const Vector3 &pos) const {
+visualization_msgs::Marker Point::create(const hubero::geometry::Vector& pos) const {
 	visualization_msgs::Marker marker;
 
 	// NOTE: header.stamp, ns, deprecated here
@@ -40,9 +40,9 @@ visualization_msgs::Marker Point::create(const Vector3 &pos) const {
 	marker.color = color_;
 
 	geometry_msgs::Point p;
-	p.x = pos.X();
-	p.y = pos.Y();
-	p.z = pos.Z();
+	p.x = pos.getX();
+	p.y = pos.getY();
+	p.z = pos.getZ();
 
 	marker.points.push_back(p);
 

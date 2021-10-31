@@ -8,11 +8,17 @@
 #ifndef INCLUDE_HUBERO_LOCAL_PLANNER_SFM_WORLD_H_
 #define INCLUDE_HUBERO_LOCAL_PLANNER_SFM_WORLD_H_
 
-#include <hubero_common/typedefs.h>
+// geometry
+#include <hubero_local_planner/geometry/vector.h>
+#include <hubero_local_planner/geometry/pose.h>
+#include <hubero_local_planner/geometry/angle.h>
+
 #include <utility>
 #include <vector>
 
 namespace sfm {
+
+static const double RELATIVE_LOCATION_FRONT_THRESHOLD = IGN_DTOR(9);
 
 typedef enum {
 	LOCATION_FRONT = 0,
@@ -23,10 +29,10 @@ typedef enum {
 } RelativeLocation;
 
 struct StaticObject {
-	Pose3 robot;
-	Pose3 object;
+	hubero::geometry::Pose robot;
+	hubero::geometry::Pose object;
 	/// \brief so called d_alpha_beta - vector connecting the object with a robot (closest points of theirs footprints)
-	Vector3 dist_v;
+	hubero::geometry::Vector dist_v;
 	/// \brief Distance to the robot (length of the `dist_v` vector)
 	double dist;
 
@@ -42,17 +48,17 @@ struct StaticObject {
 
 struct DynamicObject : StaticObject {
 	/// \brief Velocity vector of the object
-	Vector3 vel;
+	hubero::geometry::Vector vel;
 	/// \brief Direction of movement of the dynamic obstacles
-	double dir_beta;
+	hubero::geometry::Angle dir_beta;
 	///
 	/// \brief Relative (to the alpha) location of dynamic object
 	RelativeLocation rel_loc;
 	/// \brief Relative (to the alpha) location of dynamic object expressed as an angle
-	double rel_loc_angle;
+	hubero::geometry::Angle rel_loc_angle;
 	///
 	/// \brief Angle of a distance vector connecting alpha and beta closest points
-	double dist_angle;
+	hubero::geometry::Angle dist_angle;
 };
 
 // since contents are the same
@@ -60,21 +66,21 @@ typedef StaticObject Target;
 
 struct Robot {
 	/// @brief Pose of the centroid representing robot's footprint
-	Pose3 centroid;
+	hubero::geometry::Pose centroid;
 	/// @brief Velocity of the robot
-	Vector3 vel;
+	hubero::geometry::Vector vel;
 	/// @brief Stores target pose and pose of the robot's footprint that is closest to the target
 	Target target;
 	/// @brief Stores global goal pose and pose of the robot's footprint that is closest to the target
 	Target goal;
 	/// @brief Heading direction of the robot, can be either deducted from velocity or orientation
-	double heading_dir;
+	hubero::geometry::Angle heading_dir;
 };
 
 /// @brief Helper structure useful for marking closest points between robot and object
 struct Distance {
-	Pose3 robot;
-	Pose3 object;
+	hubero::geometry::Pose robot;
+	hubero::geometry::Pose object;
 };
 
 /**
@@ -97,11 +103,11 @@ public:
 	 * @param goal_pose: global goal pose
 	 */
 	World(
-			const Pose3& robot_pose_centroid,
-			const Pose3& robot_pose,
-			const Vector3& robot_vel,
-			const Pose3& target_pose,
-			const Pose3& goal_pose
+			const hubero::geometry::Pose& robot_pose_centroid,
+			const hubero::geometry::Pose& robot_pose,
+			const hubero::geometry::Vector& robot_vel,
+			const hubero::geometry::Pose& target_pose,
+			const hubero::geometry::Pose& goal_pose
 	);
 
 	/**
@@ -112,10 +118,10 @@ public:
 	 * @param goal_pose: global goal pose
 	 */
 	World(
-			const Pose3& robot_pose,
-			const Vector3& robot_vel,
-			const Pose3& target_pose,
-			const Pose3& goal_pose
+			const hubero::geometry::Pose& robot_pose,
+			const hubero::geometry::Vector& robot_vel,
+			const hubero::geometry::Pose& target_pose,
+			const hubero::geometry::Pose& goal_pose
 	);
 
 	/**
@@ -126,9 +132,9 @@ public:
 	 * @param force_dynamic_type: if set to True, obstacle interaction will be treated as dynamic one
 	 */
 	void addObstacle(
-			const Pose3& robot_pose_closest,
-			const Pose3& obstacle_pose_closest,
-			const Vector3& obstacle_vel,
+			const hubero::geometry::Pose& robot_pose_closest,
+			const hubero::geometry::Pose& obstacle_pose_closest,
+			const hubero::geometry::Vector& obstacle_vel,
 			bool force_dynamic_type = false
 	);
 
@@ -140,9 +146,9 @@ public:
 	 * @param force_dynamic_type: if set to True, obstacle interaction will be treated as dynamic one
 	 */
 	void addObstacles(
-			const std::vector<Pose3>& robot_pose_closest,
-			const std::vector<Pose3>& obstacle_pose_closest,
-			const std::vector<Vector3>& obstacle_vel,
+			const std::vector<hubero::geometry::Pose>& robot_pose_closest,
+			const std::vector<hubero::geometry::Pose>& obstacle_pose_closest,
+			const std::vector<hubero::geometry::Vector>& obstacle_vel,
 			bool force_dynamic_type = false
 	);
 
@@ -173,15 +179,15 @@ public:
 
 protected:
 	StaticObject createObstacleStatic(
-			const Pose3& robot_pose_closest,
-			const Pose3& obstacle_pose_closest
+			const hubero::geometry::Pose& robot_pose_closest,
+			const hubero::geometry::Pose& obstacle_pose_closest
 	) const;
 	DynamicObject createObstacleDynamic(
-			const Pose3& robot_pose_closest,
-			const Pose3& obstacle_pose_closest,
-			const Vector3& obstacle_vel
+			const hubero::geometry::Pose& robot_pose_closest,
+			const hubero::geometry::Pose& obstacle_pose_closest,
+			const hubero::geometry::Vector& obstacle_vel
 	) const;
-	Target createTarget(const Pose3& robot_pose, const Pose3& target_pose) const;
+	Target createTarget(const hubero::geometry::Pose& robot_pose, const hubero::geometry::Pose& target_pose) const;
 
 	/// \brief Helper function which calculates a relative
 	/// location of the investigated object based on actor's
@@ -192,11 +198,11 @@ protected:
 	/// - relative location expressed as an angle (radians)
 	/// - angle of the vector connecting \f$\alpha\f$ and \beta
 	void computeObjectRelativeLocation(
-			const Angle &actor_yaw,
-			const Vector3 &d_alpha_beta,
+			const hubero::geometry::Angle& actor_yaw,
+			const hubero::geometry::Vector& d_alpha_beta,
 			RelativeLocation& beta_rel_location,
-			double& beta_angle_rel,
-			double& d_alpha_beta_angle
+			hubero::geometry::Angle& beta_angle_rel,
+			hubero::geometry::Angle& d_alpha_beta_angle
 	) const;
 
 	/// @brief Stores pose of point that belongs to the robot's footprint that is closest to the target

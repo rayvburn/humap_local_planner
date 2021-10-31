@@ -85,22 +85,37 @@ public:
 	 * @{
 	 */
 	/**
+	 * Converts 2D forces into robot forces w/ holonomic contraints.
+	 */
+	static void computeTwistNonholonomic(
+		const Pose& pose,
+		const Vector& force,
+		const Vector& robot_vel_glob,
+		const double& sim_period,
+		const double& robot_mass,
+		const double& min_vel_x,
+		const double& max_vel_x,
+		const double& max_rot_vel,
+		Vector& cmd_vel
+	) {} // TODO
+
+	/**
 	 * @brief computeTwist's helper that actually performs all computations, explicitly taking necessary parameters
 	 *
 	 * @details Converts 2D forces into robot forces with non-holonomic contraints.
 	 * Main reason to separate computeTwist from this helper method is unit testing
 	 */
 	static void computeTwist(
-		const tf::Stamped<tf::Pose>& pose,
-		const Eigen::Vector3f& force,
-		const geometry_msgs::Twist& robot_vel_glob,
+		const Pose& pose,
+		const Vector& force,
+		const Vector& robot_vel_glob,
 		const double& sim_period,
 		const double& robot_mass,
 		const double& min_vel_x,
 		const double& max_vel_x,
 		const double& max_rot_vel,
 		const double& twist_rotation_compensation,
-		geometry_msgs::Twist& cmd_vel
+		Vector& cmd_vel
 	);
 
 	/**
@@ -111,9 +126,9 @@ public:
 	 * @param vel_global output
 	 */
 	static void computeVelocityGlobal(
-		const geometry_msgs::Twist& vel_local,
-		const tf::Stamped<tf::Pose>& pose,
-		geometry_msgs::Twist& vel_global
+		const Vector& vel_local,
+		const Pose& pose,
+		Vector& vel_global
 	);
 	/** @} */ // end of velocitytransformations
 
@@ -144,10 +159,10 @@ protected:
 	RobotFootprintModelPtr getRobotFootprintFromParamServer(const ros::NodeHandle& nh);
 
 	void computeTwist(
-		const tf::Stamped<tf::Pose>& pose,
-		const Eigen::Vector3f& force,
-		const geometry_msgs::Twist& robot_vel_glob,
-		geometry_msgs::Twist& cmd_vel
+		const Pose& pose,
+		const Vector& force,
+		const Vector& robot_vel_glob,
+		Vector& cmd_vel
 	) const;
 
 	/// @brief nav_core status

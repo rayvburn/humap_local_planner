@@ -131,7 +131,24 @@ set(HEADERS_CONFIG
     include/${PROJECT_NAME}/hubero_config.h
 )
 
+set(HEADERS_GEOMETRY
+    include/${PROJECT_NAME}/geometry/angle.h
+    # include/${PROJECT_NAME}/geometry/line.h
+    include/${PROJECT_NAME}/geometry/pose.h
+    include/${PROJECT_NAME}/geometry/vector.h
+)
+
+set(SOURCES_GEOMETRY
+    src/geometry/angle.cpp
+    src/geometry/pose.cpp
+    src/geometry/vector.cpp
+)
+
 ## Custom libraries
+### Geometry
+add_library(geometry ${HEADERS_GEOMETRY} ${SOURCES_GEOMETRY})
+target_link_libraries(geometry ${IGNITION-MATH_LIBRARIES})
+set_target_properties(geometry PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Config
 add_library(config ${HEADERS_CONFIG})
 set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
@@ -145,7 +162,7 @@ target_link_libraries(inflation ${IGNITION-MATH_LIBRARIES})
 set_target_properties(inflation PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### SFM
 add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
-target_link_libraries(sfm inflation config ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(sfm inflation config geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization - Helper library
 add_library(vis_helper ${HEADERS_VIS} ${SOURCES_VIS})
@@ -172,7 +189,7 @@ add_library(hubero_local_planner
     include/hubero_local_planner/utils/converter.h
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
 
 ## Executables
 add_executable(test_executable
@@ -211,5 +228,25 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_world_generation test/test_world_generation.cpp)
   if(TARGET test_world_generation)
     target_link_libraries(test_world_generation hubero_local_planner)
+  endif()
+
+  catkin_add_gtest(test_geometry_angle test/test_geometry_angle.cpp)
+  if(TARGET test_geometry_angle)
+    target_link_libraries(test_geometry_angle geometry)
+  endif()
+
+  catkin_add_gtest(test_geometry_pose test/test_geometry_pose.cpp)
+  if(TARGET test_geometry_pose)
+    target_link_libraries(test_geometry_pose geometry)
+  endif()
+
+  catkin_add_gtest(test_geometry_vector test/test_geometry_vector.cpp)
+  if(TARGET test_geometry_vector)
+    target_link_libraries(test_geometry_vector geometry)
+  endif()
+
+  catkin_add_gtest(test_sfm test/test_sfm.cpp)
+  if(TARGET test_sfm)
+    target_link_libraries(test_sfm sfm)
   endif()
 endif()

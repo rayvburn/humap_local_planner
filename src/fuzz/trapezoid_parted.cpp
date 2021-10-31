@@ -6,7 +6,10 @@
  */
 
 #include <hubero_local_planner/fuzz/trapezoid_parted.h>
+#include <hubero_local_planner/geometry/angle.h>
 #include <math.h> // fabs()
+
+using namespace hubero::geometry;
 
 namespace fuzz {
 
@@ -48,14 +51,14 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 	bool status = false;
 
 	// helper variables to perform initial tests
-	ignition::math::Angle a(start - intersection_);	a.Normalize(); // A is the first  vertex of the trapezoid
-	ignition::math::Angle d(end + intersection_);	d.Normalize(); // D is the fourth vertex of the trapezoid
+	Angle a(start - intersection_); // A is the first  vertex of the trapezoid
+	Angle d(end + intersection_); // D is the fourth vertex of the trapezoid
 
 	// check whether trapezoid's A vertex is located before (smaller than) the D vertex
-	if ( a.Radian() < d.Radian() ) {
+	if ( a.getRadian() < d.getRadian() ) {
 
 		// if below condition is met then full term is located within allowable bounds (in <-PI; +PI> range)
-		if ( a.Radian() >= (-IGN_PI) && d.Radian() <= (+IGN_PI) ) {
+		if ( a.getRadian() >= (-IGN_PI) && d.getRadian() <= (+IGN_PI) ) {
 
 			// normal operation - only single term's parameters must be found
 //			params += a.Radian(); 	params += " ";														// A
@@ -63,7 +66,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 //			gamma.Radian(end);		gamma.Normalize();		params += gamma.Radian(); 	params += " ";	// C
 //			params += d.Radian();	params += " ";														// D
 //			params += "1.0";																			// height
-			params = generateParams(a.Radian(), start, end, d.Radian(), 1.0);
+			params = generateParams(a.getRadian(), start, end, d.getRadian(), 1.0);
 
 		}
 
@@ -76,7 +79,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 
 		// find interval which contains +PI argument - it can be achieved
 		// via simple comparison of the 2 consecutive vertices locations
-		if ( a.Radian() >= start ) {
+		if ( a.getRadian() >= start ) {
 
 			// CASE 1: trapezoid's first part finishes somewhere between A and B vertices
 			//
@@ -87,7 +90,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 			// as long as the `INPUT VARIABLE` is always withing those bounds.
 
 			// firstly, find how much the B vertex goes out of +PI range (i.e. the value before normalization)
-			double wrap = std::fabs(-IGN_PI - start);
+			double wrap = std::abs(-IGN_PI - start);
 
 			// argument B vertex would have if range would not be limited
 			double b_out_range = IGN_PI + wrap;     // positive side case
@@ -97,37 +100,37 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 //			double height = findHeight('a', a.Radian(), b_out_range);
 
 			// first part's configuration (range artificially extended by 5 degrees)
-			params = generateParams(a.Radian(), b_out_range, b_out_range + IGN_DTOR(5.0), b_out_range + IGN_DTOR(5.0), 1.0);
+			params = generateParams(a.getRadian(), b_out_range, b_out_range + IGN_DTOR(5.0), b_out_range + IGN_DTOR(5.0), 1.0);
 
 			// consider negative side case now (wrap from the positive side to the negative one)
-			wrap = std::fabs(IGN_PI - start); // `wrap2` in notebook
+			wrap = std::abs(IGN_PI - start); // `wrap2` in notebook
 			double a_out_range = -IGN_PI - wrap;
 
 			// second part's configuration
-			params_wrap = generateParams(a_out_range, start, end, d.Radian(), 1.0);
+			params_wrap = generateParams(a_out_range, start, end, d.getRadian(), 1.0);
 
 
 
 		} else if ( start >= end ) {
 
 			// CASE 2: trapezoid's first part finishes somewhere between B and C vertices
-			params = generateParams(a.Radian(), start, +IGN_PI, +IGN_PI, 1.0);
+			params = generateParams(a.getRadian(), start, +IGN_PI, +IGN_PI, 1.0);
 
 			// find the distance which has been cut off (`end` is surely negative)
 			double cutoff = std::fabs(-IGN_PI - end); // TODO: is this needed?
 
 			// find the second part's configuration
 //			params_wrap = generateParams(-IGN_PI, -IGN_PI, cutoff, d.Radian(), 1.0); // TODO: ?
-			params_wrap = generateParams(-IGN_PI, -IGN_PI, end, d.Radian(), 1.0);
+			params_wrap = generateParams(-IGN_PI, -IGN_PI, end, d.getRadian(), 1.0);
 
 
 
-		} else if ( end >= d.Radian() ) {
+		} else if ( end >= d.getRadian() ) {
 
 			// CASE 3: trapezoid's first part finishes somewhere between C and D vertices
 			//
 			// firstly, find how much the D vertex goes out of +PI range (i.e. the value before normalization)
-			double wrap = std::fabs(-IGN_PI - d.Radian());
+			double wrap = std::fabs(-IGN_PI - d.getRadian());
 
 			// argument D vertex would have if range would not be limited
 			double d_out_range = IGN_PI + wrap;     // positive side case
@@ -137,7 +140,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 //			double height = findHeight('a', a.Radian(), d_out_range);
 
 			// first part's configuration (range artificially extended by 5 degree)
-			params = generateParams(a.Radian(), start, end, d_out_range, 1.0);
+			params = generateParams(a.getRadian(), start, end, d_out_range, 1.0);
 
 			// consider negative side case now (wrap from the positive side to the negative one)
 			//
@@ -146,7 +149,7 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 			double c_out_range = -IGN_PI - wrap;
 
 			// second part's configuration
-			params_wrap = generateParams(c_out_range - IGN_DTOR(5.0), c_out_range - IGN_DTOR(5.0), c_out_range, d.Radian(), 1.0);
+			params_wrap = generateParams(c_out_range - IGN_DTOR(5.0), c_out_range - IGN_DTOR(5.0), c_out_range, d.getRadian(), 1.0);
 
 		}
 		status = true;

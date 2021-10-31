@@ -39,9 +39,9 @@ void Grid::createGrid(const float &x_start, const float &x_end, const float &y_s
 	}
 
 	// according to resolution, create grid (measurement) points within selected bounds
-	for ( float x = x_start_temp; x <= x_end_temp; x += std::fabs(resolution) ) {
-		for ( float y = y_start_temp; y <= y_end_temp; y += std::fabs(resolution) ) {
-			grid_.push_back( Vector3(static_cast<double>(x), static_cast<double>(y), 0.0) );
+	for ( float x = x_start_temp; x <= x_end_temp; x += std::abs(resolution) ) {
+		for ( float y = y_start_temp; y <= y_end_temp; y += std::abs(resolution) ) {
+			grid_.push_back( hubero::geometry::Vector(x, y, 0.0) );
 		}
 	}
 
@@ -75,7 +75,7 @@ bool Grid::isWholeGridChecked() const {
 
 // ------------------------------------------------------------------- //
 
-Vector3 Grid::getNextGridElement() {
+hubero::geometry::Vector Grid::getNextGridElement() {
 	grid_index_++;
 	return ( grid_.at(grid_index_ - 1) );
 }

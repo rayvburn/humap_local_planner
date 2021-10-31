@@ -10,8 +10,8 @@
 // C++ STL libraries
 #include <string>
 
-// ignition libraries
-#include <hubero_common/typedefs.h>
+// geometry libraries
+#include <hubero_local_planner/geometry/geometry.h>
 
 // ROS libraries
 #include <std_msgs/ColorRGBA.h>

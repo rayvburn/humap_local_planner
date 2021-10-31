@@ -9,6 +9,8 @@
 #define INCLUDE_FUZZ_TRAPEZOIDLOCINDEP_H_
 
 #include <hubero_local_planner/fuzz/trapezoid_parted.h>
+#include <hubero_local_planner/geometry/angle.h>
+using namespace hubero::geometry;
 
 namespace fuzz {
 
@@ -25,7 +27,7 @@ public:
 	///
 	/// @param gamma_center
 	/// @return
-	bool update(const Angle &gamma_center);
+	bool update(const Angle& gamma_center);
 
 //	bool update
 

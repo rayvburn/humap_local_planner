@@ -166,70 +166,68 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// retrieve environment information and pass them to the HuBeRo planner
 
 	// Get robot pose
-	tf::Stamped<tf::Pose> robot_pose;
-	costmap_ros_->getRobotPose(robot_pose);
-	debug_print_verbose("pose: x %2.4f / y %2.4f / z %2.4f / Rx %2.4f, Ry %2.4f, Rz %2.4f, Rw %2.4f | frame: %s \r\n",
-		robot_pose.getOrigin().x(),
-		robot_pose.getOrigin().y(),
-		robot_pose.getOrigin().z(),
-		robot_pose.getRotation().x(),
-		robot_pose.getRotation().y(),
-		robot_pose.getRotation().z(),
-		robot_pose.getRotation().w(),
+	tf::Stamped<tf::Pose> robot_pose_tf;
+	costmap_ros_->getRobotPose(robot_pose_tf);
+	Pose robot_pose(robot_pose_tf);
+	debug_print_verbose("pose: x %2.4f / y %2.4f / z %2.4f / Rr %2.4f, Rp %2.4f, Ry %2.4f | frame: %s \r\n",
+		robot_pose.getX(),
+		robot_pose.getY(),
+		robot_pose.getZ(),
+		robot_pose.getRoll(),
+		robot_pose.getPitch(),
+		robot_pose.getYaw(),
 		costmap_ros_->getGlobalFrameID().c_str()
 	);
 
 	// Get robot velocity
 	tf::Stamped<tf::Pose> robot_vel_tf;
 	odom_helper_.getRobotVel(robot_vel_tf);
-	geometry_msgs::Twist robot_vel;
-	robot_vel.linear.x = robot_vel_tf.getOrigin().getX();
-	robot_vel.linear.y = robot_vel_tf.getOrigin().getY();
-	robot_vel.angular.z = tf::getYaw(robot_vel_tf.getRotation());
+	Vector robot_vel(robot_vel_tf);
 	debug_print_verbose("vel: x %2.4f / y %2.4f / yaw %2.4f \r\n",
-		robot_vel.linear.x,
-		robot_vel.linear.y,
-		robot_vel.angular.z
+		robot_vel.getX(),
+		robot_vel.getY(),
+		robot_vel.getZ()
 	);
 
 	// Get robot goal
-	tf::Stamped<tf::Pose> robot_goal;
-	planner_util_->getGoal(robot_goal);
+	tf::Stamped<tf::Pose> robot_goal_tf;
+	planner_util_->getGoal(robot_goal_tf);
+	Pose robot_goal(robot_goal_tf);
 	debug_print_verbose("goal: x %2.4f / y %2.4f / yaw %2.4f | frame: %s \r\n",
-			robot_goal.getOrigin().x(),
-			robot_goal.getOrigin().y(),
-			tf::getYaw(robot_goal.getRotation()),
-			robot_goal.frame_id_.c_str()
+			robot_goal.getX(),
+			robot_goal.getY(),
+			robot_goal.getYaw(),
+			robot_goal_tf.frame_id_.c_str()
 	);
 
 	// prepare obstacles
 	updateObstacleContainerWithCostmapConverter();
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
-	geometry_msgs::Twist robot_vel_glob;
+	Vector robot_vel_glob;
 	computeVelocityGlobal(robot_vel, robot_pose, robot_vel_glob);
 
 	// compute force exerted on the particle (robot)
-	Eigen::Vector3f force;
+	Vector force;
 	planner_->compute(robot_pose, robot_vel_glob, robot_goal, obstacles_, force);
 
-	computeTwist(robot_pose, force, robot_vel_glob, cmd_vel);
+	Vector velocity_cmd;
+	computeTwist(robot_pose, force, robot_vel_glob, velocity_cmd);
+	cmd_vel = velocity_cmd.getAsTwist();
 
 	// visualization
 	auto vis_data = planner_->getMotionData();
-	Pose3 pose = Converter::toIgnPose(robot_pose);
-	Pose3 goal = Converter::toIgnPose(robot_goal);
 
-	vis_.publishForceInternal(pose.Pos(), vis_data.force_internal);
-	vis_.publishForceInteraction(pose.Pos(), vis_data.force_interaction);
-	vis_.publishForceSocial(pose.Pos(), vis_data.force_social);
-	vis_.publishForceCombined(pose.Pos(), vis_data.force_combined);
-	vis_.publishBehaviourActive(pose.Pos(), vis_data.behaviour_active);
+	vis_.publishForceInternal(robot_pose.getPositionVector(), vis_data.force_internal);
+	vis_.publishForceInteraction(robot_pose.getPositionVector(), vis_data.force_interaction);
+	vis_.publishForceSocial(robot_pose.getPositionVector(), vis_data.force_social);
+	vis_.publishForceCombined(robot_pose.getPositionVector(), vis_data.force_combined);
+	vis_.publishBehaviourActive(robot_pose.getPositionVector(), vis_data.behaviour_active);
 	vis_.publishClosestPoints(vis_data.closest_points);
-	vis_.publishPath(pose);
-	vis_.publishGrid(pose, *planner_);
-	vis_.publishRobotFootprint(pose, planner_->getRobotFootprintModel());
-	vis_.publishGoal(goal.Pos());
-	vis_.publishGoalLocal(planner_->getGoalLocal().Pos());
+	vis_.publishPath(robot_pose);
+	vis_.publishGrid(robot_pose, *planner_);
+	vis_.publishRobotFootprint(robot_pose, planner_->getRobotFootprintModel());
+	vis_.publishGoal(robot_goal.getPositionVector());
+	vis_.publishGoalLocal(planner_->getGoalLocal().getPositionVector());
 
 	//publishLocalPlan(/*TODO*/);
 	publishGlobalPlan(global_plan_);
@@ -237,59 +235,56 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 }
 
 void HuberoPlannerROS::computeTwist(
-	const tf::Stamped<tf::Pose>& pose,
-	const Eigen::Vector3f& force,
-	const geometry_msgs::Twist& robot_vel_glob,
+	const Pose& pose,
+	const Vector& force,
+	const Vector& robot_vel_glob,
 	const double& sim_period,
 	const double& robot_mass,
 	const double& min_vel_x,
 	const double& max_vel_x,
 	const double& max_rot_vel,
 	const double& twist_rotation_compensation,
-	geometry_msgs::Twist& cmd_vel
+	Vector& cmd_vel
 ) {
 	// no force - no movement (strain physical laws)
-	if (force.norm() <= 1e-08) {
-		cmd_vel.linear.x = 0.0;
-		cmd_vel.angular.z = 0.0;
+	if (force.calculateLength() <= 1e-08) {
+		cmd_vel = Vector(0.0, 0.0, 0.0);
 		return;
 	}
 
 	// convert 2D forces into robot forces with non-holonomic contraints
-	double yaw = tf::getYaw(pose.getRotation());
+	double yaw = pose.getYaw();
 
 	// alias
 	double dt = sim_period;
 
 	// conversion
-	Vector3 force_v = Converter::toIgnVector(force);
-	Angle force_v_dir = std::atan2(force_v.Y(), force_v.X());
+	Angle force_dir(force);
 
 	// global force affects global acceleration directly
-	Vector3 acc_v = force_v / robot_mass;
-	Vector3 vel_v_new = acc_v * dt;
+	Vector acc_v = force / robot_mass;
+	Vector vel_v_new = acc_v * dt;
 
 	// inverted rotation matrix expressed as 2 eqn
 	// @url https://github.com/yinzixuan126/modified_dwa/blob/b379c01e37adc1f6414005750633b05e1a024ae5/iri_navigation/iri_akp_local_planner_companion/local_lib/src/scene_elements/robot.cpp#L91
 	// projection to robot pose (dot product)
-	double vv = +cos(yaw) * vel_v_new.X() + sin(yaw) * vel_v_new.Y();
+	double vv = +cos(yaw) * vel_v_new.getX() + sin(yaw) * vel_v_new.getY();
 	// cross product theta x f
-	double vw = -sin(yaw) * vel_v_new.X() + cos(yaw) * vel_v_new.Y();
+	double vw = -sin(yaw) * vel_v_new.getX() + cos(yaw) * vel_v_new.getY();
 
 	// EXPERIMENTAL
-	Angle ang_z_force_diff(force_v_dir.Radian() - yaw);
-	ang_z_force_diff.Normalize();
+	Angle ang_z_force_diff(force_dir.getRadian() - yaw);
     // strengthen rotation
-	double vw_mod = vw + twist_rotation_compensation * ang_z_force_diff.Radian();
+	double vw_mod = vw + twist_rotation_compensation * ang_z_force_diff.getRadian();
 
 	// logging section
 	debug_print_verbose("force - x: %2.3f, y: %2.3f, th: %2.3f, mass - %2.3f\r\n",
-		force_v.X(), force_v.Y(), force_v.Z(), robot_mass
+		force.getX(), force.getY(), force.getZ(), robot_mass
 	);
 
 	debug_print_verbose("accel - x: %2.3f, y: %2.3f, th: %2.3f, vel - x: %2.3f, y: %2.3f, th: %2.3f\r\n",
-		acc_v.X(), acc_v.Y(), acc_v.Z(),
-		vel_v_new.X(), vel_v_new.Y(), vel_v_new.Z()
+		acc_v.getX(), acc_v.getY(), acc_v.getZ(),
+		vel_v_new.getX(), vel_v_new.getY(), vel_v_new.getZ()
 	);
 
 	debug_print_verbose("cmd_vel 'init'  - lin.x: %2.3f, ang.z: %2.3f\r\n", vv, vw);
@@ -317,50 +312,47 @@ void HuberoPlannerROS::computeTwist(
 	}
 
 	// assign final values
-	cmd_vel.linear.x = vv;
-	cmd_vel.angular.z = vw;
+	cmd_vel.setX(vv);
+	cmd_vel.setY(0.0);
+	cmd_vel.setZ(vw);
 
 	debug_print_verbose(
 		"cmd_vel 'final' - lin.x: %2.3f (min %2.3f, max %2.3f), ang.z: %2.3f (max %2.3f)\r\n",
-		cmd_vel.linear.x, min_vel_x, max_vel_x, cmd_vel.angular.z, max_rot_vel
+		cmd_vel.getX(), min_vel_x, max_vel_x, cmd_vel.getZ(), max_rot_vel
 	);
 }
 
 void HuberoPlannerROS::computeVelocityGlobal(
-		const geometry_msgs::Twist& vel_local,
-		const tf::Stamped<tf::Pose>& pose,
-		geometry_msgs::Twist& vel_global
+		const Vector& vel_local,
+		const Pose& pose,
+		Vector& vel_global
 ) {
 	// slide 38 at https://www.cs.princeton.edu/courses/archive/fall11/cos495/COS495-Lecture3-RobotMotion.pdf
-	double yaw = tf::getYaw(pose.getRotation());
+	double yaw = pose.getYaw();
 	Eigen::Matrix3d rotation_yaw_inv;
 	// create a rotation matrix
 	rotation_yaw_inv <<
 		cos(yaw), 0, 0,
 		sin(yaw), 0, 0,
 		0, 0, 1;
-	// convert to Eigen Vector
-	Eigen::Vector3d vel_local_eigen(vel_local.linear.x, vel_local.linear.y, vel_local.angular.z);
 	// compute global velocity vector
-	Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local_eigen;
+	Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local.getAsEigen();
 	// prepare twist expressed in global coordinates
-	vel_global.linear.x = vel_global_eigen[0];
-	vel_global.linear.y = vel_global_eigen[1];
-	vel_global.angular.z = vel_global_eigen[2];
+	vel_global = Vector(vel_global_eigen);
 
 	debug_print_verbose("velocity local  : x: %2.4f, y: %2.4f, ang_z: %2.4f   (yaw: %2.4f,  sin(yaw): %2.4f,  cos(yaw): %2.4f) \r\n",
-		vel_local.linear.x,
-		vel_local.linear.y,
-		vel_local.angular.z,
+		vel_local.getX(),
+		vel_local.getY(),
+		vel_local.getZ(),
 		yaw,
 		sin(yaw),
 		cos(yaw)
 	);
 
 	debug_print_verbose("velocity global: x: %2.4f, y: %2.4f, ang_z: %2.4f \r\n",
-		vel_global.linear.x,
-		vel_global.linear.y,
-		vel_global.angular.z
+		vel_global.getX(),
+		vel_global.getY(),
+		vel_global.getZ()
 	);
 }
 
@@ -545,10 +537,10 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 }
 
 void HuberoPlannerROS::computeTwist(
-		const tf::Stamped<tf::Pose>& pose,
-		const Eigen::Vector3f& force,
-		const geometry_msgs::Twist& robot_vel_glob,
-		geometry_msgs::Twist& cmd_vel) const
+	const Pose& pose,
+	const Vector& force,
+	const Vector& robot_vel_glob,
+	Vector& cmd_vel) const
 {
 	// call static method
 	HuberoPlannerROS::computeTwist(

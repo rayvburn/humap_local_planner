@@ -16,19 +16,11 @@ TrapezoidLocIndep::TrapezoidLocIndep(std::string name, double intersection_deg, 
 
 // ------------------------------------------------------------------- //
 
-bool TrapezoidLocIndep::update(const Angle &gamma_center) {
-
-	// 2 angles must be created (normalization needed)
-	Angle gamma_start = gamma_center;
-	gamma_start.Radian(gamma_start.Radian() - interval_);
-	gamma_start.Normalize();
-
-	Angle gamma_end = gamma_center;
-	gamma_end.Radian(gamma_end.Radian() + interval_);
-	gamma_end.Normalize();
-
-	return (TrapezoidParted::update(gamma_start.Radian(), gamma_end.Radian()));
-
+bool TrapezoidLocIndep::update(const Angle& gamma_center) {
+	// 2 angles must be created (normalization performed inside ctor)
+	Angle gamma_start(gamma_center.getRadian() - interval_);
+	Angle gamma_end(gamma_center.getRadian() + interval_);
+	return TrapezoidParted::update(gamma_start.getRadian(), gamma_end.getRadian());
 }
 
 // ------------------------------------------------------------------- //

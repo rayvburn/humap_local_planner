@@ -26,6 +26,7 @@
 
 namespace hubero_local_planner {
 
+// FIXME: lack of using namespace hubero::geometry, but class got included properly
 class Visualization {
 public:
 	/**
@@ -39,36 +40,36 @@ public:
 	bool pubBounding();
 
 	/// @section Force vector marker publishing
-	bool publishForceInternal(const Vector3& pos, const Vector3& force);
-	bool publishForceInteraction(const Vector3& pos, const Vector3& force);
-	bool publishForceSocial(const Vector3& pos, const Vector3& force);
-	bool publishForceCombined(const Vector3& pos, const Vector3& force);
+	bool publishForceInternal(const Vector& pos, const Vector& force);
+	bool publishForceInteraction(const Vector& pos, const Vector& force);
+	bool publishForceSocial(const Vector& pos, const Vector& force);
+	bool publishForceCombined(const Vector& pos, const Vector& force);
 
-	bool publishBehaviourActive(const Vector3& pos, const std::string& description);
-	bool publishClosestPoints(const std::vector<Pose3>& pts);
-	bool publishVelocity(const Vector3& pos_start,
+	bool publishBehaviourActive(const Vector& pos, const std::string& description);
+	bool publishClosestPoints(const std::vector<Pose>& pts);
+	bool publishVelocity(const Vector& pos_start,
 			const double& angle_lin,
 			const double& linear_x,
-			const Vector3& pos_lin_end,
+			const Vector& pos_lin_end,
 			const double& angle_ang,
 			const double& angular_z
 	);
 
-	bool publishPath(const Pose3& new_pos);
+	bool publishPath(const Pose& new_pos);
 	void resetPath();
 
 	bool publishGrid(
-			const Pose3& pos_current,
+			const Pose& pos_current,
 			HuberoPlanner& planner
 	);
 
 	bool publishRobotFootprint(
-			const Pose3& pos_current,
+			const Pose& pos_current,
 			const RobotFootprintModelConstPtr footprint
 	);
 
-	bool publishGoalLocal(const Vector3& pos);
-	bool publishGoal(const Vector3& pos);
+	bool publishGoalLocal(const Vector& pos);
+	bool publishGoal(const Vector& pos);
 	virtual ~Visualization() = default;
 
 private:

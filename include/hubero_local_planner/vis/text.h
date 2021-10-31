@@ -21,8 +21,8 @@ public:
 
 	void setParameters(const float &text_size);
 
-	visualization_msgs::Marker create(const ignition::math::Vector3d &pos, const int &number) const;
-	visualization_msgs::Marker create(const ignition::math::Vector3d &pos, const std::string &text) const;
+	visualization_msgs::Marker create(const hubero::geometry::Vector& pos, const int& number) const;
+	visualization_msgs::Marker create(const hubero::geometry::Vector& pos, const std::string& text) const;
 
 	virtual ~Text();
 

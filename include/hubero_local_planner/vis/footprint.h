@@ -19,7 +19,7 @@ public:
 	Footprint();
 	virtual void setHeight(const double& height);
 	virtual visualization_msgs::MarkerArray create(
-			const Pose3& pos_current,
+			const hubero::geometry::Pose& pos_current,
 			const hubero_local_planner::RobotFootprintModelConstPtr footprint) const;
 	virtual ~Footprint() = default;
 protected:
