@@ -6,7 +6,6 @@
  */
 
 #include <hubero_local_planner/sfm/social_force_model.h>
-#include <hubero_common/converter.h>
 
 // additional headers
 #include <cmath>			// atan2()
