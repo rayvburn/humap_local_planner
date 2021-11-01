@@ -1,6 +1,6 @@
 #include <hubero_local_planner/geometry/quaternion.h>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 Quaternion::Quaternion(const double& yaw): quat_(0.0, 0.0, yaw) {}
@@ -9,4 +9,4 @@ Quaternion::Quaternion(const double& roll, const double& pitch, const double& ya
 Quaternion::Quaternion(const double& x, const double& y, const double& z, const double& w): quat_(w, x, y, z) {}
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

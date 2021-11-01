@@ -3,7 +3,7 @@
 
 #include <hubero_local_planner/geometry/geometry.h>
 
-using namespace hubero::geometry;
+using namespace hubero_local_planner::geometry;
 
 TEST(HuberoGeometryPose, ctor) {
 	// default

@@ -5,7 +5,7 @@
 #include <ignition/math/Angle.hh>
 #include <ignition/math/Vector3.hh>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 class Vector;
@@ -16,7 +16,7 @@ public:
 
     /**
      * // FIXME: Problematic copy constructor
-     * \details "no matching function for call to ‘hubero::geometry::Angle::Angle(hubero::geometry::Angle)’"
+     * \details "no matching function for call to ‘geometry::Angle::Angle(geometry::Angle)’"
      */
     // explicit Angle(const Angle& obj);
 
@@ -169,4 +169,4 @@ protected:
 };
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

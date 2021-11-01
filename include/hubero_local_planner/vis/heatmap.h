@@ -10,6 +10,7 @@
 #include <hubero_local_planner/vis/grid.h>
 #include <hubero_local_planner/vis/heat_cell.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 /// \brief Incorporates Grid and HeatCell classes methods, provides an interface that is easy to use
@@ -29,3 +30,4 @@ private:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

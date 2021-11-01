@@ -60,8 +60,8 @@ bool HuberoPlanner::compute(
 	// store vectors of poses of closest points between robot and other objects; makes use out of obstacles
 	// representation (extracted from costmap) and robot's footprint;
 	// these, in fact, are used only for visualisation
-	std::vector<sfm::Distance> meaningful_interaction_static;
-	std::vector<sfm::Distance> meaningful_interaction_dynamic;
+	std::vector<Distance> meaningful_interaction_static;
+	std::vector<Distance> meaningful_interaction_dynamic;
 
 	// perform SFM and fuzzy logic computations
 	compute(pose, force, meaningful_interaction_static, meaningful_interaction_dynamic);
@@ -87,8 +87,8 @@ bool HuberoPlanner::compute(
 }
 
 bool HuberoPlanner::compute(const Pose& pose, Vector& force) {
-	std::vector<sfm::Distance> meaningful_interaction_static;
-	std::vector<sfm::Distance> meaningful_interaction_dynamic;
+	std::vector<Distance> meaningful_interaction_static;
+	std::vector<Distance> meaningful_interaction_dynamic;
 	return compute(pose, force, meaningful_interaction_static, meaningful_interaction_dynamic);
 }
 
@@ -231,10 +231,10 @@ bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
 bool HuberoPlanner::compute(
 	const Pose& pose,
 	Vector& force,
-	std::vector<sfm::Distance>& meaningful_interaction_static,
-	std::vector<sfm::Distance>& meaningful_interaction_dynamic
+	std::vector<Distance>& meaningful_interaction_static,
+	std::vector<Distance>& meaningful_interaction_dynamic
 ) {
-	world_model_ = sfm::World(pose, vel_, goal_local_, goal_);
+	world_model_ = World(pose, vel_, goal_local_, goal_);
 	createEnvironmentModel(pose);
 
 	sfm_.computeSocialForce(
@@ -247,8 +247,8 @@ bool HuberoPlanner::compute(
 	// actual `social` vector
 	Vector human_action_force;
 
-	std::vector<sfm::StaticObject> objects_static = world_model_.getStaticObjectsData();
-	std::vector<sfm::DynamicObject> objects_dynamic = world_model_.getDynamicObjectsData();
+	std::vector<StaticObject> objects_static = world_model_.getStaticObjectsData();
+	std::vector<DynamicObject> objects_dynamic = world_model_.getDynamicObjectsData();
 	// evaluate whether more complex forces are supposed to be calculated
 	// TODO: add param `disable fuzzy behaviours`
 	if (!cfg_->getSfm()->disable_interaction_forces) {
@@ -267,7 +267,7 @@ bool HuberoPlanner::compute(
 		// \f$\alpha\f$'s direction of motion expressed in world coordinate system
 		double dir_alpha = world_model_.getRobotData().heading_dir.getRadian();
 
-		for (const sfm::DynamicObject& object: objects_dynamic) {
+		for (const DynamicObject& object: objects_dynamic) {
 			dir_beta_dynamic.push_back(object.dir_beta.getRadian());
 			rel_loc_dynamic.push_back(object.rel_loc_angle.getRadian());
 			dist_angle_dynamic.push_back(object.dist_angle.getRadian());

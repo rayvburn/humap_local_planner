@@ -7,13 +7,11 @@
 
 #include <hubero_local_planner/fuzz/regions.h>
 #include <hubero_local_planner/fuzz/processor.h>
-
 #include <hubero_local_planner/geometry/angle.h>
-
-using namespace hubero::geometry;
 
 // ------------------------------------------------------------------- //
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 // flags to check the `status register`
@@ -394,4 +392,4 @@ char Processor::decodeRelativeLocation(const double &rel_loc) const {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
-
+} /* namespace hubero_local_planner */

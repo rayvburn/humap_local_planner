@@ -8,6 +8,7 @@
 #ifndef INCLUDE_FUZZ_REGIONS_H_
 #define INCLUDE_FUZZ_REGIONS_H_
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 /* ------------- Input variables ------------- */
@@ -48,5 +49,6 @@ typedef enum {
 } FuzzBehavior;
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_FUZZ_REGIONS_H_ */

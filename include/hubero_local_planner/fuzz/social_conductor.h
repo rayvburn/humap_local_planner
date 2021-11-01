@@ -15,10 +15,10 @@
 #include <string>
 #include <tuple>
 
-using namespace hubero::geometry;
-
+namespace hubero_local_planner {
 namespace fuzz {
 
+using namespace geometry;
 /// \brief This class takes care of calculations connected with summation
 /// of consecutive social forces that are meant to be generated based on
 /// the world configuration. The resulting social force is obtained
@@ -74,5 +74,6 @@ private:
 };
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_FUZZ_SOCIALCONDUCTOR_H_ */

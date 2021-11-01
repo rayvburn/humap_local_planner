@@ -10,7 +10,7 @@
 
 #include <math.h>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 class Angle;
@@ -287,4 +287,4 @@ protected:
 }; // class Vector
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

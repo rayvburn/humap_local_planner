@@ -16,6 +16,7 @@
 #include <tuple>
 #include <map>
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 ///
@@ -118,5 +119,6 @@ private:
 };
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_FUZZ_PROCESSOR_H_ */

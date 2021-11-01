@@ -12,14 +12,12 @@
 
 // environment obstacle representation
 #include <hubero_local_planner/hubero_config.h>
-#include <hubero_local_planner/sfm/world.h>
+#include <hubero_local_planner/world.h>
 
 // C++ STL
 #include <vector>	// closest points
 #include <tuple>	// rel_loc
 #include <chrono>
-
-using namespace hubero::geometry;
 
 // ----------------------------------------------------------------------------------------------- //
 /*
@@ -36,7 +34,9 @@ using namespace hubero::geometry;
  */
 // ----------------------------------------------------------------------------------------------- //
 
+namespace hubero_local_planner {
 namespace sfm {
+using namespace geometry;
 
 // ---------------------------------
 
@@ -337,3 +337,4 @@ protected:
 };
 
 } /* namespace sfm */
+} /* namespace hubero_local_planner */

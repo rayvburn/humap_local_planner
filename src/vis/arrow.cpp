@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/vis/arrow.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 Arrow::Arrow(): max_length_(1.0f), sfm_max_force_(2000.0) {}
@@ -20,7 +21,7 @@ void Arrow::setParameters(const float& length_meters, const float& sfm_max_force
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Arrow::create(const hubero::geometry::Vector& pos, const hubero::geometry::Vector& vector) const {
+visualization_msgs::Marker Arrow::create(const Vector& pos, const Vector& vector) const {
 
 	visualization_msgs::Marker marker;
 
@@ -40,10 +41,10 @@ visualization_msgs::Marker Arrow::create(const hubero::geometry::Vector& pos, co
 	marker.pose.position.z = pos.getZ();
 
 	// marker orientation is based on force vector direction
-	hubero::geometry::Angle yaw(vector);
+	Angle yaw(vector);
 
 	// convert to quaternion
-	hubero::geometry::Quaternion quaternion(yaw.getRadian());
+	Quaternion quaternion(yaw.getRadian());
 
 	marker.pose.orientation.x = quaternion.getX();
 	marker.pose.orientation.y = quaternion.getY();
@@ -72,3 +73,4 @@ Arrow::~Arrow() {
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

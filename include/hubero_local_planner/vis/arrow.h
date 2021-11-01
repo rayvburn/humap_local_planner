@@ -9,8 +9,10 @@
 
 #include <hubero_local_planner/vis/marker_base.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
+using namespace geometry;
 class Arrow : public MarkerBase {
 
 public:
@@ -30,7 +32,7 @@ public:
 	/// \param[in] Foothold of an arrow
 	/// \param[in] Force vector which is used to
 	/// determine a marker's orientation and length
-	virtual visualization_msgs::Marker create(const hubero::geometry::Vector& pos, const hubero::geometry::Vector& vector) const;
+	virtual visualization_msgs::Marker create(const Vector& pos, const Vector& vector) const;
 
 	/// \brief Default destructor
 	virtual ~Arrow();
@@ -47,3 +49,4 @@ protected:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

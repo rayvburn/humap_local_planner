@@ -7,7 +7,7 @@
 #include "gtest_cout.h"
 
 using namespace hubero_local_planner;
-using namespace hubero::geometry;
+using namespace hubero_local_planner::geometry;
 
 // local -> global velocity conversion does not change Z component of the vector
 TEST(HuberoVelocityConversions, computeVelocityGlobal) {

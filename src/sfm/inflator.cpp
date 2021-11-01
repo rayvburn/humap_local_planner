@@ -10,6 +10,7 @@
 
 #include <hubero_local_planner/sfm/sfm_debug.h>
 
+namespace hubero_local_planner {
 namespace sfm {
 
 // ------------------------------------------------------------------- //
@@ -730,3 +731,4 @@ Inflator::~Inflator() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace sfm */
+} /* namespace hubero_local_planner */

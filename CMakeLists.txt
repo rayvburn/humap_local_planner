@@ -93,13 +93,19 @@ set(HEADERS_SFM
     include/${PROJECT_NAME}/sfm/inflator.h
     include/${PROJECT_NAME}/sfm/social_force_model.h
     include/${PROJECT_NAME}/sfm/sfm_debug.h
-    include/${PROJECT_NAME}/sfm/world.h
 )
 set(SOURCES_SFM
     src/sfm/inflator.cpp
     src/sfm/social_force_model.cpp
     src/sfm/sfm_debug.cpp
-    src/sfm/world.cpp
+)
+
+set(HEADERS_WORLD
+    include/${PROJECT_NAME}/world.h
+)
+
+set(SOURCES_WORLD
+    src/world.cpp
 )
 
 set(HEADERS_VIS
@@ -162,6 +168,10 @@ set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_D
 add_library(inflation ${HEADERS_INFLATION} ${SOURCES_INFLATION})
 target_link_libraries(inflation ${IGNITION-MATH_LIBRARIES})
 set_target_properties(inflation PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+### World - ontology
+add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
+target_link_libraries(world geometry ${IGNITION-MATH_LIBRARIES})
+set_target_properties(world PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### SFM
 add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
 target_link_libraries(sfm inflation config geometry ${IGNITION-MATH_LIBRARIES})
@@ -190,7 +200,7 @@ add_library(hubero_local_planner
     include/hubero_local_planner/robot_footprint_model.h
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
 
 ## Executables
 add_executable(test_executable
@@ -226,6 +236,7 @@ if (CATKIN_ENABLE_TESTING)
     target_link_libraries(test_velocity_conversions hubero_local_planner)
   endif()
 
+  # world
   catkin_add_gtest(test_world_generation test/test_world_generation.cpp)
   if(TARGET test_world_generation)
     target_link_libraries(test_world_generation hubero_local_planner)

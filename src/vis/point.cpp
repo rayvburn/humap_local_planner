@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/vis/point.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 Point::Point():
@@ -17,7 +18,7 @@ void Point::setSize(const double& side_length) {
 	size_ = side_length;
 }
 
-visualization_msgs::Marker Point::create(const hubero::geometry::Vector& pos) const {
+visualization_msgs::Marker Point::create(const Vector& pos) const {
 	visualization_msgs::Marker marker;
 
 	// NOTE: header.stamp, ns, deprecated here
@@ -50,3 +51,4 @@ visualization_msgs::Marker Point::create(const hubero::geometry::Vector& pos) co
 }
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

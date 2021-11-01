@@ -1,6 +1,6 @@
 #include <hubero_local_planner/geometry/pose.h>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 Pose::Pose(double x, double y, double yaw): Pose::Pose(x, y, 0.0, 0.0, 0.0, yaw) {}
@@ -170,4 +170,4 @@ teb_local_planner::PoseSE2 Pose::getAsTebPose() const {
 }
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

@@ -8,6 +8,7 @@
 #include <hubero_local_planner/fuzz/regions.h>
 #include <hubero_local_planner/fuzz/social_conductor.h>
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 // ------------------------------------------------------------------- //
@@ -189,3 +190,4 @@ void SocialConductor::updateActiveBehaviour(const std::string &beh_name) {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */

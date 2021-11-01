@@ -14,8 +14,10 @@
 // ROS libraries
 #include <visualization_msgs/MarkerArray.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
+using namespace geometry;
 /// \brief Class that manages creation of a vector field
 /// visualization; generates a grid of points and calculates
 /// a social force in each of them (treats each position as
@@ -48,7 +50,7 @@ public:
 	/// element using locally stored grid index;
 	/// NOTE: by invoking it twice one will omit
 	/// some grid points
-	hubero::geometry::Vector getNextGridElement();
+	Vector getNextGridElement();
 
 	/// \brief Sets grid index to 0; must be invoked after
 	/// each grid composition finish (or just before
@@ -65,7 +67,7 @@ public:
 private:
 
 	/// \brief A vector of grid points
-	std::vector<hubero::geometry::Vector> grid_;
+	std::vector<Vector> grid_;
 
 	/// \brief Stores current grid point's index
 	/// in a vector
@@ -79,3 +81,4 @@ protected:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

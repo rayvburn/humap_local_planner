@@ -11,7 +11,7 @@
 #include <teb_local_planner/pose_se2.h>
 #include <tf/transform_datatypes.h>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 // Abstraction layer between different types that represent Pose
@@ -121,4 +121,4 @@ protected:
 }; // class Pose
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

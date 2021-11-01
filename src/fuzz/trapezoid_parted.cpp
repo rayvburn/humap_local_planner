@@ -9,9 +9,10 @@
 #include <hubero_local_planner/geometry/angle.h>
 #include <math.h> // fabs()
 
-using namespace hubero::geometry;
-
+namespace hubero_local_planner {
 namespace fuzz {
+
+using namespace geometry;
 
 // ------------------------------------------------------------------- //
 
@@ -293,3 +294,4 @@ void TrapezoidParted::resetWrapped() {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */

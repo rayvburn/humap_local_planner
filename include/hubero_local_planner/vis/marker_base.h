@@ -17,6 +17,7 @@
 #include <std_msgs/ColorRGBA.h>
 #include <visualization_msgs/Marker.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 /// \brief Base class for sfm::vis:: objects;
@@ -56,3 +57,4 @@ protected:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */
