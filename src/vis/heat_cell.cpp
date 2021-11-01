@@ -5,7 +5,6 @@
  *      Author: rayvburn
  */
 
-#include <hubero_common/typedefs.h>
 #include <hubero_local_planner/vis/heat_cell.h>
 #include <std_msgs/ColorRGBA.h>
 
