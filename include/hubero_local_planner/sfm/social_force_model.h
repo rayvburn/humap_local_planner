@@ -8,7 +8,7 @@
 #pragma once
 
 #include <hubero_local_planner/geometry/geometry.h>
-#include <hubero_common/shift_register.h>
+#include <hubero_local_planner/utils/shift_register.h>
 
 // environment obstacle representation
 #include <hubero_local_planner/hubero_config.h>

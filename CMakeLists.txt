@@ -21,7 +21,6 @@ find_package(catkin REQUIRED
         pcl_conversions
         roscpp
         tf
-        hubero_common
 )
 
 set(IGN_MATH_VER 3)
@@ -36,7 +35,6 @@ include_directories(
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     ${IGNITION-MATH_INCLUDE_DIRS}
-    ${hubero_common_INCLUDE_DIRS}
 )
 add_definitions(${EIGEN3_DEFINITIONS})
 
@@ -55,7 +53,6 @@ catkin_package(
         roscpp
         teb_local_planner
         costmap_converter
-        hubero_common
 )
 
 set(HEADERS_FUZZY
@@ -200,7 +197,7 @@ add_library(hubero_local_planner
     include/hubero_local_planner/robot_footprint_model.h
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES})
 
 ## Executables
 add_executable(test_executable
