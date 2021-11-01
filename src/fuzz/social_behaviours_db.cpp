@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/fuzz/social_behaviours_db.h>
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 // ------------------------------------------------------------------- //
@@ -329,4 +330,4 @@ Vector SocialBehavioursDb::assertForceDirection(const Vector& force_beh) const {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
-
+} /* namespace hubero_local_planner */

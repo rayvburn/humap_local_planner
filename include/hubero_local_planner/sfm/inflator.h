@@ -25,6 +25,7 @@
 // template definition placed in header - load directives
 // which parts of code to compile
 
+namespace hubero_local_planner {
 namespace sfm {
 
 // ---------------------------------
@@ -287,4 +288,6 @@ public:
 
 
 }; /* class Inflator */
-}; /* namespace sfm */
+
+} /* namespace sfm */
+} /* namespace hubero_local_planner */

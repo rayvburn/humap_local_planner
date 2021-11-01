@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/vis/line_list.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -15,7 +16,7 @@ LineList::LineList(): line_id_max_(0) {}
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::MarkerArray LineList::createArray(const std::vector<hubero::geometry::Pose> &poses) {
+visualization_msgs::MarkerArray LineList::createArray(const std::vector<Pose> &poses) {
 
 	visualization_msgs::MarkerArray array;
 
@@ -86,7 +87,7 @@ visualization_msgs::MarkerArray LineList::createArray(const std::vector<hubero::
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker LineList::create(const std::vector<hubero::geometry::Pose> &poses) {
+visualization_msgs::Marker LineList::create(const std::vector<Pose> &poses) {
 	visualization_msgs::Marker marker;
 
 	marker.header.frame_id = frame_;
@@ -113,13 +114,13 @@ visualization_msgs::Marker LineList::create(const std::vector<hubero::geometry::
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker LineList::create(const hubero::geometry::Pose &p1, const hubero::geometry::Pose &p2, const unsigned int &line_id) const {
+visualization_msgs::Marker LineList::create(const Pose &p1, const Pose &p2, const unsigned int &line_id) const {
 	return ( create(p1.getPosition(), p2.getPosition(), line_id) );
 }
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker LineList::create(const hubero::geometry::Vector &p1, const hubero::geometry::Vector &p2, const unsigned int &line_id) const {
+visualization_msgs::Marker LineList::create(const Vector &p1, const Vector &p2, const unsigned int &line_id) const {
 
 	visualization_msgs::Marker marker;
 
@@ -164,3 +165,4 @@ LineList::~LineList() {}
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

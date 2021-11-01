@@ -8,12 +8,13 @@
 #pragma once
 
 #include <vector>
-#include <hubero_common/typedefs.h>
 #include <hubero_local_planner/vis/marker_base.h>
 #include <visualization_msgs/MarkerArray.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
+using namespace geometry;
 /// \brief LineList class extends Base's functionality
 /// with a LineList management (may be developed further)
 /// http://wiki.ros.org/rviz/DisplayTypes/Marker#Line_List_.28LINE_LIST.3D5.29
@@ -25,23 +26,23 @@ public:
 	LineList();
 
 	/// \brief Method which wraps createLineList()
-	visualization_msgs::MarkerArray createArray(const std::vector<hubero::geometry::Pose>& poses);
-	visualization_msgs::Marker create(const std::vector<hubero::geometry::Pose>& poses);
+	visualization_msgs::MarkerArray createArray(const std::vector<Pose>& poses);
+	visualization_msgs::Marker create(const std::vector<Pose>& poses);
 
 	/// \brief Method that passes position components
 	/// of a poses to a createLineList() method which
-	/// takes hubero::geometry::Vector
+	/// takes Vector
 	visualization_msgs::Marker create(
-		const hubero::geometry::Pose& p1,
-		const hubero::geometry::Pose& p2,
+		const Pose& p1,
+		const Pose& p2,
 		const unsigned int& line_id
 	) const;
 
 	/// \brief Function that creates a line list;
 	/// each line could be created out of 2 points
 	visualization_msgs::Marker create(
-		const hubero::geometry::Vector& p1,
-		const hubero::geometry::Vector& p2,
+		const Vector& p1,
+		const Vector& p2,
 		const unsigned int& line_id
 	) const;
 
@@ -57,3 +58,4 @@ protected:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

@@ -1,6 +1,6 @@
 #include <hubero_local_planner/geometry/angle.h>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 Angle::Angle(const double& angle_rad, bool normalize): angle_(angle_rad) {
@@ -36,4 +36,4 @@ Angle Angle::normalize() {
 }
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

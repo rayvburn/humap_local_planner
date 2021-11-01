@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
 #include <ros/ros.h>
 #include <hubero_local_planner/geometry/geometry.h>
-#include <hubero_local_planner/sfm/world.h>
+#include <hubero_local_planner/world.h>
 
 #include "gtest_cout.h"
 
-using namespace hubero::geometry;
+using namespace hubero_local_planner;
+using namespace hubero_local_planner::geometry;
 
 // parts of these tests are used in `test_sfm.cpp`
 
@@ -16,8 +17,8 @@ TEST(HuberoWorldGeneration, robotTargetDistance) {
     const Pose GOAL_LOCAL(2.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_GLOBAL(3.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
-    sfm::World world = sfm::World(ROBOT_POSE, Vector(), GOAL_LOCAL, GOAL_GLOBAL);
-    sfm::Robot robot = world.getRobotData();
+    World world = World(ROBOT_POSE, Vector(), GOAL_LOCAL, GOAL_GLOBAL);
+    Robot robot = world.getRobotData();
 
     EXPECT_EQ(robot.target.dist, (GOAL_LOCAL.getX() - ROBOT_POSE.getX()));
     EXPECT_EQ(robot.goal.dist, (GOAL_GLOBAL.getX() - ROBOT_POSE.getX()));
@@ -28,7 +29,7 @@ TEST(HuberoWorldGeneration, robotTargetDistance) {
     const Pose GOAL_LOCAL2(5.0, 5.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_GLOBAL2(10.0, 10.0, 0.0, 0.0, 0.0, IGN_DTOR(180.0));
 
-    world = sfm::World(ROBOT_POSE2, Vector(), GOAL_LOCAL2, GOAL_GLOBAL2);
+    world = World(ROBOT_POSE2, Vector(), GOAL_LOCAL2, GOAL_GLOBAL2);
     robot = world.getRobotData();
 
     double norm = std::sqrt(

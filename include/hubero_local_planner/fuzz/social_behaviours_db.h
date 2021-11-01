@@ -12,10 +12,10 @@
 #include <hubero_local_planner/geometry/vector.h>
 #include <hubero_local_planner/hubero_config.h>
 
-using namespace hubero::geometry;
-
+namespace hubero_local_planner {
 namespace fuzz {
 
+using namespace geometry;
 class SocialBehavioursDb {
 
 public:
@@ -115,5 +115,6 @@ private:
 };
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_FUZZ_SOCIALBEHAVIOURSDB_H_ */

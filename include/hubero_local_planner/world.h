@@ -16,9 +16,7 @@
 #include <utility>
 #include <vector>
 
-namespace sfm {
-
-static const double RELATIVE_LOCATION_FRONT_THRESHOLD = IGN_DTOR(9);
+namespace hubero_local_planner {
 
 typedef enum {
 	LOCATION_FRONT = 0,
@@ -29,10 +27,10 @@ typedef enum {
 } RelativeLocation;
 
 struct StaticObject {
-	hubero::geometry::Pose robot;
-	hubero::geometry::Pose object;
+	geometry::Pose robot;
+	geometry::Pose object;
 	/// \brief so called d_alpha_beta - vector connecting the object with a robot (closest points of theirs footprints)
-	hubero::geometry::Vector dist_v;
+	geometry::Vector dist_v;
 	/// \brief Distance to the robot (length of the `dist_v` vector)
 	double dist;
 
@@ -48,17 +46,17 @@ struct StaticObject {
 
 struct DynamicObject : StaticObject {
 	/// \brief Velocity vector of the object
-	hubero::geometry::Vector vel;
+	geometry::Vector vel;
 	/// \brief Direction of movement of the dynamic obstacles
-	hubero::geometry::Angle dir_beta;
+	geometry::Angle dir_beta;
 	///
 	/// \brief Relative (to the alpha) location of dynamic object
 	RelativeLocation rel_loc;
 	/// \brief Relative (to the alpha) location of dynamic object expressed as an angle
-	hubero::geometry::Angle rel_loc_angle;
+	geometry::Angle rel_loc_angle;
 	///
 	/// \brief Angle of a distance vector connecting alpha and beta closest points
-	hubero::geometry::Angle dist_angle;
+	geometry::Angle dist_angle;
 };
 
 // since contents are the same
@@ -66,21 +64,21 @@ typedef StaticObject Target;
 
 struct Robot {
 	/// @brief Pose of the centroid representing robot's footprint
-	hubero::geometry::Pose centroid;
+	geometry::Pose centroid;
 	/// @brief Velocity of the robot
-	hubero::geometry::Vector vel;
+	geometry::Vector vel;
 	/// @brief Stores target pose and pose of the robot's footprint that is closest to the target
 	Target target;
 	/// @brief Stores global goal pose and pose of the robot's footprint that is closest to the target
 	Target goal;
 	/// @brief Heading direction of the robot, can be either deducted from velocity or orientation
-	hubero::geometry::Angle heading_dir;
+	geometry::Angle heading_dir;
 };
 
 /// @brief Helper structure useful for marking closest points between robot and object
 struct Distance {
-	hubero::geometry::Pose robot;
-	hubero::geometry::Pose object;
+	geometry::Pose robot;
+	geometry::Pose object;
 };
 
 /**
@@ -89,6 +87,8 @@ struct Distance {
  */
 class World {
 public:
+	static constexpr double RELATIVE_LOCATION_FRONT_THRESHOLD = IGN_DTOR(9);
+
 	/**
 	 * @brief Dummy constructor
 	 */
@@ -103,11 +103,11 @@ public:
 	 * @param goal_pose: global goal pose
 	 */
 	World(
-			const hubero::geometry::Pose& robot_pose_centroid,
-			const hubero::geometry::Pose& robot_pose,
-			const hubero::geometry::Vector& robot_vel,
-			const hubero::geometry::Pose& target_pose,
-			const hubero::geometry::Pose& goal_pose
+			const geometry::Pose& robot_pose_centroid,
+			const geometry::Pose& robot_pose,
+			const geometry::Vector& robot_vel,
+			const geometry::Pose& target_pose,
+			const geometry::Pose& goal_pose
 	);
 
 	/**
@@ -118,10 +118,10 @@ public:
 	 * @param goal_pose: global goal pose
 	 */
 	World(
-			const hubero::geometry::Pose& robot_pose,
-			const hubero::geometry::Vector& robot_vel,
-			const hubero::geometry::Pose& target_pose,
-			const hubero::geometry::Pose& goal_pose
+			const geometry::Pose& robot_pose,
+			const geometry::Vector& robot_vel,
+			const geometry::Pose& target_pose,
+			const geometry::Pose& goal_pose
 	);
 
 	/**
@@ -132,9 +132,9 @@ public:
 	 * @param force_dynamic_type: if set to True, obstacle interaction will be treated as dynamic one
 	 */
 	void addObstacle(
-			const hubero::geometry::Pose& robot_pose_closest,
-			const hubero::geometry::Pose& obstacle_pose_closest,
-			const hubero::geometry::Vector& obstacle_vel,
+			const geometry::Pose& robot_pose_closest,
+			const geometry::Pose& obstacle_pose_closest,
+			const geometry::Vector& obstacle_vel,
 			bool force_dynamic_type = false
 	);
 
@@ -146,9 +146,9 @@ public:
 	 * @param force_dynamic_type: if set to True, obstacle interaction will be treated as dynamic one
 	 */
 	void addObstacles(
-			const std::vector<hubero::geometry::Pose>& robot_pose_closest,
-			const std::vector<hubero::geometry::Pose>& obstacle_pose_closest,
-			const std::vector<hubero::geometry::Vector>& obstacle_vel,
+			const std::vector<geometry::Pose>& robot_pose_closest,
+			const std::vector<geometry::Pose>& obstacle_pose_closest,
+			const std::vector<geometry::Vector>& obstacle_vel,
 			bool force_dynamic_type = false
 	);
 
@@ -179,15 +179,15 @@ public:
 
 protected:
 	StaticObject createObstacleStatic(
-			const hubero::geometry::Pose& robot_pose_closest,
-			const hubero::geometry::Pose& obstacle_pose_closest
+			const geometry::Pose& robot_pose_closest,
+			const geometry::Pose& obstacle_pose_closest
 	) const;
 	DynamicObject createObstacleDynamic(
-			const hubero::geometry::Pose& robot_pose_closest,
-			const hubero::geometry::Pose& obstacle_pose_closest,
-			const hubero::geometry::Vector& obstacle_vel
+			const geometry::Pose& robot_pose_closest,
+			const geometry::Pose& obstacle_pose_closest,
+			const geometry::Vector& obstacle_vel
 	) const;
-	Target createTarget(const hubero::geometry::Pose& robot_pose, const hubero::geometry::Pose& target_pose) const;
+	Target createTarget(const geometry::Pose& robot_pose, const geometry::Pose& target_pose) const;
 
 	/// \brief Helper function which calculates a relative
 	/// location of the investigated object based on actor's
@@ -198,11 +198,11 @@ protected:
 	/// - relative location expressed as an angle (radians)
 	/// - angle of the vector connecting \f$\alpha\f$ and \beta
 	void computeObjectRelativeLocation(
-			const hubero::geometry::Angle& actor_yaw,
-			const hubero::geometry::Vector& d_alpha_beta,
+			const geometry::Angle& actor_yaw,
+			const geometry::Vector& d_alpha_beta,
 			RelativeLocation& beta_rel_location,
-			hubero::geometry::Angle& beta_angle_rel,
-			hubero::geometry::Angle& d_alpha_beta_angle
+			geometry::Angle& beta_angle_rel,
+			geometry::Angle& d_alpha_beta_angle
 	) const;
 
 	/// @brief Stores pose of point that belongs to the robot's footprint that is closest to the target
@@ -226,6 +226,6 @@ private:
 	}
 };
 
-} /* namespace sfm */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_HUBERO_LOCAL_PLANNER_SFM_WORLD_H_ */

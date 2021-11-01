@@ -3,7 +3,7 @@
 
 #include <hubero_local_planner/geometry/geometry.h>
 
-using namespace hubero::geometry;
+using namespace hubero_local_planner::geometry;
 
 static const double TOLERANCE_STRICT = 1e-09;
 static const double TOLERANCE_SOFT = 1e-04;

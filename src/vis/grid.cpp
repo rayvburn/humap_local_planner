@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/vis/grid.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -41,7 +42,7 @@ void Grid::createGrid(const float &x_start, const float &x_end, const float &y_s
 	// according to resolution, create grid (measurement) points within selected bounds
 	for ( float x = x_start_temp; x <= x_end_temp; x += std::abs(resolution) ) {
 		for ( float y = y_start_temp; y <= y_end_temp; y += std::abs(resolution) ) {
-			grid_.push_back( hubero::geometry::Vector(x, y, 0.0) );
+			grid_.push_back( Vector(x, y, 0.0) );
 		}
 	}
 
@@ -75,7 +76,7 @@ bool Grid::isWholeGridChecked() const {
 
 // ------------------------------------------------------------------- //
 
-hubero::geometry::Vector Grid::getNextGridElement() {
+Vector Grid::getNextGridElement() {
 	grid_index_++;
 	return ( grid_.at(grid_index_ - 1) );
 }
@@ -99,3 +100,4 @@ Grid::~Grid() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

@@ -8,6 +8,7 @@
 #include <hubero_local_planner/vis/heat_cell.h>
 #include <std_msgs/ColorRGBA.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 // --------------------------------------------------------------
@@ -27,7 +28,7 @@ void HeatCell::setParameters(const double& min_force_magnitude, const double& ma
 
 // --------------------------------------------------------------
 
-visualization_msgs::Marker HeatCell::create(const hubero::geometry::Vector& pos, const double& force_magnitude) const {
+visualization_msgs::Marker HeatCell::create(const Vector& pos, const double& force_magnitude) const {
 
 	visualization_msgs::Marker marker;
 	// NOTE: header.stamp, ns, deprecated here
@@ -45,7 +46,7 @@ visualization_msgs::Marker HeatCell::create(const hubero::geometry::Vector& pos,
 	marker.pose.position.z = pos.getZ() + 0.1; // few cm above the `ground`
 
 	// default quaternion
-	hubero::geometry::Quaternion quaternion(0.0);
+	Quaternion quaternion(0.0);
 
 	marker.pose.orientation.x = quaternion.getX();
 	marker.pose.orientation.y = quaternion.getY();
@@ -185,3 +186,4 @@ HeatCell::HsvColor HeatCell::convertMagnitudeToHSV(const double& magnitude) cons
 // --------------------------------------------------------------
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

@@ -10,13 +10,15 @@
 
 #include "marker_base.h"
 
+namespace hubero_local_planner {
 namespace vis {
 
+using namespace geometry;
 class Point : public MarkerBase {
 public:
 	Point();
 	void setSize(const double& side_length);
-	virtual visualization_msgs::Marker create(const hubero::geometry::Vector& pos) const;
+	virtual visualization_msgs::Marker create(const Vector& pos) const;
 	virtual ~Point() = default;
 
 protected:
@@ -24,5 +26,6 @@ protected:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_HUBERO_LOCAL_PLANNER_VIS_POINT_H_ */

@@ -10,6 +10,7 @@
 #include <hubero_local_planner/vis/grid.h>
 #include <hubero_local_planner/vis/arrow.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 /// \brief Arrow is treated as a base class to easily configure grid-specific configuration
@@ -31,3 +32,4 @@ public:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

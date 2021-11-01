@@ -2,7 +2,7 @@
 
 #include <ignition/math/Quaternion.hh>
 
-namespace hubero {
+namespace hubero_local_planner {
 namespace geometry {
 
 class Quaternion {
@@ -49,4 +49,4 @@ protected:
 };
 
 }; // namespace geometry
-}; // namespace hubero
+}; // namespace hubero_local_planner

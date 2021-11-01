@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/vis/footprint.h>
 
+namespace hubero_local_planner {
 namespace vis {
 
 Footprint::Footprint(): MarkerBase::MarkerBase(), height_(0.0) {
@@ -17,8 +18,8 @@ void Footprint::setHeight(const double& height) {
 }
 
 visualization_msgs::MarkerArray Footprint::create(
-		const hubero::geometry::Pose& pos_current,
-		const hubero_local_planner::RobotFootprintModelConstPtr footprint) const
+		const Pose& pos_current,
+		const RobotFootprintModelConstPtr footprint) const
 {
 	teb_local_planner::PoseSE2 pose = pos_current.getAsTebPose();
 	visualization_msgs::MarkerArray markers;
@@ -39,3 +40,4 @@ visualization_msgs::MarkerArray Footprint::create(
 
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

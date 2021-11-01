@@ -10,10 +10,11 @@
 
 #include <hubero_local_planner/fuzz/trapezoid_parted.h>
 #include <hubero_local_planner/geometry/angle.h>
-using namespace hubero::geometry;
 
+namespace hubero_local_planner {
 namespace fuzz {
 
+using namespace geometry;
 class TrapezoidLocDep : public TrapezoidParted {
 
 public:
@@ -37,5 +38,6 @@ private:
 };
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_FUZZ_TRAPEZOIDLOCDEP_H_ */

@@ -5,7 +5,7 @@
 #include <memory>
 
 #include <hubero_local_planner/hubero_config.h>
-#include <hubero_local_planner/sfm/world.h>
+#include <hubero_local_planner/world.h>
 #include <hubero_local_planner/sfm/social_force_model.h>
 #include <hubero_local_planner/fuzz/processor.h>
 #include <hubero_local_planner/fuzz/social_conductor.h>
@@ -42,8 +42,7 @@
 
 namespace hubero_local_planner {
 
-using namespace hubero::geometry;
-
+using namespace geometry;
 /**
  * @class HuberoPlanner
  * @brief A class implementing a local planner using the HuberoPlanner
@@ -229,8 +228,8 @@ private:
 	bool compute(
 		const Pose& pose,
 		Vector& force,
-		std::vector<sfm::Distance>& meaningful_interaction_static,
-		std::vector<sfm::Distance>& meaningful_interaction_dynamic
+		std::vector<Distance>& meaningful_interaction_static,
+		std::vector<Distance>& meaningful_interaction_dynamic
 	);
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
@@ -256,7 +255,7 @@ private:
 	/// @brief Robot footprint model
 	RobotFootprintModelPtr robot_model_;
 	/// @brief World model
-	sfm::World world_model_;
+	World world_model_;
 
 	sfm::SocialForceModel sfm_;
 	fuzz::Processor fuzzy_processor_; //!< produces segmentation fault in destructor when ran in a separated executable (Segmentation fault (core dumped))

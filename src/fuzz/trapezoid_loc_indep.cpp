@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/fuzz/trapezoid_loc_indep.h>
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 // ------------------------------------------------------------------- //
@@ -35,3 +36,4 @@ TrapezoidLocIndep::~TrapezoidLocIndep() {}
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */

@@ -15,6 +15,7 @@
 
 #include <fl/term/Trapezoid.h>
 
+namespace hubero_local_planner {
 namespace fuzz {
 
 class TrapezoidParted {
@@ -59,5 +60,6 @@ protected:
 };
 
 } /* namespace fuzz */
+} /* namespace hubero_local_planner */
 
 #endif /* INCLUDE_FUZZ_TRAPEZOIDPARTED_H_ */

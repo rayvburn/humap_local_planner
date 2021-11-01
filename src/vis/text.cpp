@@ -8,6 +8,7 @@
 #include <hubero_local_planner/vis/text.h>
 #include <string>
 
+namespace hubero_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -22,7 +23,7 @@ void Text::setParameters(const float& text_size) {
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Text::create(const hubero::geometry::Vector& pos, const int& number) const {
+visualization_msgs::Marker Text::create(const Vector& pos, const int& number) const {
 
 	return (create(pos, std::to_string(number)));
 
@@ -30,7 +31,7 @@ visualization_msgs::Marker Text::create(const hubero::geometry::Vector& pos, con
 
 // ------------------------------------------------------------------- //
 
-visualization_msgs::Marker Text::create(const hubero::geometry::Vector& pos, const std::string& text) const {
+visualization_msgs::Marker Text::create(const Vector& pos, const std::string& text) const {
 
 	visualization_msgs::Marker marker;
 
@@ -67,3 +68,4 @@ Text::~Text() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

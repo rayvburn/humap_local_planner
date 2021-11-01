@@ -39,6 +39,7 @@ static bool print_info = false;
 
 // ----------------------------------------
 
+namespace hubero_local_planner {
 namespace sfm {
 
 // ------------------------------------------------------------------- //
@@ -801,3 +802,4 @@ void SocialForceModel::reset() {
 // ------------------------------------------------------------------- //
 
 } /* namespace sfm */
+} /* namespace hubero_local_planner */

@@ -10,8 +10,10 @@
 #include <hubero_local_planner/vis/marker_base.h>
 #include <vector>
 
+namespace hubero_local_planner {
 namespace vis {
 
+using namespace geometry;
 class HeatCell : public MarkerBase {
 
 public:
@@ -23,7 +25,7 @@ public:
 	virtual void setParameters(const double& min_force_magnitude, const double& max_force_magnitude, const double& resolution);
 
 	/// \brief Creates a Marker configured as a cube with a minimal height (in fact a square)
-	virtual visualization_msgs::Marker create(const hubero::geometry::Vector& pos, const double& force_magnitude) const;
+	virtual visualization_msgs::Marker create(const Vector& pos, const double& force_magnitude) const;
 
 	/// \brief Destructor
 	virtual ~HeatCell();
@@ -62,3 +64,4 @@ private:
 };
 
 } /* namespace vis */
+} /* namespace hubero_local_planner */

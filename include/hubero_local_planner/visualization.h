@@ -26,6 +26,7 @@
 
 namespace hubero_local_planner {
 
+using namespace geometry;
 // FIXME: lack of using namespace hubero::geometry, but class got included properly
 class Visualization {
 public:

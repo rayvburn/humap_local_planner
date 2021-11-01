@@ -26,6 +26,7 @@
 #include <hubero_local_planner/visualization.h>
 
 namespace hubero_local_planner {
+using namespace geometry;
 /**
  * @class 
  * @brief ROS Wrapper for the HuberoPlanner that adheres to the
