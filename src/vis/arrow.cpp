@@ -43,12 +43,12 @@ visualization_msgs::Marker Arrow::create(const hubero::geometry::Vector& pos, co
 	hubero::geometry::Angle yaw(vector);
 
 	// convert to quaternion
-	ignition::math::Quaterniond quaternion(0.0, 0.0, yaw.getRadian());
+	hubero::geometry::Quaternion quaternion(yaw.getRadian());
 
-	marker.pose.orientation.x = quaternion.X();
-	marker.pose.orientation.y = quaternion.Y();
-	marker.pose.orientation.z = quaternion.Z();
-	marker.pose.orientation.w = quaternion.W();
+	marker.pose.orientation.x = quaternion.getX();
+	marker.pose.orientation.y = quaternion.getY();
+	marker.pose.orientation.z = quaternion.getZ();
+	marker.pose.orientation.w = quaternion.getW();
 
 	// scale
 	// arrow's length is calculated based on max allowable force `in SFM class`
