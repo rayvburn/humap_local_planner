@@ -161,11 +161,11 @@ bool Visualization::publishVelocity(
 	marker.pose.position.z = marker_stack_height_ - 1 * MARKER_GAP;
 
 	// convert to quaternion
-	Quaternion quaternion(0.0, 0.0, angle_lin);
-	marker.pose.orientation.x = quaternion.X();
-	marker.pose.orientation.y = quaternion.Y();
-	marker.pose.orientation.z = quaternion.Z();
-	marker.pose.orientation.w = quaternion.W();
+	Quaternion quaternion(angle_lin);
+	marker.pose.orientation.x = quaternion.getX();
+	marker.pose.orientation.y = quaternion.getY();
+	marker.pose.orientation.z = quaternion.getZ();
+	marker.pose.orientation.w = quaternion.getW();
 
 	// first marker
 	marker_array.markers.push_back(marker);
@@ -175,11 +175,11 @@ bool Visualization::publishVelocity(
 	marker.pose.position.x = pos_lin_end.getX();
 	marker.pose.position.y = pos_lin_end.getY();
 
-	Quaternion quaternion_ang(0.0, 0.0, angle_ang);
-	marker.pose.orientation.x = quaternion_ang.X();
-	marker.pose.orientation.y = quaternion_ang.Y();
-	marker.pose.orientation.z = quaternion_ang.Z();
-	marker.pose.orientation.w = quaternion_ang.W();
+	Quaternion quaternion_ang(angle_ang);
+	marker.pose.orientation.x = quaternion_ang.getX();
+	marker.pose.orientation.y = quaternion_ang.getY();
+	marker.pose.orientation.z = quaternion_ang.getZ();
+	marker.pose.orientation.w = quaternion_ang.getW();
 
 	marker_array.markers.push_back(marker);
 
@@ -253,7 +253,7 @@ bool Visualization::publishGrid(
 		planner.compute(pose, force);
 
 		// pass a result to vector of grid forces
-		marker_force_grid_.addMarker(marker_force_grid_.create(pose.getPositionVector(), force));
+		marker_force_grid_.addMarker(marker_force_grid_.create(pose.getPosition(), force));
 	}
 	pub_grid_.publish(marker_force_grid_.getMarkerArray());
 	return true;

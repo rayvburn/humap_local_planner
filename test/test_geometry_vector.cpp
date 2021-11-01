@@ -24,7 +24,7 @@ TEST(HuberoGeometryVector, ctor_vector) {
     ASSERT_DOUBLE_EQ(v3.getX(), v2.getX());
     ASSERT_DOUBLE_EQ(v3.getY(), v2.getY());
     ASSERT_DOUBLE_EQ(v3.getZ(), v2.getZ());
-    ASSERT_EQ(v3_ign, v3.getVector());
+    ASSERT_EQ(v3_ign, v3.getRawVector());
 }
 
 TEST(HuberoGeometryVector, setters) {
@@ -100,7 +100,7 @@ TEST(HuberoGeometryVector, conversion) {
 
     ignition::math::Vector3d v_ign(v_ref.getX(), v_ref.getY(), v_ref.getZ());
     Vector v_from_ign(v_ign);
-    ASSERT_EQ(v_from_ign.getVector(), v_ign);
+    ASSERT_EQ(v_from_ign.getRawVector(), v_ign);
 
     Eigen::Vector2d v_eigen2d(v_ref.getX(), v_ref.getY());
     Vector v_from_eigen2d(v_eigen2d);

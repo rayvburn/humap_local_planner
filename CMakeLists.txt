@@ -135,12 +135,14 @@ set(HEADERS_GEOMETRY
     include/${PROJECT_NAME}/geometry/angle.h
     # include/${PROJECT_NAME}/geometry/line.h
     include/${PROJECT_NAME}/geometry/pose.h
+    include/${PROJECT_NAME}/geometry/quaternion.h
     include/${PROJECT_NAME}/geometry/vector.h
 )
 
 set(SOURCES_GEOMETRY
     src/geometry/angle.cpp
     src/geometry/pose.cpp
+    src/geometry/quaternion.cpp
     src/geometry/vector.cpp
 )
 
@@ -186,7 +188,6 @@ add_library(hubero_local_planner
     src/hubero_planner_ros.cpp
     include/hubero_local_planner/obstacles.h
     include/hubero_local_planner/robot_footprint_model.h
-    include/hubero_local_planner/utils/converter.h
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry ${IGNITION-MATH_LIBRARIES} ${hubero_common_LIBRARIES})
@@ -243,6 +244,11 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_geometry_vector test/test_geometry_vector.cpp)
   if(TARGET test_geometry_vector)
     target_link_libraries(test_geometry_vector geometry)
+  endif()
+
+  catkin_add_gtest(test_geometry_quaternion test/test_geometry_quaternion.cpp)
+  if(TARGET test_geometry_quaternion)
+    target_link_libraries(test_geometry_quaternion geometry)
   endif()
 
   catkin_add_gtest(test_sfm test/test_sfm.cpp)

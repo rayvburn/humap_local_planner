@@ -114,7 +114,7 @@ visualization_msgs::Marker LineList::create(const std::vector<hubero::geometry::
 // ------------------------------------------------------------------- //
 
 visualization_msgs::Marker LineList::create(const hubero::geometry::Pose &p1, const hubero::geometry::Pose &p2, const unsigned int &line_id) const {
-	return ( create(p1.getPositionVector(), p2.getPositionVector(), line_id) );
+	return ( create(p1.getPosition(), p2.getPosition(), line_id) );
 }
 
 // ------------------------------------------------------------------- //

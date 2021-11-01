@@ -1,5 +1,4 @@
 #include <hubero_local_planner/hubero_planner_ros.h>
-#include <hubero_local_planner/utils/converter.h>
 
 #include <Eigen/Core>
 #include <cmath>
@@ -217,17 +216,17 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// visualization
 	auto vis_data = planner_->getMotionData();
 
-	vis_.publishForceInternal(robot_pose.getPositionVector(), vis_data.force_internal);
-	vis_.publishForceInteraction(robot_pose.getPositionVector(), vis_data.force_interaction);
-	vis_.publishForceSocial(robot_pose.getPositionVector(), vis_data.force_social);
-	vis_.publishForceCombined(robot_pose.getPositionVector(), vis_data.force_combined);
-	vis_.publishBehaviourActive(robot_pose.getPositionVector(), vis_data.behaviour_active);
+	vis_.publishForceInternal(robot_pose.getPosition(), vis_data.force_internal);
+	vis_.publishForceInteraction(robot_pose.getPosition(), vis_data.force_interaction);
+	vis_.publishForceSocial(robot_pose.getPosition(), vis_data.force_social);
+	vis_.publishForceCombined(robot_pose.getPosition(), vis_data.force_combined);
+	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active);
 	vis_.publishClosestPoints(vis_data.closest_points);
 	vis_.publishPath(robot_pose);
 	vis_.publishGrid(robot_pose, *planner_);
 	vis_.publishRobotFootprint(robot_pose, planner_->getRobotFootprintModel());
-	vis_.publishGoal(robot_goal.getPositionVector());
-	vis_.publishGoalLocal(planner_->getGoalLocal().getPositionVector());
+	vis_.publishGoal(robot_goal.getPosition());
+	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());
 
 	//publishLocalPlan(/*TODO*/);
 	publishGlobalPlan(global_plan_);

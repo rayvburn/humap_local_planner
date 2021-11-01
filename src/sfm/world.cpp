@@ -81,7 +81,7 @@ StaticObject World::createObstacleStatic(
 	StaticObject obstacle;
 	obstacle.robot = robot_pose_closest;
 	obstacle.object = obstacle_pose_closest;
-	obstacle.dist_v = hubero::geometry::Vector(obstacle.object.getPosition() - obstacle.robot.getPosition());
+	obstacle.dist_v = hubero::geometry::Vector(obstacle.object.getRawPosition() - obstacle.robot.getRawPosition());
 	// NOTE: in SFM calculations it is assumed that all objects are in the actor's plane
 	obstacle.dist_v.setZ(0.0);
 	obstacle.dist = obstacle.dist_v.calculateLength();
@@ -93,7 +93,7 @@ Target World::createTarget(const hubero::geometry::Pose& robot_pose, const huber
 	Target target;
 	target.robot = robot_pose;
 	target.object = target_pose;
-	target.dist_v = hubero::geometry::Vector(target_pose.getPosition() - robot_pose.getPosition());
+	target.dist_v = hubero::geometry::Vector(target_pose.getRawPosition() - robot_pose.getRawPosition());
 	target.dist = target.dist_v.calculateLength();
 	return target;
 }
@@ -106,7 +106,7 @@ DynamicObject World::createObstacleDynamic(
 	DynamicObject obstacle;
 	obstacle.robot = robot_pose_closest;
 	obstacle.object = obstacle_pose_closest;
-	obstacle.dist_v = hubero::geometry::Vector(obstacle.object.getPosition() - obstacle.robot.getPosition());
+	obstacle.dist_v = hubero::geometry::Vector(obstacle.object.getRawPosition() - obstacle.robot.getRawPosition());
 	// it is assumed that all objects are located in the plane
 	obstacle.dist_v.setZ(0.0);
 	obstacle.dist = obstacle.dist_v.calculateLength();

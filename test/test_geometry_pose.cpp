@@ -75,6 +75,15 @@ TEST(HuberoGeometryPose, ctor) {
 	ASSERT_DOUBLE_EQ(pose3.getQuaternionY(), 0.0);
 	ASSERT_DOUBLE_EQ(pose3.getQuaternionZ(), 0.7);
 	ASSERT_DOUBLE_EQ(pose3.getQuaternionW(), 0.7);
+
+	// geometry Vector + Quaternion
+	Pose pose4(Vector(0.2, 0.3, 0.4), Quaternion(IGN_PI_4));
+	ASSERT_DOUBLE_EQ(pose4.getX(), 0.2);
+	ASSERT_DOUBLE_EQ(pose4.getY(), 0.3);
+	ASSERT_DOUBLE_EQ(pose4.getZ(), 0.4);
+	ASSERT_DOUBLE_EQ(pose4.getRoll(), 0.0);
+	ASSERT_DOUBLE_EQ(pose4.getPitch(), 0.0);
+	ASSERT_DOUBLE_EQ(pose4.getYaw(), IGN_PI_4);
 }
 
 TEST(HuberoGeometryPose, setters) {
@@ -111,7 +120,7 @@ TEST(HuberoGeometryPose, conversion) {
 	ASSERT_DOUBLE_EQ(pose_geom_msg_conv.getRoll(), 0.0);
 	ASSERT_DOUBLE_EQ(pose_geom_msg_conv.getPitch(), 0.0);
 	ASSERT_DOUBLE_EQ(pose_geom_msg_conv.getYaw(), IGN_PI);
-	ASSERT_EQ(pose_ref.getPose(), pose_geom_msg_conv.getPose());
+	ASSERT_EQ(pose_ref.getRawPose(), pose_geom_msg_conv.getRawPose());
 
 	teb_local_planner::PoseSE2 pose_teb = pose_ref.getAsTebPose();
 	Pose pose_teb_conv(pose_teb);
@@ -131,7 +140,7 @@ TEST(HuberoGeometryPose, conversion) {
 	ASSERT_DOUBLE_EQ(pose_tf_conv.getRoll(), 0.0);
 	ASSERT_DOUBLE_EQ(pose_tf_conv.getPitch(), 0.0);
 	ASSERT_DOUBLE_EQ(pose_tf_conv.getYaw(), IGN_PI);
-	ASSERT_EQ(pose_ref.getPose(), pose_tf_conv.getPose());
+	ASSERT_EQ(pose_ref.getRawPose(), pose_tf_conv.getRawPose());
 
 	geometry_msgs::Transform pose_geom_tf = pose_ref.getAsTfTransform();
 	Pose pose_geom_tf_conv(pose_geom_tf);
@@ -141,7 +150,7 @@ TEST(HuberoGeometryPose, conversion) {
 	ASSERT_DOUBLE_EQ(pose_geom_tf_conv.getRoll(), 0.0);
 	ASSERT_DOUBLE_EQ(pose_geom_tf_conv.getPitch(), 0.0);
 	ASSERT_DOUBLE_EQ(pose_geom_tf_conv.getYaw(), IGN_PI);
-	ASSERT_EQ(pose_ref.getPose(), pose_geom_tf_conv.getPose());
+	ASSERT_EQ(pose_ref.getRawPose(), pose_geom_tf_conv.getRawPose());
 }
 
 int main(int argc, char** argv) {
