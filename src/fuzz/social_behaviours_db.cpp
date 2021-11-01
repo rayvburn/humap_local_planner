@@ -6,7 +6,6 @@
  */
 
 #include <hubero_local_planner/fuzz/social_behaviours_db.h>
-#include <hubero_common/typedefs.h>
 
 namespace fuzz {
 
@@ -234,13 +233,7 @@ Vector SocialBehavioursDb::decelerate() {
 
 Vector SocialBehavioursDb::createDirVector(const double& direction) const {
 
-	// X = 1.0, Y = 0.0
-	Vector v;
-	v.setX(cos(direction));
-	v.setY(sin(direction));
-	v.setZ(0.0);
-
-	return (v);
+	return Vector(Angle(direction));
 
 }
 

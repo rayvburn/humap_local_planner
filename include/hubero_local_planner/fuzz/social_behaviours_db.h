@@ -8,6 +8,7 @@
 #ifndef INCLUDE_FUZZ_SOCIALBEHAVIOURSDB_H_
 #define INCLUDE_FUZZ_SOCIALBEHAVIOURSDB_H_
 
+#include <hubero_local_planner/geometry/angle.h>
 #include <hubero_local_planner/geometry/vector.h>
 #include <hubero_local_planner/hubero_config.h>
 
