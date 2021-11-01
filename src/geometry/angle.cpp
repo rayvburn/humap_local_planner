@@ -11,11 +11,11 @@ Angle::Angle(const double& angle_rad, bool normalize): angle_(angle_rad) {
 
 Angle::Angle(const ignition::math::Angle& angle, bool normalize): Angle::Angle(angle.Radian(), normalize) {}
 
-// Angle::Angle(const Angle& obj): angle_(obj.getAngle()) {}
+// Angle::Angle(const Angle& obj): angle_(obj.getRawAngle()) {}
 
 Angle::Angle(const ignition::math::Vector3d& vector): Angle(std::atan2(vector.Y(), vector.X()), false) {}
 
-Angle::Angle(const Vector& vector): Angle::Angle(vector.getVector()) {}
+Angle::Angle(const Vector& vector): Angle::Angle(vector.getRawVector()) {}
 
 void Angle::setRadian(const double& angle, bool normalize) {
     angle_.Radian(angle);

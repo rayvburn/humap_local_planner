@@ -1,11 +1,12 @@
 #pragma once
 
-#include <hubero_local_planner/geometry/vector.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Transform.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <hubero_local_planner/geometry/vector.h>
+#include <hubero_local_planner/geometry/quaternion.h>
 #include <ignition/math/Pose3.hh>
 #include <teb_local_planner/pose_se2.h>
 #include <tf/transform_datatypes.h>
@@ -32,6 +33,7 @@ public:
         const ignition::math::Vector3d& pos,
         const ignition::math::Quaterniond& quat = ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)
     );
+    Pose(const Vector& position, const Quaternion& orientation);
     Pose(const geometry_msgs::Twist& twist);
     Pose(const tf::Stamped<tf::Pose>& pose);
     Pose(const geometry_msgs::Pose& pose);
@@ -84,22 +86,24 @@ public:
         return pose_.Rot().W();
     }
 
-    inline ignition::math::Pose3d getPose() const {
+    inline ignition::math::Pose3d getRawPose() const {
         return pose_;
     }
 
-    // getRawPosition
-    inline ignition::math::Vector3d getPosition() const {
+    inline ignition::math::Vector3d getRawPosition() const {
         return pose_.Pos();
     }
 
-    inline Vector getPositionVector() const {
-        return Vector(getPosition());
+    inline Vector getPosition() const {
+        return Vector(getRawPosition());
     }
 
-    // getRawOrientation
-    inline ignition::math::Quaterniond getOrientation() const {
+    inline ignition::math::Quaterniond getRawOrientation() const {
         return pose_.Rot();
+    }
+
+    inline Quaternion getOrientation() const {
+        return Quaternion(pose_.Rot());
     }
 
     // TODO: operators?

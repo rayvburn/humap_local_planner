@@ -60,12 +60,12 @@ public:
 
     /// Does not make sense if Pose2D ctor was used
     inline double dot(const Vector& vector) const {
-        return v_.Dot(vector.getVector());
+        return v_.Dot(vector.getRawVector());
     }
 
     /// Does not make sense if Pose2D ctor was used
     inline Vector cross(const Vector& vector) const {
-        return v_.Cross(vector.getVector());
+        return v_.Cross(vector.getRawVector());
     }
 
     /**
@@ -93,8 +93,8 @@ public:
     inline double getZ() const {
         return v_.Z();
     }
-    // getRawVector
-    inline ignition::math::Vector3d getVector() const {
+
+    inline ignition::math::Vector3d getRawVector() const {
         return v_;
     }
 
@@ -113,7 +113,7 @@ public:
     /// \param[in] v a new value
     /// \return this
     Vector& operator=(const Vector& v) {
-        v_ = v.getVector();
+        v_ = v.getRawVector();
         return *this;
     }
 
@@ -129,14 +129,14 @@ public:
     /// \param[in] v vector to add
     /// \return the sum vector
     Vector operator+(const Vector &v) const {
-        return Vector(v_ + v.getVector());
+        return Vector(v_ + v.getRawVector());
     }
 
     /// \brief Addition assignment operator
     /// \param[in] v vector to add
     /// \return the sum vector
     const Vector& operator+=(const Vector& v) {
-        v_ += v.getVector();
+        v_ += v.getRawVector();
         return *this;
     }
 
@@ -173,14 +173,14 @@ public:
     /// \param[in] pt a vector to substract
     /// \return a vector after the substraction
     inline Vector operator-(const Vector &pt) const {
-        return Vector(v_ - pt.getVector());
+        return Vector(v_ - pt.getRawVector());
     }
 
     /// \brief Subtraction assignment operators
     /// \param[in] pt subtrahend
     /// \return a vector after the substraction
     const Vector& operator-=(const Vector& pt) {
-        v_ -= pt.getVector();
+        v_ -= pt.getRawVector();
         return *this;
     }
 
@@ -196,7 +196,7 @@ public:
     /// \param[in] v vector subtrahend
     /// \return difference vector
     friend inline Vector operator-(const double s, const Vector& v) {
-        return Vector(s - v.getVector());
+        return Vector(s - v.getRawVector());
     }
 
     /// \brief Subtraction assignment operator
@@ -212,7 +212,7 @@ public:
     /// \param[in] pt the vector divisor
     /// \return a vector
     const Vector operator/(const Vector& pt) const {
-        return Vector(v_ / pt.getVector());
+        return Vector(v_ / pt.getRawVector());
     }
 
     /// \brief Division assignment operator
@@ -220,7 +220,7 @@ public:
     /// \param[in] pt the vector divisor
     /// \return a vector
     const Vector& operator/=(const Vector& pt) {
-        v_ /= pt.getVector();
+        v_ /= pt.getRawVector();
         return *this;
     }
 
@@ -246,7 +246,7 @@ public:
     /// \param[in] p multiplier operator
     /// \return a vector
     Vector operator*(const Vector &p) const {
-        return Vector(v_ * p.getVector());
+        return Vector(v_ * p.getRawVector());
     }
 
     /// \brief Multiplication assignment operators
@@ -254,7 +254,7 @@ public:
     /// \param[in] v a vector
     /// \return this
     const Vector& operator*=(const Vector& v) {
-        v_ *= v.getVector();
+        v_ *= v.getRawVector();
         return *this;
     }
 
@@ -270,7 +270,7 @@ public:
     /// \param[in] v input vector
     /// \return a scaled vector
     friend inline Vector operator*(double s, const Vector& v) {
-        return Vector(v.getVector() * s);
+        return Vector(v.getRawVector() * s);
     }
 
     /// \brief Multiplication operator

@@ -46,7 +46,7 @@ public:
     /**
      * Returns the wrapped class' object
      */
-    ignition::math::Angle getAngle() const {
+    ignition::math::Angle getRawAngle() const {
         return angle_;
     }
 
@@ -59,7 +59,7 @@ public:
     /// \return the new angle
     /// \details Does not normalize Angle
     Angle operator-(const Angle& angle) const {
-        return Angle(angle_ - angle.getAngle(), false);
+        return Angle(angle_ - angle.getRawAngle(), false);
     }
 
     /// \brief Addition operator, result = this + angle
@@ -67,7 +67,7 @@ public:
     /// \return the new angle
     /// \details Does not normalize Angle
     Angle operator+(const Angle& angle) const {
-        return Angle(angle_ + angle.getAngle(), false);
+        return Angle(angle_ + angle.getRawAngle(), false);
     }
 
     /// \brief Multiplication operator, result = this * angle
@@ -75,7 +75,7 @@ public:
     /// \return the new angle
     /// \details Does not normalize Angle
     Angle operator*(const Angle& angle) const {
-        return Angle(angle_ * angle.getAngle(), false);
+        return Angle(angle_ * angle.getRawAngle(), false);
     }
 
     /// \brief Division, result = this / angle
@@ -83,7 +83,7 @@ public:
     /// \return the new angle
     /// \details Does not normalize Angle
     Angle operator/(const Angle& angle) const {
-        return Angle(angle_ / angle.getAngle(), false);
+        return Angle(angle_ / angle.getRawAngle(), false);
     }
 
     /// \brief Subtraction set, this = this - angle
@@ -91,7 +91,7 @@ public:
     /// \return angle
     /// \details Does not normalize Angle
     Angle operator-=(const Angle& angle) {
-        angle_ -= angle.getAngle();
+        angle_ -= angle.getRawAngle();
         return Angle(*this);
     }
 
@@ -100,7 +100,7 @@ public:
     /// \return angle
     /// \details Does not normalize Angle
     Angle operator+=(const Angle& angle) {
-        angle_ += angle.getAngle();
+        angle_ += angle.getRawAngle();
         return Angle(*this);
     }
 
@@ -109,7 +109,7 @@ public:
     /// \return angle
     /// \details Does not normalize Angle
     Angle operator*=(const Angle& angle) {
-        angle_ *= angle.getAngle();
+        angle_ *= angle.getRawAngle();
         return Angle(*this);
     }
 
@@ -118,7 +118,7 @@ public:
     /// \return angle
     /// \details Does not normalize Angle
     Angle operator/=(const Angle& angle) {
-        angle_ /= angle.getAngle();
+        angle_ /= angle.getRawAngle();
         return Angle(*this);
     }
 
@@ -126,42 +126,42 @@ public:
     /// \param[in] angle Angle to check for equality
     /// \return true if this == angle
     bool operator==(const Angle& angle) const {
-        return angle_ == angle.getAngle();
+        return angle_ == angle.getRawAngle();
     }
 
     /// \brief Inequality
     /// \param[in] angle Angle to check for inequality
     /// \return true if this != angle
     bool operator!=(const Angle& angle) const {
-        return angle_ != angle.getAngle();
+        return angle_ != angle.getRawAngle();
     }
 
     /// \brief Less than operator
     /// \param[in] angle Angle to check
     /// \return true if this < angle
     bool operator<(const Angle& angle) const {
-        return angle_ < angle.getAngle();
+        return angle_ < angle.getRawAngle();
     }
 
     /// \brief Less or equal operator
     /// \param[in] angle Angle to check
     /// \return true if this <= angle
     bool operator<=(const Angle& angle) const {
-        return angle_ <= angle.getAngle();
+        return angle_ <= angle.getRawAngle();
     }
 
     /// \brief Greater than operator
     /// \param[in] angle Angle to check
     /// \return true if this > angle
     bool operator>(const Angle& angle) const {
-        return angle_ > angle.getAngle();
+        return angle_ > angle.getRawAngle();
     }
 
     /// \brief Greater or equal operator
     /// \param[in] angle Angle to check
     /// \return true if this >= angle
     bool operator>=(const Angle& angle) const {
-        return angle_ >= angle.getAngle();
+        return angle_ >= angle.getRawAngle();
     }
     /// @}
 protected:

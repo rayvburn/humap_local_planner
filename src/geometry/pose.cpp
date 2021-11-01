@@ -22,6 +22,9 @@ Pose::Pose(
 Pose::Pose(const ignition::math::Vector3d& pos, const ignition::math::Quaterniond& quat):
     pose_(ignition::math::Pose3d(pos, quat)) {}
 
+Pose::Pose(const Vector& position, const Quaternion& orientation):
+    Pose::Pose(position.getRawVector(), orientation.getRawQuaternion()) {}
+
 Pose::Pose(const geometry_msgs::Twist& twist):
     Pose::Pose(twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.x, twist.angular.y, twist.angular.z) {}
 

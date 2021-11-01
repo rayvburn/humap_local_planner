@@ -1,5 +1,4 @@
 #include <hubero_local_planner/hubero_planner.h>
-#include <hubero_local_planner/utils/converter.h>
 #include <math.h>
 
 #include <hubero_local_planner/utils/debug.h>
