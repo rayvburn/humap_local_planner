@@ -46,12 +46,12 @@ visualization_msgs::Marker HeatCell::create(const hubero::geometry::Vector& pos,
 	marker.pose.position.z = pos.getZ() + 0.1; // few cm above the `ground`
 
 	// default quaternion
-	ignition::math::Quaterniond quaternion(0.0, 0.0, 0.0);
+	hubero::geometry::Quaternion quaternion(0.0);
 
-	marker.pose.orientation.x = quaternion.X();
-	marker.pose.orientation.y = quaternion.Y();
-	marker.pose.orientation.z = quaternion.Z();
-	marker.pose.orientation.w = quaternion.W();
+	marker.pose.orientation.x = quaternion.getX();
+	marker.pose.orientation.y = quaternion.getY();
+	marker.pose.orientation.z = quaternion.getZ();
+	marker.pose.orientation.w = quaternion.getW();
 
 	// scale
 	// arrow's length is calculated based on max allowable force `in SFM class`
