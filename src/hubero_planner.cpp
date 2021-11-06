@@ -22,6 +22,7 @@ HuberoPlanner::HuberoPlanner(
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
+	fuzzy_processor_.printFisConfiguration();
 }
 
 HuberoPlanner::~HuberoPlanner() {

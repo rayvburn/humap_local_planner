@@ -14,160 +14,108 @@
 namespace hubero_local_planner {
 namespace fuzz {
 
-// flags to check the `status register`
-//#define PROCESSOR_EXTRA_TERM_NONE 			(0x01)
-//#define PROCESSOR_EXTRA_TERM_OUTWARDS 		(0x02)
-//#define PROCESSOR_EXTRA_TERM_CROSS_FRONT 	(0x04)
-//#define PROCESSOR_EXTRA_TERM_CROSS_BEHIND 	(0x08)
-
-//#define PROCESSOR_PRINT_DEBUG_INFO
-
-Processor::Processor(): alpha_dir_(0.0) {
+Processor::Processor():
+	alpha_dir_(0.0),
+	engine_ptr_(new fl::Engine()),
+	location_ptr_(new fl::InputVariable()),
+	direction_ptr_(new fl::InputVariable()),
+	trapezoid_out_("outwards", 10),
+	trapezoid_cf_("cross_front", 10),
+	trapezoid_cb_("cross_behind", 10),
+	trapezoid_eq_("equal", 10, 20),
+	trapezoid_opp_("opposite", 10, 20),
+	social_behavior_ptr_(new fl::OutputVariable()),
+	rule_block_ptr_(new fl::RuleBlock())
+{
 	/* Initialize engine */
-	engine_.setName("SocialBehaviors");
-	engine_.setDescription("");
+	engine_ptr_->setName("SocialBehaviors");
+	engine_ptr_->setDescription("");
 
 	/* Initialize first input variable */
-	location_.setName("location");
-	location_.setDescription("");
-	location_.setEnabled(true);
-	location_.setRange(-IGN_PI, +IGN_PI);
-	location_.setLockValueInRange(false);
+	location_ptr_->setName("location");
+	location_ptr_->setDescription("");
+	location_ptr_->setEnabled(true);
+	location_ptr_->setRange(-IGN_PI, +IGN_PI);
+	location_ptr_->setLockValueInRange(false);
 
 	// `location` regions
-	location_.addTerm(new fl::Triangle("back",			IGN_DTOR(-180.0), 	IGN_DTOR(-180.0),  	IGN_DTOR(-160.0)));
-	location_.addTerm(new fl::Trapezoid("back_right", 	IGN_DTOR(-180.0), 	IGN_DTOR(-150.0), 	IGN_DTOR(-120.0), 	IGN_DTOR(-90.0)));
-	location_.addTerm(new fl::Trapezoid("front_right", 	IGN_DTOR(-120.0), 	IGN_DTOR(-90.0), 	IGN_DTOR(-30.0), 	IGN_DTOR(0.0)));
-	location_.addTerm(new fl::Triangle("front", 		IGN_DTOR(-20.0), 	IGN_DTOR(0.0), 		IGN_DTOR(+20.0)));
-	location_.addTerm(new fl::Trapezoid("front_left", 	IGN_DTOR(0.0), 		IGN_DTOR(30.0), 	IGN_DTOR(90.0), 	IGN_DTOR(120.0)));
-	location_.addTerm(new fl::Trapezoid("back_left", 	IGN_DTOR(90.0),		IGN_DTOR(120.0), 	IGN_DTOR(150.0), 	IGN_DTOR(180.0)));
-	location_.addTerm(new fl::Triangle("back",			IGN_DTOR(+160.0), 	IGN_DTOR(+180.0),  	IGN_DTOR(+180.0)));
-	engine_.addInputVariable(&location_);
+	location_ptr_->addTerm(new fl::Triangle( "back",        IGN_DTOR(-180.0), IGN_DTOR(-180.0), IGN_DTOR(-160.0)));
+	location_ptr_->addTerm(new fl::Trapezoid("back_right",  IGN_DTOR(-180.0), IGN_DTOR(-150.0), IGN_DTOR(-120.0), IGN_DTOR(-90.0)));
+	location_ptr_->addTerm(new fl::Trapezoid("front_right", IGN_DTOR(-120.0), IGN_DTOR(-90.0),  IGN_DTOR(-30.0),  IGN_DTOR(0.0)));
+	location_ptr_->addTerm(new fl::Triangle( "front",       IGN_DTOR(-20.0),  IGN_DTOR(0.0),    IGN_DTOR(+20.0)));
+	location_ptr_->addTerm(new fl::Trapezoid("front_left",  IGN_DTOR(0.0),    IGN_DTOR(30.0),   IGN_DTOR(90.0),   IGN_DTOR(120.0)));
+	location_ptr_->addTerm(new fl::Trapezoid("back_left",   IGN_DTOR(90.0),   IGN_DTOR(120.0),  IGN_DTOR(150.0),  IGN_DTOR(180.0)));
+	location_ptr_->addTerm(new fl::Triangle( "back",        IGN_DTOR(+160.0), IGN_DTOR(+180.0), IGN_DTOR(+180.0)));
+	engine_ptr_->addInputVariable(location_ptr_);
 
 	/* Initialize second input variable */
-	direction_.setName("direction");
-	direction_.setDescription("");
-	direction_.setEnabled(true);
-	direction_.setRange(-IGN_PI, +IGN_PI);
-	direction_.setLockValueInRange(false);
+	direction_ptr_->setName("direction");
+	direction_ptr_->setDescription("");
+	direction_ptr_->setEnabled(true);
+	direction_ptr_->setRange(-IGN_PI, +IGN_PI);
+	direction_ptr_->setLockValueInRange(false);
 
+	// approach similar to VFH = vector field histogram
 	// `direction` regions must be configured dynamically,
-	// make it default at the start
-//	direction_.addTerm(new fl::Trapezoid("outwards"));
-//	direction_.addTerm(new fl::Trapezoid("cross_front"));
-//	// NOTE: `cross_center` is not a valid region (not useful for reasoning)
-//	direction_.addTerm(new fl::Trapezoid("cross_behind"));
-//	direction_.addTerm(new fl::Trapezoid("equal"));
-//	direction_.addTerm(new fl::Trapezoid("opposite"));
-	// ---
-	// TODO: VFH = vector field histogram
+	// TODO: `cross_center`
+	//
 	// `outwards`
-	direction_.addTerm(trapezoid_out_.getTrapezoids().at(0));
-	direction_.addTerm(trapezoid_out_.getTrapezoids().at(1));
+	direction_ptr_->addTerm(trapezoid_out_.getTrapezoids().at(0));
+	direction_ptr_->addTerm(trapezoid_out_.getTrapezoids().at(1));
 	// `cross_front`
-	direction_.addTerm(trapezoid_cf_.getTrapezoids().at(0));
-	direction_.addTerm(trapezoid_cf_.getTrapezoids().at(1));
+	direction_ptr_->addTerm(trapezoid_cf_.getTrapezoids().at(0));
+	direction_ptr_->addTerm(trapezoid_cf_.getTrapezoids().at(1));
 	// `cross_behind`
-	direction_.addTerm(trapezoid_cb_.getTrapezoids().at(0));
-	direction_.addTerm(trapezoid_cb_.getTrapezoids().at(1));
+	direction_ptr_->addTerm(trapezoid_cb_.getTrapezoids().at(0));
+	direction_ptr_->addTerm(trapezoid_cb_.getTrapezoids().at(1));
 	// `equal`
-	direction_.addTerm(trapezoid_eq_.getTrapezoids().at(0));
-	direction_.addTerm(trapezoid_eq_.getTrapezoids().at(1));
+	direction_ptr_->addTerm(trapezoid_eq_.getTrapezoids().at(0));
+	direction_ptr_->addTerm(trapezoid_eq_.getTrapezoids().at(1));
 	// `opposite`
-	direction_.addTerm(trapezoid_opp_.getTrapezoids().at(0));
-	direction_.addTerm(trapezoid_opp_.getTrapezoids().at(1));
-	// ---
-	engine_.addInputVariable(&direction_);
+	direction_ptr_->addTerm(trapezoid_opp_.getTrapezoids().at(0));
+	direction_ptr_->addTerm(trapezoid_opp_.getTrapezoids().at(1));
+	engine_ptr_->addInputVariable(direction_ptr_);
 
     /* Initialize output variable */
-    social_behavior_.setName("behavior");
-    social_behavior_.setDescription("");
-    social_behavior_.setEnabled(true);
-    social_behavior_.setRange(0.000, 9.000); // FIXME: change if any term changes
-    social_behavior_.setLockValueInRange(false);
-    social_behavior_.setAggregation(new fl::Maximum);
-    social_behavior_.setDefuzzifier(new fl::Centroid()); // prev resolution was 100
-    social_behavior_.setDefaultValue(fl::nan);
-    social_behavior_.setLockPreviousValue(false);
+    social_behavior_ptr_->setName("behavior");
+    social_behavior_ptr_->setDescription("");
+    social_behavior_ptr_->setEnabled(true);
+    social_behavior_ptr_->setRange(-IGN_PI, +IGN_PI);
+    social_behavior_ptr_->setLockValueInRange(false);
+    social_behavior_ptr_->setAggregation(new fl::Maximum);
+    social_behavior_ptr_->setDefuzzifier(new fl::Centroid());
+    social_behavior_ptr_->setDefaultValue(fl::nan);
+    social_behavior_ptr_->setLockPreviousValue(false);
 
-    std::cout << "\t**********************************************\n";
-    std::cout << "\t\tSocialBehavior configuration\n";
-    // TODO: wrap into function
-    // threshold values related to regions
-    const double INTERSECTION = 0.1;
-    double upper = static_cast<double>(FUZZ_BEH_TURN_LEFT);
-    double lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("turn_left", 				lower, 					lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tturn_left: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_TURN_LEFT_ACCELERATE); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("turn_left_accelerate", 		lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tturn_left_accelerate: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_ACCELERATE); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("accelerate", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\taccelerate: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_GO_ALONG); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("go_along", 					lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tgo_along: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_DECELERATE); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("decelerate", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tdecelerate: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_STOP); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("stop", 						lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tstop: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT_DECELERATE); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("turn_right_decelerate",		lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tturn_right_decelerate: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("turn_right", 				lower - INTERSECTION,	lower, 	upper, 	upper + INTERSECTION));
-    std::cout << "\tturn_right: " << lower << " / " << upper << std::endl;
-
-    upper = static_cast<double>(FUZZ_BEH_TURN_RIGHT_ACCELERATE); lower = upper - 1.0;
-    social_behavior_.addTerm(new fl::Trapezoid("turn_right_accelerate", 	lower - INTERSECTION,	lower, 	upper, 	upper));
-    std::cout << "\tturn_right_accelerate: " << lower << " / " << upper << std::endl;
-    std::cout << "\t**********************************************\n";
-
-    engine_.addOutputVariable(&social_behavior_);
-
-    // output regions
-    //
-    /*
-     X turn_left
-     X go_along
-     X accelerate
-     X turn_left_accelerate
-     X turn_right_accelerate
-     X turn_right
-     X turn_right_decelerate
-     X stop
-     X decelerate
-     */
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("accelerate",            IGN_DTOR(-30),  IGN_DTOR(-15),  IGN_DTOR(-15),  IGN_DTOR(+30)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(+15),  IGN_DTOR(+30),  IGN_DTOR(+60),  IGN_DTOR(+75)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(+60),  IGN_DTOR(+75),  IGN_DTOR(+105), IGN_DTOR(+120)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_decelerate", IGN_DTOR(+105), IGN_DTOR(+120), IGN_DTOR(+140), IGN_DTOR(+155)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateA",           IGN_DTOR(+140), IGN_DTOR(+155), IGN_DTOR(+165), IGN_DTOR(+180)));
+	social_behavior_ptr_->addTerm(new fl::Triangle( "stopA",                 IGN_DTOR(+165), IGN_DTOR(+180), IGN_DTOR(+195)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateB",           IGN_DTOR(-180), IGN_DTOR(-165), IGN_DTOR(-155), IGN_DTOR(-140)));
+	social_behavior_ptr_->addTerm(new fl::Triangle( "stopB",                 IGN_DTOR(-195), IGN_DTOR(-180), IGN_DTOR(-165)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_decelerate",  IGN_DTOR(-155), IGN_DTOR(-140), IGN_DTOR(-120), IGN_DTOR(-105)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left",             IGN_DTOR(-120), IGN_DTOR(-105), IGN_DTOR(-75),  IGN_DTOR(-60)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_accelerate",  IGN_DTOR(-75),  IGN_DTOR(-60),  IGN_DTOR(-30),  IGN_DTOR(-15)));
+	engine_ptr_->addOutputVariable(social_behavior_ptr_);
 
     /* Initialize rule block */
-    rule_block_.setName("mamdani");
-    rule_block_.setDescription("");
-    rule_block_.setEnabled(true);
-    rule_block_.setConjunction(new fl::Minimum); 			// fuzzylite/fuzzylite/fl/norm/t
-    rule_block_.setDisjunction(new fl::AlgebraicSum);		// fuzzylite/fuzzylite/fl/norm/s
+    rule_block_ptr_->setName("mamdani");
+    rule_block_ptr_->setDescription("");
+    rule_block_ptr_->setEnabled(true);
+    rule_block_ptr_->setConjunction(new fl::Minimum); 			// fuzzylite/fuzzylite/fl/norm/t
+    rule_block_ptr_->setDisjunction(new fl::AlgebraicSum);		// fuzzylite/fuzzylite/fl/norm/s
     // FIXME: AlgebraicProduct -> seems to choose not the highest membership term? IS THIS THE CAUSE?
-    rule_block_.setImplication(new fl::Minimum); 			// AlgebraicProduct);
-    rule_block_.setActivation(new fl::General);				// https://fuzzylite.github.io/fuzzylite/df/d4b/classfl_1_1_activation.html
+    rule_block_ptr_->setImplication(new fl::Minimum); 			// AlgebraicProduct);
+    rule_block_ptr_->setActivation(new fl::General);				// https://fuzzylite.github.io/fuzzylite/df/d4b/classfl_1_1_activation.html
     /*
-      	terminate called after throwing an instance of 'fl::Exception'
-			what():  [conjunction error] the following rule requires a conjunction operator:
-		location is front_right and direction is cross_front
-		{at /src/rule/Antecedent.cpp::activationDegree() [line:114]}
+	terminate called after throwing an instance of 'fl::Exception'
+		what():  [conjunction error] the following rule requires a conjunction operator:
+	location is front_right and direction is cross_front
+	{at /src/rule/Antecedent.cpp::activationDegree() [line:114]}
      */
-    //
-    // template
-    // rule_block_.addRule(fl::Rule::parse("if location is X and direction is Y then behavior is Z", &engine_));
-    //
+
     /*
      * NOTE: It seems that there is a crucial aspect in `fuzzylite` Term naming convention.
      * The library immediately throws segfault after AddRule call was fed with a term name
@@ -175,52 +123,54 @@ Processor::Processor(): alpha_dir_(0.0) {
      * This may be the problem with fl::Term class or Rule parser function.
      * The program crashes also when a Rule contains a name of a Term which has not
      * been defined yet (whose name is unknown).
+	 * Template:
+	 * rule_block_ptr_->addRule(fl::Rule::parse("if location is X and direction is Y then behavior is Z", engine_ptr_));
      */
-    std::cout << "\nfuzzylite's RULE BLOCK1: " << rule_block_.toString() << std::endl << std::endl;
+	// location - `front`
+    rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is oppositeA     or direction is oppositeB    ) then behavior is turn_right",            engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is outwardsA     or direction is outwardsB    ) then behavior is accelerate",            engine_ptr_));
+    rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is equalA        or direction is equalB       ) then behavior is decelerateA",           engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is equalA        or direction is equalB       ) then behavior is decelerateB",           engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is cross_frontA  or direction is cross_frontB ) then behavior is turn_right",            engine_ptr_));
     // location - `front_right`
-    //																																	 previously: stop - doesnt work well
-    //																																	 `turn_right_decelerate` - causes sticking and going in the same direction
-    //																																	 `turn_right_accelerate`
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right", 	&engine_)); // 1
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is cross_behindA or direction is cross_behindB) 	then behavior is turn_left", 				&engine_)); // 2
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 3
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is oppositeA 	or direction is oppositeB	 )	then behavior is turn_left", 				&engine_)); // 4
-    rule_block_.addRule(fl::Rule::parse("if location is front_right and (direction is outwardsA 	or direction is outwardsB	 )	then behavior is turn_left", 				&engine_)); // 9
+    rule_block_ptr_->addRule(fl::Rule::parse("if location is front_right and (direction is cross_behindA or direction is cross_behindB) then behavior is turn_left",             engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front_right and (direction is oppositeA     or direction is oppositeB    ) then behavior is turn_left",             engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front_right and (direction is outwardsA     or direction is outwardsB    ) then behavior is turn_left",             engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front_right and (direction is equalA        or direction is equalB       ) then behavior is turn_left_accelerate",  engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front_right and (direction is cross_frontA  or direction is cross_frontB ) then behavior is turn_right",            engine_ptr_));
     // location - `back_right`
-    rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is accelerate", 				&engine_)); // 5
-    rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is cross_behindA or direction is cross_behindB) 	then behavior is turn_left_accelerate", 	&engine_)); // 6
-    rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 7
-    rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is go_along", 				&engine_)); // 8
-    rule_block_.addRule(fl::Rule::parse("if location is back_right  and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is go_along", 				&engine_)); // 10
-    // location - `front_left`																														 turn_left
-    //																																				 turn_right_decelerate
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right_accelerate", 	&engine_)); // EXTRA (added after few experiments although it may just strengthen another case)
-    //																																				 // try acc
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is cross_behindA or direction is cross_behindB) 	then behavior is go_along", 	&engine_)); // 11 // V1 (after front changes): turn_right_accelerate
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 12
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is turn_right", 				&engine_)); // 13
-    rule_block_.addRule(fl::Rule::parse("if location is front_left  and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is turn_right_decelerate", 	&engine_)); // 14
-    // location - `back_left`
-    rule_block_.addRule(fl::Rule::parse("if location is back_left   and (direction is equalA 		or direction is equalB		 ) 	then behavior is go_along", 				&engine_)); // 15
-    rule_block_.addRule(fl::Rule::parse("if location is back_left   and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is go_along", 				&engine_)); // 16
-    // location - `front`
-    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is accelerate", 					&engine_)); // 17	// V1: stop
-    //																																				 V2: 'turn_right_decelerate'
-    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is cross_frontA 	or direction is cross_frontB ) 	then behavior is turn_right", 					&engine_)); // 17b	// V1: stop
-    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is equalA 		or direction is equalB		 ) 	then behavior is decelerate", 				&engine_)); // 18
-    rule_block_.addRule(fl::Rule::parse("if location is front 	    and (direction is oppositeA 	or direction is oppositeB	 ) 	then behavior is turn_right", 				&engine_)); // 19
-    // location - `back`
-    rule_block_.addRule(fl::Rule::parse("if location is back 	    and (direction is outwardsA 	or direction is outwardsB	 ) 	then behavior is go_along", 				&engine_)); // 20
-    rule_block_.addRule(fl::Rule::parse("if location is back 	    and (direction is cross_behindA or direction is cross_behindB) 	then behavior is go_along", 				&engine_)); // 20b
-    // apply rules
-    std::cout << "\nfuzzylite's RULE BLOCK: " << rule_block_.toString() << std::endl << std::endl;
-    engine_.addRuleBlock(&rule_block_);
-//    engine_.configure("AlgebraicProduct", "AlgebraicSum", "AlgebraicProduct", "AlgebraicSum", "Centroid");
-//    engine_.configure("conj", "disj", "implic", "aggreg", "defuzz", "activ");
+    rule_block_ptr_->addRule(fl::Rule::parse("if location is back_right  and (direction is cross_behindA or direction is cross_behindB) then behavior is turn_left_accelerate",  engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is back_right  and (direction is oppositeA     or direction is oppositeB    ) then behavior is turn_right",            engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is back_right  and (direction is equalA        or direction is equalB       ) then behavior is turn_right_accelerate", engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is back_right  and (direction is cross_frontA  or direction is cross_frontB ) then behavior is accelerate",            engine_ptr_));
+	// location - `back`
+	// none
+	// location - `back_left`
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is back_left   and (direction is cross_behindA or direction is cross_behindB) then behavior is accelerate",            engine_ptr_));
+	// location - `front_left`
+    rule_block_ptr_->addRule(fl::Rule::parse("if location is front_left  and (direction is cross_behindA or direction is cross_behindB) then behavior is turn_right",            engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front_left  and (direction is cross_frontA  or direction is cross_frontB ) then behavior is turn_right_accelerate", engine_ptr_));
+	try {
+		engine_ptr_->addRuleBlock(rule_block_ptr_);
+	} catch (fl::Exception& what) {
+		std::cout << what.what() << std::endl;
+	}
     // FIXME: below does not overwrite rule block's settings
-    engine_.configure("AlgebraicProduct", "AlgebraicSum", "AlgebraicProduct", "Maximum", "Centroid", "General");
-    std::cout << "inputs: " << engine_.numberOfInputVariables() << "\toutputs: " << engine_.numberOfOutputVariables() << "\trule_blocks: " << engine_.numberOfRuleBlocks() << std::endl << std::endl;
+    engine_ptr_->configure("AlgebraicProduct", "AlgebraicSum", "AlgebraicProduct", "Maximum", "Centroid", "General");
+}
 
+// ------------------------------------------------------------------- //
+
+void Processor::printFisConfiguration() const {
+	// system basic information
+	std::cout << "Fuzzy Inference System configuration" << std::endl;
+	std::cout << "\tinputs: " << engine_ptr_->numberOfInputVariables() <<
+		", outputs: " << engine_ptr_->numberOfOutputVariables() <<
+		", rule_blocks: " << engine_ptr_->numberOfRuleBlocks() << std::endl;
+	std::string status;
+	std::cout << "\tFIS engine ready flag: " << engine_ptr_->isReady(&status) << " (" << status << ")" << std::endl;
+	// print rules
+	std::cout << "FIS 'Processor' class rule block" << std::endl << rule_block_ptr_->toString() << std::endl;
 }
 
 // ------------------------------------------------------------------- //
@@ -263,53 +213,41 @@ void Processor::process() {
 		std::string term_name = "";
 
 		// update the location input variable
-		location_.setValue(fl::scalar(rel_loc_.at(i)));
+		location_ptr_->setValue(fl::scalar(rel_loc_.at(i)));
 
 		// update `direction_` regions according to value previously set
 		updateRegions(alpha_dir_, beta_dir_.at(i), d_alpha_beta_angle_.at(i), rel_loc_.at(i));
 
 		// calculate the gamma angle for the current alpha-beta configuration
 		Angle gamma(d_alpha_beta_angle_.at(i) - alpha_dir_ - beta_dir_.at(i));
-		direction_.setValue(fl::scalar(gamma.getRadian()));
+		direction_ptr_->setValue(fl::scalar(gamma.getRadian()));
 
 		// execute fuzzy calculations
-		engine_.process();
-
-		// - - - - - - print meaningful data
-
-		#ifdef PROCESSOR_PRINT_DEBUG_INFO
-		std::cout << "location\t value: " << location_.getValue() << "\tmemberships: " << location_.fuzzify(location_.getValue()) << std::endl;
-		std::cout << "direction\t value: " << direction_.getValue() << "\tmemberships: " << direction_.fuzzify(direction_.getValue()) << std::endl;
-		std::cout << "output\t\t value: " << social_behavior_.getValue() << std::endl;
-		std::cout << "\t\tfuzzyOut: " << social_behavior_.fuzzyOutputValue();
-		#endif
+		engine_ptr_->process();
 
 		fl::scalar y_highest_temp = fl::nan;
-		fl::Term* term_highest_ptr = social_behavior_.highestMembership(social_behavior_.getValue(), &y_highest_temp);
+		fl::Term* term_highest_ptr = social_behavior_ptr_->highestMembership(social_behavior_ptr_->getValue(), &y_highest_temp);
 
 		// check whether proper term was found, if not - `nullptr` will be detected
 		if ( term_highest_ptr != nullptr ) {
 			term_name = term_highest_ptr->getName();
 		}
 
-		#ifdef PROCESSOR_PRINT_DEBUG_INFO
-		std::cout << "\n\t\tname: " << term_name << "\theight: " << y_highest_temp << std::endl;
-		#endif
-
-		// NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms
-		// with a corresponding membership
-		// WHEREAS fl::variable fl::variable::fuzzify(fl::scalar) returns the
-		// same list but with NORMALIZED membership?
-		// the effect is as: 	fuzzyOutputValue()	-> 	0.222/turn_right_decelerate
-		//						fuzzify(fl::scalar)	-> 	1.000/turn_right_decelerate
-		// when only single term has non-zero membership.
-		// When multiple (2) terms have non-zero membership then results
-		// are as follow:
-		// fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
-		// fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
-
+		/**
+		 * NOTE: fl::variable::fuzzyOutputValue() returns a list of available terms
+		 * with a corresponding membership
+		 * WHEREAS fl::variable fl::variable::fuzzify(fl::scalar) returns the
+		 * same list but with NORMALIZED membership?
+		 * the effect is as: 	fuzzyOutputValue()	-> 	0.222/turn_right_decelerate
+		 * 					fuzzify(fl::scalar)	-> 	1.000/turn_right_decelerate
+		 * when only single term has non-zero membership.
+		 * When multiple (2) terms have non-zero membership then results
+		 * are as follow:
+		 * fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
+		 * fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
+		 */
 		// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
-		double fitness = static_cast<double>(social_behavior_.getValue());
+		double fitness = static_cast<double>(social_behavior_ptr_->getValue());
 		fitness = fitness - std::floor(fitness);
 
 		output_v_.push_back(std::make_tuple(term_name, fitness));
@@ -326,7 +264,13 @@ std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
 
 // ------------------------------------------------------------------- //
 
-Processor::~Processor() {}
+Processor::~Processor() {
+	// free memory allocated in ctor;
+	// Note that fl::Engine manages deletion of all objects that it receives:
+	// https://github.com/fuzzylite/fuzzylite/blob/7aee562d6ca17f3cf42588ffb5116e03017c3c50/fuzzylite/src/Engine.cpp#L96
+	delete engine_ptr_;
+}
+
 
 // ------------------------------------------------------------------- //
 
@@ -340,8 +284,8 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 	// compute relative location (`side`)
 	char side = decodeRelativeLocation(rel_loc); // decodeRelativeLocation(gamma_eq, gamma_opp, gamma_cc);
 
-//	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
-//	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
+	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
+	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
 
 	/* - - - - - Terms sensitive to side changes - - - - - */
 	// `outwards`
@@ -356,22 +300,6 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 	trapezoid_eq_.update(gamma_eq);
 	// `opposite`
 	trapezoid_opp_.update(gamma_opp);
-
-	// - - - - - - print meaningful data
-	// calculate the gamma angle for the current alpha-beta configuration
-	// FIXME: debugging only
-	Angle gamma(d_alpha_beta_angle - alpha_dir - beta_dir);
-
-#ifdef PROCESSOR_PRINT_DEBUG_INFO
-	std::cout << "gamma_eq: " << gamma_eq.Radian() << "\t\tgamma_opp: " << gamma_opp.Radian() << "\t\tgamma_cc: " << gamma_cc.Radian() << std::endl;
-	// print only `side`
-	if ( side == 'l' ) {
-		std::cout << "----LEFT" << std::endl;
-	} else if ( side == 'r' ) {
-		std::cout << "----RIGHT" << std::endl;
-	}
-#endif
-	// - - - - - -
 
 }
 
