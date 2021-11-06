@@ -49,7 +49,17 @@ public:
 	/// \return Vector of tuples. Each tuple consists of behavior name (string) and membership level.
 	std::vector<std::tuple<std::string, double> > getOutput() const;
 
+	/// \brief Specifically for unit testing, must be called after @ref process
+	std::vector<std::tuple<std::string, double>> membershipInputRelLoc() const;
+
+	/// \brief Specifically for unit testing, must be called after @ref process
+	std::vector<std::tuple<std::string, double>> membershipInputDirCross() const;
+
 	virtual ~Processor();
+
+protected:
+	/// \brief Parameterized method used by @ref membershipInputRelLoc and @ref membershipInputDirCross
+	static std::vector<std::tuple<std::string, double>> highestMembership(const fl::InputVariable* input_ptr);
 
 private:
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion

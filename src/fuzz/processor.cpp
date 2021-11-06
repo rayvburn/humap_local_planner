@@ -271,9 +271,52 @@ Processor::~Processor() {
 	delete engine_ptr_;
 }
 
+// ------------------------------------------------------------------- //
+
+std::vector<std::tuple<std::string, double>> Processor::membershipInputRelLoc() const {
+	return Processor::highestMembership(location_ptr_);
+}
 
 // ------------------------------------------------------------------- //
 
+std::vector<std::tuple<std::string, double>> Processor::membershipInputDirCross() const {
+	return Processor::highestMembership(direction_ptr_);
+}
+
+// ------------------------------------------------------------------- //
+// PROTECTED
+std::vector<std::tuple<std::string, double>> Processor::highestMembership(const fl::InputVariable* input_ptr) {
+	const std::vector<fl::Term*> terms = input_ptr->terms();
+	double max_membership = 0.0;
+	std::vector<std::tuple<std::string, double>> v_terms_memberships;
+	for (const auto term : terms) {
+		double membership = term->membership(input_ptr->getValue());
+		if (membership > max_membership) {
+			v_terms_memberships.clear();
+			v_terms_memberships.push_back(std::make_tuple(term->getName(), membership));
+			max_membership = membership;
+		} else if (membership == max_membership) {
+			v_terms_memberships.push_back(std::make_tuple(term->getName(), membership));
+		}
+	}
+	return v_terms_memberships;
+
+	// dummy version - returns first (alphabetically) term that has maximum membership
+	// returns std::tuple<std::string, double>
+	//
+	// std::string term_name("unknown");
+	// fl::scalar y_highest_temp = fl::nan;
+	// fl::Term* term_highest_ptr = input_ptr->highestMembership(input_ptr->getValue(), &y_highest_temp);
+
+	// // check whether proper term was found, if not - `nullptr` will be detected
+	// if ( term_highest_ptr != nullptr ) {
+	// 	term_name = term_highest_ptr->getName();
+	// }
+	// return std::make_tuple(term_name, static_cast<double>(y_highest_temp));
+}
+
+// ------------------------------------------------------------------- //
+// PRIVATE
 void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, const double &d_alpha_beta_angle, const double &rel_loc) {
 
 	// calculate threshold angle values, normalize
