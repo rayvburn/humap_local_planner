@@ -8,7 +8,7 @@
 #ifndef INCLUDE_FUZZ_PROCESSOR_H_
 #define INCLUDE_FUZZ_PROCESSOR_H_
 
-#include "fl/Headers.h"
+#include <fl/Headers.h>
 #include <hubero_local_planner/fuzz/trapezoid_loc_dep.h>
 #include <hubero_local_planner/fuzz/trapezoid_loc_indep.h>
 #include <hubero_local_planner/geometry/geometry.h>
@@ -30,11 +30,13 @@ public:
 	/// with values proper to this application.
 	Processor();
 
+	/// \brief Prints FIS configuration to console (stdout)
+	void printFisConfiguration() const;
+
 	/// \brief Setter method for `d_alpha_beta` angle (see SFM doc for details).
 	/// `d_alpha_beta` angle is a direction of a vector connecting alpha and beta
 	/// center positions.
 	/// \param d_alpha_beta_angle is an angle described above
-
 	bool load(const double &dir_alpha, const std::vector<double> &dir_beta_v, const std::vector<double> &rel_loc_v,
 			  const std::vector<double> &dist_angle_v);
 
@@ -74,47 +76,53 @@ private:
 	/* ------- output --------- */
 	std::vector<std::tuple<std::string, double> > output_v_;
 
-
-
-	/* ----- fuzzylite-related ----- */
+	/**
+	 * @defgroup fuzzy fuzzylite-related
+	 *
+	 * @details fl::* objects must be dynamically allocated, passing pointer of raw, e.g., @ref fl::InputVariable
+	 * object to @ref engine_ produces segmentation fault in unit tests and does not indicate failures, see
+	 * https://github.com/fuzzylite/fuzzylite#c
+	 *
+	 * @{
+	 */
 	/// \brief Fuzzy logic engine
-	fl::Engine engine_;
+	fl::Engine* engine_ptr_;
 
 	/* ----- Input variables ----- */
-
 	/// \brief An angle which helps specify on which hand-side the object is located relative to the actor
-	fl::InputVariable location_; 	//	double object_dir_relative_angle_;
+	fl::InputVariable* location_ptr_; 	//	double object_dir_relative_angle_;
 
 	// direction input variable section (consists of input variable and related trapezoidal terms)
 	/// \brief A relative angle between 2 objects' velocities vectors; used to determine
 	/// whether objects are moving in the same direction
-	fl::InputVariable direction_; 		//	double vels_relative_angle_;
+	fl::InputVariable* direction_ptr_; 		//	double vels_relative_angle_;
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points outwards relative to the `alpha` direction
-	TrapezoidLocDep trapezoid_out_{"outwards", 10}; 	// `intersection`
+	TrapezoidLocDep trapezoid_out_;
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction crosses in front of the `alpha` center
-	TrapezoidLocDep trapezoid_cf_{"cross_front", 10};
+	TrapezoidLocDep trapezoid_cf_;
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction crosses behind the `alpha` center
-	TrapezoidLocDep trapezoid_cb_{"cross_behind", 10};
+	TrapezoidLocDep trapezoid_cb_;
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the same direction as the `alpha`'s
-	TrapezoidLocIndep trapezoid_eq_{"equal", 10, 20}; 	// `intersection`, `interval`
+	TrapezoidLocIndep trapezoid_eq_;
 
 	/// \brief Trapezoidal term related to the case when `beta` object's
 	/// direction points in the opposite direction as the `alpha`'s
-	TrapezoidLocIndep trapezoid_opp_{"opposite", 10, 20};
+	TrapezoidLocIndep trapezoid_opp_;
 
 	/* ----- Output variables ----- */
-	fl::OutputVariable social_behavior_;
+	fl::OutputVariable* social_behavior_ptr_;
 
 	/*  ----- Rule block ----- */
-	fl::RuleBlock rule_block_;
+	fl::RuleBlock* rule_block_ptr_;
+	// @} // end of the group
 
 };
 

@@ -159,7 +159,7 @@ add_library(config ${HEADERS_CONFIG})
 set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Fuzzy
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
-target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Inflation
 add_library(inflation ${HEADERS_INFLATION} ${SOURCES_INFLATION})
