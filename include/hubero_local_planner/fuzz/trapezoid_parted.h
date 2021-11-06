@@ -25,7 +25,8 @@ public:
 	/// @brief Constructor
 	/// @param name: name of the trapezoid term
 	/// @param intersection_deg
-	TrapezoidParted(std::string name, double intersection_deg);
+	/// @param dtor_deletes whether @ref ~TrapezoidParted deletes memory allocated in @ref trapezoid_ptrs_
+	TrapezoidParted(std::string name, double intersection_deg, bool dtor_deletes = false);
 
 	/// @brief Updates both trapezoid parts
 	/// @param start
@@ -53,6 +54,10 @@ protected:
 	/// location of corner points (gamma_cc etc.). Consists of 2 elements
 	/// when range wraps from +PI to - PI.
 	std::vector<fl::Trapezoid*> trapezoid_ptrs_;
+
+	/// \brief Flag that indicates whether @ref trapezoid_ptrs_ contents should be deleted in this class' dtor
+	/// This is related to fl::Engine specifics, see https://github.com/fuzzylite/fuzzylite/issues/93 for details
+	bool dtor_delete_trapezoids_;
 
 	/// Defines how much a given region intersects the contiguous one (in `radians`)
 	double intersection_;

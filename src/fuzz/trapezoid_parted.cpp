@@ -17,8 +17,8 @@ using namespace geometry;
 
 // ------------------------------------------------------------------- //
 
-TrapezoidParted::TrapezoidParted(std::string name, double intersection_deg)
-		: intersection_(IGN_DTOR(intersection_deg))
+TrapezoidParted::TrapezoidParted(std::string name, double intersection_deg, bool dtor_deletes)
+		: intersection_(IGN_DTOR(intersection_deg)), dtor_delete_trapezoids_(dtor_deletes)
 {
 	// create 2 trapezoid instances, rules will need both of them for deduction;
 	// both trapezoids are first initialized with NaNs so they will not be recognized
@@ -35,8 +35,15 @@ TrapezoidParted::TrapezoidParted(std::string name, double intersection_deg)
 // ------------------------------------------------------------------- //
 
 TrapezoidParted::~TrapezoidParted() {
-	delete trapezoid_ptrs_.at(0);
-	delete trapezoid_ptrs_.at(1);
+	if (!dtor_delete_trapezoids_) {
+		return;
+	}
+	if (trapezoid_ptrs_.at(0) != nullptr) {
+		delete trapezoid_ptrs_.at(0);
+	}
+	if (trapezoid_ptrs_.at(1) != nullptr) {
+		delete trapezoid_ptrs_.at(1);
+	}
 }
 
 // ************************************************************************************************************
