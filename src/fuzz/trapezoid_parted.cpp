@@ -7,6 +7,7 @@
 
 #include <hubero_local_planner/fuzz/trapezoid_parted.h>
 #include <hubero_local_planner/geometry/angle.h>
+#include <stdexcept>
 #include <math.h> // fabs()
 
 namespace hubero_local_planner {
@@ -69,6 +70,8 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 //			params += "1.0";																			// height
 			params = generateParams(a.getRadian(), start, end, d.getRadian(), 1.0);
 
+		} else {
+			throw std::runtime_error("unhandled case in trapezoid update");
 		}
 
 	} else {
@@ -283,9 +286,9 @@ void TrapezoidParted::resetWrapped() {
 	// all `vertices` to NaNs and `height` to 0
 	if ( trapezoid_ptrs_.at(1)->getVertexA() != fl::nan ) {
 		trapezoid_ptrs_.at(1)->setVertexA(fl::nan);
-		trapezoid_ptrs_.at(1)->setVertexA(fl::nan);
-		trapezoid_ptrs_.at(1)->setVertexA(fl::nan);
-		trapezoid_ptrs_.at(1)->setVertexA(fl::nan);
+		trapezoid_ptrs_.at(1)->setVertexB(fl::nan);
+		trapezoid_ptrs_.at(1)->setVertexC(fl::nan);
+		trapezoid_ptrs_.at(1)->setVertexD(fl::nan);
 		trapezoid_ptrs_.at(1)->setHeight(0.0f);
 	}
 
