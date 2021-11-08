@@ -17,16 +17,18 @@ TrapezoidLocDep::TrapezoidLocDep(std::string name, double intersection_deg)
 
 // ------------------------------------------------------------------- //
 
-bool TrapezoidLocDep::update(const char &side, const Angle& gamma_start, const Angle& gamma_end) {
+bool TrapezoidLocDep::update(RelativeLocation side, const Angle& gamma_start, const Angle& gamma_end) {
 
 	bool extra_term;
 
 	// based on `side` argument value, let's calculate trapezoid parameters;
 	// an additional term is configured internally if needed
-	if ( side == 'r' ) {
+	if ( side == RelativeLocation::LOCATION_RIGHT ) {
 		extra_term = TrapezoidParted::update(gamma_start.getRadian(), gamma_end.getRadian());
-	} else if ( side == 'l' ) {
+	} else if ( side == RelativeLocation::LOCATION_LEFT ) {
 		extra_term = TrapezoidParted::update(gamma_end.getRadian(), gamma_start.getRadian());
+	} else {
+		throw std::runtime_error("wrong value of the relative location!");
 	}
 
 	return (extra_term);
