@@ -13,18 +13,12 @@
 #include <hubero_local_planner/geometry/pose.h>
 #include <hubero_local_planner/geometry/angle.h>
 
+#include <hubero_local_planner/defines.h>
+
 #include <utility>
 #include <vector>
 
 namespace hubero_local_planner {
-
-typedef enum {
-	LOCATION_FRONT = 0,
-	LOCATION_RIGHT,
-	LOCATION_LEFT,
-	LOCATION_BEHIND,
-	LOCATION_UNSPECIFIED
-} RelativeLocation;
 
 struct StaticObject {
 	geometry::Pose robot;
