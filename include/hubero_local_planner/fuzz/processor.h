@@ -63,7 +63,7 @@ protected:
 
 private:
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
-	char decodeRelativeLocation(const double &rel_loc) const;
+	RelativeLocation decodeRelativeLocation(const double &rel_loc) const;
 
 	/// \brief Updates trapezoidal regions of input variables.
 	/// \note Must be preceded by `setters` of input variables.

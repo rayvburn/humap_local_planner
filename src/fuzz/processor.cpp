@@ -325,7 +325,7 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 	Angle gamma_cc(IGN_PI - alpha_dir);
 
 	// compute relative location (`side`)
-	char side = decodeRelativeLocation(rel_loc); // decodeRelativeLocation(gamma_eq, gamma_opp, gamma_cc);
+	RelativeLocation side = decodeRelativeLocation(rel_loc);
 
 	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
 	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
@@ -348,15 +348,16 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 
 // ------------------------------------------------------------------- //
 
-char Processor::decodeRelativeLocation(const double &rel_loc) const {
+RelativeLocation Processor::decodeRelativeLocation(const double &rel_loc) const {
 
 	if ( rel_loc <= 0.0 ) {
-		return('r'); 	// right side
+		// right side
+		return RelativeLocation::LOCATION_RIGHT;
 	} else if ( rel_loc > 0.0 ) {
-		return('l');	// left side
-	} else {
-		return('x');
+		// left side
+		return RelativeLocation::LOCATION_LEFT;
 	}
+	return RelativeLocation::LOCATION_UNSPECIFIED;
 
 }
 
