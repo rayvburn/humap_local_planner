@@ -88,16 +88,16 @@ Processor::Processor():
     social_behavior_ptr_->setLockPreviousValue(false);
 
 	social_behavior_ptr_->addTerm(new fl::Trapezoid("accelerate",            IGN_DTOR(-30),  IGN_DTOR(-15),  IGN_DTOR(-15),  IGN_DTOR(+30)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(+15),  IGN_DTOR(+30),  IGN_DTOR(+60),  IGN_DTOR(+75)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(+60),  IGN_DTOR(+75),  IGN_DTOR(+105), IGN_DTOR(+120)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_decelerate", IGN_DTOR(+105), IGN_DTOR(+120), IGN_DTOR(+140), IGN_DTOR(+155)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateA",           IGN_DTOR(+140), IGN_DTOR(+155), IGN_DTOR(+165), IGN_DTOR(+180)));
-	social_behavior_ptr_->addTerm(new fl::Triangle( "stopA",                 IGN_DTOR(+165), IGN_DTOR(+180), IGN_DTOR(+195)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateB",           IGN_DTOR(-180), IGN_DTOR(-165), IGN_DTOR(-155), IGN_DTOR(-140)));
-	social_behavior_ptr_->addTerm(new fl::Triangle( "stopB",                 IGN_DTOR(-195), IGN_DTOR(-180), IGN_DTOR(-165)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_decelerate",  IGN_DTOR(-155), IGN_DTOR(-140), IGN_DTOR(-120), IGN_DTOR(-105)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left",             IGN_DTOR(-120), IGN_DTOR(-105), IGN_DTOR(-75),  IGN_DTOR(-60)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_accelerate",  IGN_DTOR(-75),  IGN_DTOR(-60),  IGN_DTOR(-30),  IGN_DTOR(-15)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(-15),  IGN_DTOR(-30),  IGN_DTOR(-60),  IGN_DTOR(-75)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(-60),  IGN_DTOR(-75),  IGN_DTOR(-105), IGN_DTOR(-120)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_decelerate", IGN_DTOR(-105), IGN_DTOR(-120), IGN_DTOR(-140), IGN_DTOR(-155)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateA",           IGN_DTOR(-140), IGN_DTOR(-155), IGN_DTOR(-165), IGN_DTOR(-180)));
+	social_behavior_ptr_->addTerm(new fl::Triangle( "stopA",                 IGN_DTOR(-165), IGN_DTOR(-180), IGN_DTOR(-195)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateB",           IGN_DTOR(+140), IGN_DTOR(+155), IGN_DTOR(+165), IGN_DTOR(+180)));
+	social_behavior_ptr_->addTerm(new fl::Triangle( "stopB",                 IGN_DTOR(+165), IGN_DTOR(+180), IGN_DTOR(+195)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_decelerate",  IGN_DTOR(+105), IGN_DTOR(+120), IGN_DTOR(+140), IGN_DTOR(+155)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left",             IGN_DTOR(+60),  IGN_DTOR(+75),  IGN_DTOR(+105), IGN_DTOR(+120)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_accelerate",  IGN_DTOR(+15),  IGN_DTOR(+30),  IGN_DTOR(+60),  IGN_DTOR(+75)));
 	engine_ptr_->addOutputVariable(social_behavior_ptr_);
 
     /* Initialize rule block */
