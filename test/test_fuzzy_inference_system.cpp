@@ -164,13 +164,12 @@ static std::tuple<FuzzyficationOutput, FuzzyficationOutput> fuzzyfy(Processor& f
     double dist_dynamic;
     calculateDynamicObjectData(robot, object, dir_beta_dynamic, rel_loc_dynamic, dist_angle_dynamic, dist_dynamic);
 
-    fis.load(
+    fis.process(
         robot.getYaw(),
         std::vector<double>({dir_beta_dynamic.getRadian()}),
         std::vector<double>({rel_loc_dynamic.getRadian()}),
         std::vector<double>({dist_angle_dynamic.getRadian()})
     );
-    fis.process();
 
     std::vector<std::tuple<std::string, double>> highest_mem_rel_loc;
     std::vector<std::tuple<std::string, double>> highest_mem_dir_cross;

@@ -61,7 +61,6 @@ set(HEADERS_FUZZY
     include/${PROJECT_NAME}/fuzz/trapezoid_parted.h
     include/${PROJECT_NAME}/fuzz/trapezoid_loc_indep.h
     include/${PROJECT_NAME}/fuzz/trapezoid_loc_dep.h
-    include/${PROJECT_NAME}/fuzz/social_behaviours_db.h
     include/${PROJECT_NAME}/fuzz/social_conductor.h
 )
 set(SOURCES_FUZZY
@@ -69,7 +68,6 @@ set(SOURCES_FUZZY
     src/fuzz/trapezoid_parted.cpp
     src/fuzz/trapezoid_loc_indep.cpp
     src/fuzz/trapezoid_loc_dep.cpp
-    src/fuzz/social_behaviours_db.cpp
     src/fuzz/social_conductor.cpp
 )
 
@@ -267,5 +265,10 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_fuzzy_inference_system test/test_fuzzy_inference_system.cpp)
   if(TARGET test_fuzzy_inference_system)
     target_link_libraries(test_fuzzy_inference_system fuzzy)
+  endif()
+
+  catkin_add_gtest(test_fuzzy_social_conductor test/test_fuzzy_social_conductor.cpp)
+  if(TARGET test_fuzzy_social_conductor)
+    target_link_libraries(test_fuzzy_social_conductor fuzzy)
   endif()
 endif()
