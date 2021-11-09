@@ -276,21 +276,10 @@ bool HuberoPlanner::compute(
 		}
 
 		// execute fuzzy operations block
-		fuzzy_processor_.load(
-			dir_alpha,
-			dir_beta_dynamic,
-			rel_loc_dynamic,
-			dist_angle_dynamic
-		);
-		fuzzy_processor_.process();
+		fuzzy_processor_.process(dir_alpha, dir_beta_dynamic, rel_loc_dynamic, dist_angle_dynamic);
 
 		// create a force vector according to the activated `social behaviour`
-		social_conductor_.apply(
-			sfm_.getForceCombined(),
-			dir_alpha,
-			dist_dynamic,
-			fuzzy_processor_.getOutput()
-		);
+		social_conductor_.computeBehaviourForce(pose, fuzzy_processor_.getOutput(), dist_dynamic);
 
 		// assign `social` vector
 		human_action_force = social_conductor_.getSocialVector();

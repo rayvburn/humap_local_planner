@@ -19,13 +19,17 @@
 namespace hubero_local_planner {
 namespace fuzz {
 
-///
-/// \note Remember to call all `setter` methods before calling `process`. Otherwise, the fuzzy
-/// calculations will surely utilize old values as inputs and a result will not be properly
-/// computed.
 class Processor {
-
 public:
+	struct FisOutput {
+		/// FIS output value
+		double value;
+		/// degree of membership
+		double membership;
+		/// name of the term that contains sharpened output value
+		std::string term_name;
+	};
+
 	/// \brief Initializes fuzzy logic system (based on `fuzzylite` library)
 	/// with values proper to this application.
 	Processor();
@@ -33,21 +37,23 @@ public:
 	/// \brief Prints FIS configuration to console (stdout)
 	void printFisConfiguration() const;
 
-	/// \brief Setter method for `d_alpha_beta` angle (see SFM doc for details).
-	/// `d_alpha_beta` angle is a direction of a vector connecting alpha and beta
-	/// center positions.
-	/// \param d_alpha_beta_angle is an angle described above
-	bool load(const double &dir_alpha, const std::vector<double> &dir_beta_v, const std::vector<double> &rel_loc_v,
-			  const std::vector<double> &dist_angle_v);
+	/**
+	 * Executes fuzzy calculations based on data given by arguments
+	 * @param dir_alpha determines \alpha 's direction of motion
+	 * @param dir_beta_v determines \beta -s's direction of motion
+	 * @param rel_loc_v stores angle that defines relative location of \beta in terms of \alpha 's motion direction
+	 * @param dist_angle_v direction of the vector that connects \alpha 's position with \beta 's position
+	 * @return true if processed successfully
+	 */
+	bool process(
+		const double& dir_alpha,
+		const std::vector<double>& dir_beta_v,
+		const std::vector<double>& rel_loc_v,
+		const std::vector<double>& dist_angle_v
+	);
 
-	/// \brief Executes fuzzy calculations. The `process()` call must be preceded by `updateRegions()`
-	void process();
-
-	/// \brief Based on the output variable's value, calculates the behavior needed to be applied.
-	/// In case of 2 behaviors having non-zero memberships, their `strength` is different than 1.0
-	/// (sums up to 1.0 though).
-	/// \return Vector of tuples. Each tuple consists of behavior name (string) and membership level.
-	std::vector<std::tuple<std::string, double> > getOutput() const;
+	/// \return Vector of single FIS Outputs, see @ref FisOutput for details
+	std::vector<Processor::FisOutput> getOutput() const;
 
 	/// \brief Specifically for unit testing, must be called after @ref process
 	std::vector<std::tuple<std::string, double>> membershipInputRelLoc() const;
@@ -55,6 +61,10 @@ public:
 	/// \brief Specifically for unit testing, must be called after @ref process
 	std::vector<std::tuple<std::string, double>> membershipInputDirCross() const;
 
+	/// \brief Determines location of the \beta element relative to \alpha direction of motion
+	static RelativeLocation decodeRelativeLocation(const double &rel_loc);
+
+	/// \brief Frees memory allocated for fl::Engine
 	virtual ~Processor();
 
 protected:
@@ -62,29 +72,12 @@ protected:
 	static std::vector<std::tuple<std::string, double>> highestMembership(const fl::InputVariable* input_ptr);
 
 private:
-	/// \brief Determines location of the \beta element relative to \alpha direction of motion
-	RelativeLocation decodeRelativeLocation(const double &rel_loc) const;
-
 	/// \brief Updates trapezoidal regions of input variables.
 	/// \note Must be preceded by `setters` of input variables.
 	void updateRegions(const double &alpha_dir, const double &beta_dir, const double &d_alpha_beta_angle, const double &rel_loc);
 
-	/* ----- inputs ----- */
-	/// \brief Determines \alpha 's direction of motion.
-	double alpha_dir_;
-
-	/// \brief Direction of the vector which connects \alpha 's position with \beta 's position.
-	std::vector<double> d_alpha_beta_angle_;
-
-	/// \brief Stores angle telling which \beta is located
-	/// in terms of \alpha 's direction of motion.
-	std::vector<double> rel_loc_;
-
-	/// \brief Determines \beta 's direction of motion.
-	std::vector<double> beta_dir_;
-
 	/* ------- output --------- */
-	std::vector<std::tuple<std::string, double> > output_v_;
+	std::vector<FisOutput> output_v_;
 
 	/**
 	 * @defgroup fuzzy fuzzylite-related

@@ -11,110 +11,73 @@
 namespace hubero_local_planner {
 namespace fuzz {
 
-// ------------------------------------------------------------------- //
-
-SocialConductor::SocialConductor() {}
+constexpr double SocialConductor::SOCIAL_BEHAVIOUR_RANGE;
 
 // ------------------------------------------------------------------- //
 
-void SocialConductor::apply(const Vector &force_combined, const double &dir_alpha,
-							const std::vector<double> &dist_v,
-							const std::vector<std::tuple<std::string, double> > &fuzz_output_v)
-{
+void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::BehaviourParams> cfg) {
+	cfg_ = cfg;
+}
 
-	// moved from reset
-	sf_result_ = Vector();
-	behaviour_active_str_.clear();
+// ------------------------------------------------------------------- //
 
-	this->setDirection(dir_alpha);
-	this->setForce(force_combined);
-	std::vector<Vector> forces;
+bool SocialConductor::computeBehaviourForce(
+	const Pose& pose_agent,
+	const std::vector<Processor::FisOutput>& fis_outputs_v,
+	const std::vector<double>& dist_v
+) {
+	// clear out behaviour force and active behavior names
+	reset();
 
-	for ( size_t i = 0; i < fuzz_output_v.size(); i++ ) {
-
-		this->setDistance(dist_v.at(i));
-		std::string term_name = std::get<0>(fuzz_output_v.at(i));
-
-		/* Behaviour selection based on the highest membership term name */
-
-		if ( term_name == "turn_left" ) {
-
-			// apply `turn left` behavior
-			forces.push_back(this->turnLeft());
-			updateActiveBehaviour("turn_left"); // create a list of activated behaviours
-
-		} else if ( term_name == "turn_left_accelerate" ) {
-
-			// apply `turn left and accelerate` behavior
-			forces.push_back(this->turnLeftAccelerate());
-			updateActiveBehaviour("turn_left_accelerate");
-
-		} else if ( term_name == "accelerate" ) {
-
-			// apply `accelerate` behavior
-			forces.push_back(this->accelerate());
-			updateActiveBehaviour("accelerate");
-
-		} else if ( term_name == "go_along" ) {
-
-			// apply `go along` behavior
-			forces.push_back(this->goAlong());
-			updateActiveBehaviour("go_along");
-
-		} else if ( term_name == "decelerate" ) {
-
-			// apply `decelerate` behavior
-			forces.push_back(this->decelerate());
-			updateActiveBehaviour("decelerate");
-
-		} else if ( term_name == "stop" ) {
-
-			// apply `stop` behavior
-			forces.push_back(this->stop());
-			updateActiveBehaviour("stop");
-
-		} else if ( term_name == "turn_right_decelerate" ) {
-
-			// apply `turn right and decelerate` behavior
-			forces.push_back(this->turnRightDecelerate());
-			updateActiveBehaviour("turn_right_decelerate");
-
-		} else if ( term_name == "turn_right" ) {
-
-			// apply `turn right` behavior
-			forces.push_back(this->turnRight());
-			updateActiveBehaviour("turn_right");
-
-		} else if ( term_name == "turn_right_accelerate" ) {
-
-			// apply `turn right and accelerate` behavior
-			forces.push_back(this->turnRightAccelerate());
-			updateActiveBehaviour("turn_right_accelerate");
-
-		} else {
-
-			// prevents calling `superpose` when [input] is invalid
-			// do not update the string to prevent having `none`
-			// among valid behaviours
-			return;
-
-		}
-
+	if (dist_v.size() != fis_outputs_v.size()) {
+		std::cout << "[SocialConductor] vectors of non equal sizes passed to apply()" << std::endl;
+		return false;
 	}
-	superpose(forces);
+
+	const size_t size_ref = dist_v.size();
+	// calculate combined output - superposed outputs
+	for (size_t i = 0; i < size_ref; i++) {
+		// create temporary vector pointing to direction determined by FIS output
+		Vector v_temp(Angle(fis_outputs_v.at(i).value));
+		double membership_factor = fis_outputs_v.at(i).membership;
+		double dist_based_factor = computeBehaviourStrength(dist_v.at(i));
+		behaviour_force_ += v_temp * membership_factor * dist_based_factor;
+		updateActiveBehaviour(fis_outputs_v.at(i).term_name);
+	}
+
+	// convert into global coordinates
+	behaviour_force_.rotate(pose_agent.getYaw());
+
+	/**
+	 * NOTE: apply trick from superpose (DEPRECATED)?
+	 * force `none` behaviour when `max len` is very small
+	if ( max_len < 1e-03 ) {
+		behaviour_active_str_.clear();
+	}
+	*/
+
+	// normalize -> may easily overflow
+	if (behaviour_force_.calculateLength() > 1.0) {
+		behaviour_force_.normalize();
+	}
+
+	// multiply times behaviour force factor
+	behaviour_force_ *= cfg_->force_factor;
+
+	return true;
 }
 
 // ------------------------------------------------------------------- //
 
 void SocialConductor::reset() {
-	behaviour_active_str_ = "idle";
-	sf_result_ = Vector();
+	behaviour_force_ = Vector(0.0, 0.0, 0.0);
+	behaviour_active_str_.clear();
 }
 
 // ------------------------------------------------------------------- //
 
 Vector SocialConductor::getSocialVector() const {
-	return (sf_result_);
+	return (behaviour_force_);
 }
 
 // ------------------------------------------------------------------- //
@@ -132,51 +95,22 @@ std::string SocialConductor::getBehaviourActive() const {
 
 // ------------------------------------------------------------------- //
 
-SocialConductor::~SocialConductor() { }
-
-// ------------------------------------------------------------------- //
-
-void SocialConductor::superpose(const std::vector<Vector> &forces) {
-
-	// save a max length of a component to know
-	// if there are few meaningful (i.e. non-zero length-ed)
-	// elements in the vector but apparently their sum
-	// is near-zero;
-	// used to determine which behaviours are actually activated
-	double max_len = 0.0;
-
-	// TODO: add crowd support - actual superposition
-	// NOW: average value of vectors
-	Vector avg;
-	for ( size_t i = 0; i < forces.size(); i++ ) {
-		avg += forces.at(i);
-		double len = forces.at(i).calculateLength();
-		if ( len > max_len ) { max_len = len; }
-	}
-	avg /= forces.size();
-
-	// assign averaged vector to the resultative one
-	sf_result_ = avg;
-
-	// check validity
-	if ( std::isnan(sf_result_.getX()) || std::isnan(sf_result_.getY()) ) {
-		sf_result_ = Vector();
-		max_len = 0.0;
+double SocialConductor::computeBehaviourStrength(const double& dist_to_agent) {
+	// check if obstacle is too far away
+	if (dist_to_agent > SocialConductor::SOCIAL_BEHAVIOUR_RANGE) {
+		return (0.0);
 	}
 
-	// force `none` behaviour when `max len` is very small
-	if ( max_len < 1e-03 ) {
-		behaviour_active_str_.clear();
-	}
-
-	// at the end, let's apply multiplier
-	sf_result_ *= this->cfg_->force_factor;
-
+	// in fact (SOCIAL_BEHAVIOUR_RANGE_END - SOCIAL_BEHAVIOUR_RANGE_START) but the start is 0.0
+	double a = -1.0 / SocialConductor::SOCIAL_BEHAVIOUR_RANGE;
+	// form of a line equation for readability, the independent variable is `dist_to_agent`
+	double y = a * dist_to_agent + 1.0;
+	return y;
 }
 
 // ------------------------------------------------------------------- //
 
-void SocialConductor::updateActiveBehaviour(const std::string &beh_name) {
+void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
 
 	if ( behaviour_active_str_.empty() ) {
 		behaviour_active_str_ = beh_name;

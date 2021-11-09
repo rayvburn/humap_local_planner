@@ -15,7 +15,6 @@ namespace hubero_local_planner {
 namespace fuzz {
 
 Processor::Processor():
-	alpha_dir_(0.0),
 	engine_ptr_(new fl::Engine()),
 	location_ptr_(new fl::InputVariable()),
 	direction_ptr_(new fl::InputVariable()),
@@ -82,7 +81,7 @@ Processor::Processor():
     social_behavior_ptr_->setEnabled(true);
     social_behavior_ptr_->setRange(-IGN_PI, +IGN_PI);
     social_behavior_ptr_->setLockValueInRange(false);
-    social_behavior_ptr_->setAggregation(new fl::Maximum);
+    social_behavior_ptr_->setAggregation(new fl::Maximum());
     social_behavior_ptr_->setDefuzzifier(new fl::Centroid());
     social_behavior_ptr_->setDefaultValue(fl::nan);
     social_behavior_ptr_->setLockPreviousValue(false);
@@ -104,11 +103,11 @@ Processor::Processor():
     rule_block_ptr_->setName("mamdani");
     rule_block_ptr_->setDescription("");
     rule_block_ptr_->setEnabled(true);
-    rule_block_ptr_->setConjunction(new fl::Minimum); 			// fuzzylite/fuzzylite/fl/norm/t
-    rule_block_ptr_->setDisjunction(new fl::AlgebraicSum);		// fuzzylite/fuzzylite/fl/norm/s
+    rule_block_ptr_->setConjunction(new fl::Minimum());      // fuzzylite/fuzzylite/fl/norm/t
+    rule_block_ptr_->setDisjunction(new fl::AlgebraicSum()); // fuzzylite/fuzzylite/fl/norm/s
     // FIXME: AlgebraicProduct -> seems to choose not the highest membership term? IS THIS THE CAUSE?
-    rule_block_ptr_->setImplication(new fl::Minimum); 			// AlgebraicProduct);
-    rule_block_ptr_->setActivation(new fl::General);				// https://fuzzylite.github.io/fuzzylite/df/d4b/classfl_1_1_activation.html
+    rule_block_ptr_->setImplication(new fl::Minimum());      // AlgebraicProduct);
+    rule_block_ptr_->setActivation(new fl::General());       // https://fuzzylite.github.io/fuzzylite/df/d4b/classfl_1_1_activation.html
     /*
 	terminate called after throwing an instance of 'fl::Exception'
 		what():  [conjunction error] the following rule requires a conjunction operator:
@@ -128,7 +127,8 @@ Processor::Processor():
      */
 	// location - `front`
     rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is oppositeA     or direction is oppositeB    ) then behavior is turn_right",            engine_ptr_));
-	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is outwardsA     or direction is outwardsB    ) then behavior is accelerate",            engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is outwardsA     or direction is outwardsB    ) then behavior is decelerateA",           engine_ptr_));
+	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is outwardsA     or direction is outwardsB    ) then behavior is decelerateB",           engine_ptr_));
     rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is equalA        or direction is equalB       ) then behavior is decelerateA",           engine_ptr_));
 	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is equalA        or direction is equalB       ) then behavior is decelerateB",           engine_ptr_));
 	rule_block_ptr_->addRule(fl::Rule::parse("if location is front 	     and (direction is cross_frontA  or direction is cross_frontB ) then behavior is turn_right",            engine_ptr_));
@@ -150,6 +150,7 @@ Processor::Processor():
 	// location - `front_left`
     rule_block_ptr_->addRule(fl::Rule::parse("if location is front_left  and (direction is cross_behindA or direction is cross_behindB) then behavior is turn_right",            engine_ptr_));
 	rule_block_ptr_->addRule(fl::Rule::parse("if location is front_left  and (direction is cross_frontA  or direction is cross_frontB ) then behavior is turn_right_accelerate", engine_ptr_));
+
 	try {
 		engine_ptr_->addRuleBlock(rule_block_ptr_);
 	} catch (fl::Exception& what) {
@@ -175,62 +176,47 @@ void Processor::printFisConfiguration() const {
 
 // ------------------------------------------------------------------- //
 
-bool Processor::load(const double &dir_alpha, const std::vector<double> &dir_beta_v,
-					 const std::vector<double> &rel_loc_v, const std::vector<double> &dist_angle_v)
-{
-
-	// clear output vector
+bool Processor::process(
+	const double& dir_alpha,
+	const std::vector<double>& dir_beta_v,
+	const std::vector<double>& rel_loc_v,
+	const std::vector<double>& dist_vector_angle_v
+) {
+	// clear output vector even if data is not correct
 	output_v_.clear();
-
 	// the same length is a MUST
-	if ( (dir_beta_v.size() == rel_loc_v.size()) && (rel_loc_v.size() == dist_angle_v.size()) ) {
-		alpha_dir_ = dir_alpha;
-		beta_dir_ = dir_beta_v;
-		rel_loc_ = rel_loc_v;
-		d_alpha_beta_angle_ = dist_angle_v;
-		return (true);
+	const size_t size_ref = dir_beta_v.size();
+	if (size_ref == 0) {
+		return false;
 	}
 
-	// reset just in case
-	alpha_dir_ = 0.0;
-	beta_dir_.clear();
-	rel_loc_.clear();
-	d_alpha_beta_angle_.clear();
-
-	return (false);
-
-}
-
-// ------------------------------------------------------------------- //
-
-void Processor::process() {
+	if (rel_loc_v.size() != size_ref || dist_vector_angle_v.size() != size_ref) {
+		return false;
+	}
 
 	// iterate over all vector elements (all vectors have the same size);
 	// beta_dir's size is an arbitrarily chosen count reference here
-	for ( size_t i = 0; i < beta_dir_.size(); i++ ) {
-
-		// reset the output region name
-		std::string term_name = "";
-
+	for ( size_t i = 0; i < size_ref; i++ ) {
 		// update the location input variable
-		location_ptr_->setValue(fl::scalar(rel_loc_.at(i)));
+		location_ptr_->setValue(fl::scalar(rel_loc_v.at(i)));
 
 		// update `direction_` regions according to value previously set
-		updateRegions(alpha_dir_, beta_dir_.at(i), d_alpha_beta_angle_.at(i), rel_loc_.at(i));
+		updateRegions(dir_alpha, dir_beta_v.at(i), dist_vector_angle_v.at(i), rel_loc_v.at(i));
 
 		// calculate the gamma angle for the current alpha-beta configuration
-		Angle gamma(d_alpha_beta_angle_.at(i) - alpha_dir_ - beta_dir_.at(i));
+		Angle gamma(dist_vector_angle_v.at(i) - dir_alpha - dir_beta_v.at(i));
 		direction_ptr_->setValue(fl::scalar(gamma.getRadian()));
 
 		// execute fuzzy calculations
 		engine_ptr_->process();
 
-		fl::scalar y_highest_temp = fl::nan;
-		fl::Term* term_highest_ptr = social_behavior_ptr_->highestMembership(social_behavior_ptr_->getValue(), &y_highest_temp);
+		fl::scalar membership_highest(fl::nan);
+		fl::Term* term_highest_ptr = social_behavior_ptr_->highestMembership(social_behavior_ptr_->getValue(), &membership_highest);
 
 		// check whether proper term was found, if not - `nullptr` will be detected
-		if ( term_highest_ptr != nullptr ) {
-			term_name = term_highest_ptr->getName();
+		if (term_highest_ptr == nullptr) {
+			// no output generated
+			continue;
 		}
 
 		/**
@@ -246,19 +232,19 @@ void Processor::process() {
 		 * fuzzyOutputValue()	-> 	0.239/turn_left_accelerate + 0.266/accelerate + 0.541/go_along
 		 * fuzzify(fl::scalar)	-> 	0.000/turn_left_accelerate + 0.000/accelerate + 1.000/go_along
 		 */
-		// FIXME: make it like the absolute function (decreasing on both side of the edge - 0.5)
-		double fitness = static_cast<double>(social_behavior_ptr_->getValue());
-		fitness = fitness - std::floor(fitness);
-
-		output_v_.push_back(std::make_tuple(term_name, fitness));
+		FisOutput output {};
+		output.value = static_cast<double>(social_behavior_ptr_->getValue());
+		output.membership = membership_highest;
+		output.term_name = term_highest_ptr->getName();
+		output_v_.push_back(output);
 
 	}
-
+	return true;
 }
 
 // ------------------------------------------------------------------- //
 
-std::vector<std::tuple<std::string, double> > Processor::getOutput() const {
+std::vector<Processor::FisOutput> Processor::getOutput() const {
 	return (output_v_);
 }
 
@@ -325,7 +311,7 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 	Angle gamma_cc(IGN_PI - alpha_dir);
 
 	// compute relative location (`side`)
-	RelativeLocation side = decodeRelativeLocation(rel_loc);
+	RelativeLocation side = Processor::decodeRelativeLocation(rel_loc);
 
 	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
 	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
@@ -347,8 +333,8 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 }
 
 // ------------------------------------------------------------------- //
-
-RelativeLocation Processor::decodeRelativeLocation(const double &rel_loc) const {
+// static
+RelativeLocation Processor::decodeRelativeLocation(const double &rel_loc) {
 
 	if ( rel_loc <= 0.0 ) {
 		// right side
