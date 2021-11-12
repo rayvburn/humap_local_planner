@@ -20,10 +20,10 @@ class TrapezoidLocIndep : public TrapezoidParted {
 public:
 
 	/// @param name
-	/// @param intersection_deg
+	/// @param intersection_deg: cosine of length of the rising/falling edges of the trapezoid
 	/// @param length_deg: region in fact has 0 length, so it must be artificially extended
-	/// to actually be taken into consideration during reasoning
-	TrapezoidLocIndep(std::string name, double intersection_deg, double length_deg);
+	/// to actually be taken into consideration during reasoning; values > 0 are valid
+	TrapezoidLocIndep(std::string name, double intersection_deg, double length_deg, bool dtor_deletes = false);
 
 	///
 	/// @param gamma_center

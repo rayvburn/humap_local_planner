@@ -302,16 +302,34 @@ std::vector<std::tuple<std::string, double>> Processor::highestMembership(const 
 }
 
 // ------------------------------------------------------------------- //
+
+// static
+void Processor::computeDirCrossBorderValues(
+	const double& alpha_dir,
+	const double& dist_angle,
+	const double& rel_loc_angle,
+	Angle& gamma_eq,
+	Angle& gamma_opp,
+	Angle& gamma_cc,
+	RelativeLocation& side
+) {
+	// calculate threshold angle values, normalize
+	gamma_eq = Angle(dist_angle - 2 * alpha_dir);
+	gamma_opp = Angle(gamma_eq.getRadian() - IGN_PI);
+	gamma_cc = Angle(IGN_PI - alpha_dir);
+	side = Processor::decodeRelativeLocation(rel_loc_angle);
+}
+
+// ------------------------------------------------------------------- //
 // PRIVATE
 void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, const double &d_alpha_beta_angle, const double &rel_loc) {
 
-	// calculate threshold angle values, normalize
-	Angle gamma_eq(d_alpha_beta_angle - 2 * alpha_dir);
-	Angle gamma_opp(gamma_eq.getRadian() - IGN_PI);
-	Angle gamma_cc(IGN_PI - alpha_dir);
-
-	// compute relative location (`side`)
-	RelativeLocation side = Processor::decodeRelativeLocation(rel_loc);
+	Angle gamma_eq;
+	Angle gamma_opp;
+	Angle gamma_cc;
+	RelativeLocation side = RelativeLocation::LOCATION_UNSPECIFIED;
+	// calculate threshold angle values and compute relative location (`side`)
+	Processor::computeDirCrossBorderValues(alpha_dir, d_alpha_beta_angle, rel_loc, gamma_eq, gamma_opp, gamma_cc, side);
 
 	// trapezoid's specific points (vertices), see `fuzzylite` doc for details:
 	// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html
@@ -336,10 +354,10 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 // static
 RelativeLocation Processor::decodeRelativeLocation(const double &rel_loc) {
 
-	if ( rel_loc <= 0.0 ) {
+	if ( rel_loc < 0.0 ) {
 		// right side
 		return RelativeLocation::LOCATION_RIGHT;
-	} else if ( rel_loc > 0.0 ) {
+	} else if ( rel_loc >= 0.0 ) {
 		// left side
 		return RelativeLocation::LOCATION_LEFT;
 	}

@@ -24,9 +24,15 @@ public:
 
 	/// @brief Constructor
 	/// @param name: name of the trapezoid term
-	/// @param intersection_deg
+	// TODO: change param name
+	/// @param intersection_deg: cosine of length of the rising/falling edges of the trapezoid; positive values allowed
 	/// @param dtor_deletes whether @ref ~TrapezoidParted deletes memory allocated in @ref trapezoid_ptrs_
 	TrapezoidParted(std::string name, double intersection_deg, bool dtor_deletes = false);
+
+	/**
+	 * Overrides `intersection_deg` value passed to constructor; positive values allowed
+	 */
+	void setSideLength(double intersection_deg);
 
 	/// @brief Updates both trapezoid parts
 	/// @param start

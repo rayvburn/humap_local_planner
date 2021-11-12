@@ -46,11 +46,17 @@ TrapezoidParted::~TrapezoidParted() {
 	}
 }
 
-// ************************************************************************************************************
-// private section
-// ************************************************************************************************************
+// ------------------------------------------------------------------- //
+
+void TrapezoidParted::setSideLength(double intersection_deg) {
+	intersection_ = IGN_DTOR(intersection_deg);
+}
+
+// ------------------------------------------------------------------- //
 
 bool TrapezoidParted::update(const double &start, const double &end) {
+	/// Defines trapezoid part's extension scale, when some operations are applied
+	const double RANGE_EXTENSION = IGN_DTOR(5);
 
 	// Creates parameter configuration equal to the uninitialized fl::Trapezoid instance
 	std::string params("nan nan nan nan");
@@ -60,8 +66,10 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 	bool status = false;
 
 	// helper variables to perform initial tests
-	Angle a(start - intersection_); // A is the first  vertex of the trapezoid
-	Angle d(end + intersection_); // D is the fourth vertex of the trapezoid
+	// A is the first vertex of the trapezoid
+	Angle a(start - intersection_);
+	// D is the fourth vertex of the trapezoid
+	Angle d(end + intersection_);
 
 	// check whether trapezoid's A vertex is located before (smaller than) the D vertex
 	if ( a.getRadian() < d.getRadian() ) {
@@ -70,11 +78,6 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 		if ( a.getRadian() >= (-IGN_PI) && d.getRadian() <= (+IGN_PI) ) {
 
 			// normal operation - only single term's parameters must be found
-//			params += a.Radian(); 	params += " ";														// A
-//			gamma.Radian(start);	gamma.Normalize();		params += gamma.Radian(); 	params += " ";	// B
-//			gamma.Radian(end);		gamma.Normalize();		params += gamma.Radian(); 	params += " ";	// C
-//			params += d.Radian();	params += " ";														// D
-//			params += "1.0";																			// height
 			params = generateParams(a.getRadian(), start, end, d.getRadian(), 1.0);
 
 		} else {
@@ -83,72 +86,71 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 
 	} else {
 
-		// both terms' parameters must be found
-
-		// NOTE: `start` is equal to the B vertex
-		// NOTE: `end`   is equal to the C vertex
-
+		/**
+		 * In this branch both terms (`normal` and `wrapped`) parameters must be found,
+		 * `start` is equal to the B vertex
+		 * `end`   is equal to the C vertex
+		 */
 		// find interval which contains +PI argument - it can be achieved
 		// via simple comparison of the 2 consecutive vertices locations
-		if ( a.getRadian() >= start ) {
+		if ( a.getRadian() > start ) {
 
-			// CASE 1: trapezoid's first part finishes somewhere between A and B vertices
-			//
-			// NOTE: fuzzylite does not complain about terms which are too wide for
-			// the allowable range - calculates the membership functions just right
-			// as long as the input variable does not exceed the given range.
-			// In the other words: terms' bounds can exceed <-PI; +PI> range
-			// as long as the `INPUT VARIABLE` is always withing those bounds.
-
-			// firstly, find how much the B vertex goes out of +PI range (i.e. the value before normalization)
-			double wrap = std::abs(-IGN_PI - start);
+			// CASE 1: trapezoid's first part (side edge) finishes somewhere between A and B vertices
+			/**
+			 * NOTE: fuzzylite does not complain about terms which are too wide for
+			 * the allowable range - calculates the membership functions just right
+			 * as long as the input variable does not exceed the given range.
+			 * In the other words: terms' bounds can exceed <-PI; +PI> range
+			 * as long as the `INPUT VARIABLE` stays within those bounds.
+			 */
+			// firstly, find how much the B vertex goes out of +PI range (i.e. the angle value before normalization)
+			Angle wrap_angle_n(-IGN_PI - start);
 
 			// argument B vertex would have if range would not be limited
-			double b_out_range = IGN_PI + wrap;     // positive side case
-
-			// secondly, calculate the height for the IGN_PI argument
-			// TODO: height not need to be cut?
-//			double height = findHeight('a', a.Radian(), b_out_range);
+			// positive side case
+			double b_out_range = IGN_PI - wrap_angle_n.getRadian();
 
 			// first part's configuration (range artificially extended by 5 degrees)
-			params = generateParams(a.getRadian(), b_out_range, b_out_range + IGN_DTOR(5.0), b_out_range + IGN_DTOR(5.0), 1.0);
+			params = generateParams(a.getRadian(), b_out_range, b_out_range + RANGE_EXTENSION, b_out_range + RANGE_EXTENSION, 1.0);
 
 			// consider negative side case now (wrap from the positive side to the negative one)
-			wrap = std::abs(IGN_PI - start); // `wrap2` in notebook
-			double a_out_range = -IGN_PI - wrap;
+			// `wrap2` in notebook
+			Angle wrap_angle_w = Angle(IGN_PI - a.getRadian());
+			double a_out_range = -IGN_PI - wrap_angle_w.getRadian();
 
-			// second part's configuration
+			/**
+			 * Second part's configuration
+			 * if trapezoid's broadness exceeds 2*pi range, then D vertex must be changed (compared to the one
+			 * initially calculated)
+			 */
+			double len_raw = 2 * intersection_ + (end - start);
+			bool exceeds_2pi = len_raw > (2 * IGN_PI);
+			if (exceeds_2pi) {
+				// without normalization
+				d = Angle(end + intersection_, false);
+			}
 			params_wrap = generateParams(a_out_range, start, end, d.getRadian(), 1.0);
-
-
 
 		} else if ( start >= end ) {
 
-			// CASE 2: trapezoid's first part finishes somewhere between B and C vertices
+			// FIXME: this lacks artificial extension (as in CASE 1) - why it's handled differently?
+			//
+			// CASE 2: trapezoid's first part (side edge) finishes somewhere between B and C vertices
 			params = generateParams(a.getRadian(), start, +IGN_PI, +IGN_PI, 1.0);
 
-			// find the distance which has been cut off (`end` is surely negative)
-			double cutoff = std::fabs(-IGN_PI - end); // TODO: is this needed?
-
 			// find the second part's configuration
-//			params_wrap = generateParams(-IGN_PI, -IGN_PI, cutoff, d.Radian(), 1.0); // TODO: ?
 			params_wrap = generateParams(-IGN_PI, -IGN_PI, end, d.getRadian(), 1.0);
-
-
 
 		} else if ( end >= d.getRadian() ) {
 
-			// CASE 3: trapezoid's first part finishes somewhere between C and D vertices
+			// CASE 3: trapezoid's first part (side edge) finishes somewhere between C and D vertices
 			//
 			// firstly, find how much the D vertex goes out of +PI range (i.e. the value before normalization)
 			double wrap = std::fabs(-IGN_PI - d.getRadian());
 
 			// argument D vertex would have if range would not be limited
-			double d_out_range = IGN_PI + wrap;     // positive side case
-
-			// secondly, calculate the height for the IGN_PI argument FIXME? needed?
-			// TODO: height not need to be cut?
-//			double height = findHeight('a', a.Radian(), d_out_range);
+			// positive side case
+			double d_out_range = IGN_PI + wrap;
 
 			// first part's configuration (range artificially extended by 5 degree)
 			params = generateParams(a.getRadian(), start, end, d_out_range, 1.0);
@@ -156,77 +158,25 @@ bool TrapezoidParted::update(const double &start, const double &end) {
 			// consider negative side case now (wrap from the positive side to the negative one)
 			//
 			// difference between (+IGN_PI) and C vertex location (end)
-			wrap = std::fabs(IGN_PI - end); // `wrap2` in the notebook
+			// `wrap2` in the notebook
+			wrap = std::fabs(IGN_PI - end);
 			double c_out_range = -IGN_PI - wrap;
 
 			// second part's configuration
-			params_wrap = generateParams(c_out_range - IGN_DTOR(5.0), c_out_range - IGN_DTOR(5.0), c_out_range, d.getRadian(), 1.0);
+			params_wrap = generateParams(c_out_range - RANGE_EXTENSION, c_out_range - RANGE_EXTENSION, c_out_range, d.getRadian(), 1.0);
 
+		} else {
+			throw std::runtime_error("unhandled case in trapezoid update (section 2)");
 		}
+
 		status = true;
 
-
-
 	}
 
-	//
-	/*
-	// GAP shifts region bounding point towards the region's center
-	static const double GAP = IGN_DTOR(5.0);
-	// INTERSECTION is an interval used to artificially extend the region's range
-	static const double INTERSECTION = IGN_DTOR(15.0);
-
-	// allocate variables
-	ignition::math::Angle gamma;
-	std::string params;
-	std::string params_wrap;
-
-	// check whether `start` angle is smaller than `end` angle
-	if ( start <= end ) {
-
-		// normal operation
-		gamma.Radian(start - intersection_);	gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(start);					gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(end);						gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(end + intersection_);		gamma.Normalize();		params += gamma.Radian();
-
-
-	} else {
-
-		// NOTE: Seems that `start` is bigger than `end` so a `breakdown` of ranges occurred.
-		// This kind of situation must be handled differently - see `fuzzylite`'s
-		// `Trapezoid` `membership` method:
-		// https://fuzzylite.github.io/fuzzylite/d0/d26/classfl_1_1_trapezoid.html#a266a40979ac36f6012efce935302e983
-		// 2 separate trapezoids must be created (first with c = d and a != b,
-		// second with a = b and c != d)
-		gamma.Radian(end + GAP - INTERSECTION);	gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(end + GAP);				gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(IGN_PI);					gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(IGN_PI);					gamma.Normalize();		params += gamma.Radian();
-		// FIXME: intersection range must moved to the opposite side of the x-axis
-		// when <end; pi> range is too narrow
-		return (std::make_tuple(params, true));
-
-
-		// compute the second part of the trapezoid
-		gamma.Radian(-IGN_PI);					gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(-IGN_PI);					gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(end + GAP - INTERSECTION);	gamma.Normalize();		params += gamma.Radian(); 	params += " ";
-		gamma.Radian(end + GAP);				gamma.Normalize();		params += gamma.Radian();
-		// FIXME: consider `intersection` movement from the close-to-pi range
-		return (std::make_tuple(params, false));
-
-	}
-	*/
-	//
-
-	// NOTE: params_wrap may be not modified
-//	return (std::make_tuple(params, params_wrap));
-
-	// if `wrap` did not occur, let's try to reset the second part (with index of 1)
+	// if `wrap` did not occur (status is False), let's try to reset the second part (the one with index of 1)
 	if ( !status ) {
 		// sets all fields to `nan` except for `height`
-		// TODO: is this needed? see below
+		// FIXME: this should not be necessary!
 		resetWrapped();
 	}
 

@@ -12,8 +12,8 @@ namespace fuzz {
 
 // ------------------------------------------------------------------- //
 
-TrapezoidLocDep::TrapezoidLocDep(std::string name, double intersection_deg)
-		: TrapezoidParted::TrapezoidParted(name, intersection_deg) {}
+TrapezoidLocDep::TrapezoidLocDep(std::string name, double intersection_deg, bool dtor_deletes):
+	TrapezoidParted::TrapezoidParted(name, intersection_deg, dtor_deletes) {}
 
 // ------------------------------------------------------------------- //
 
