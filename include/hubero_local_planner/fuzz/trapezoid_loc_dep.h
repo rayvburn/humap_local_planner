@@ -20,7 +20,7 @@ class TrapezoidLocDep : public TrapezoidParted {
 
 public:
 
-	TrapezoidLocDep(std::string name, double intersection_deg);
+	TrapezoidLocDep(std::string name, double intersection_deg, bool dtor_deletes = false);
 
 	/// @brief TODO: some image needed to illustrate the situation
 	/// @param side

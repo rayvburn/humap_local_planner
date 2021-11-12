@@ -64,6 +64,17 @@ public:
 	/// \brief Determines location of the \beta element relative to \alpha direction of motion
 	static RelativeLocation decodeRelativeLocation(const double &rel_loc);
 
+	/// \brief Computes @ref side (defines dir cross division placement) and @ref gamma_* s
+	static void computeDirCrossBorderValues(
+		const double& alpha_dir,
+		const double& dist_angle,
+		const double& rel_loc_angle,
+		Angle& gamma_eq,
+		Angle& gamma_opp,
+		Angle& gamma_cc,
+		RelativeLocation& side
+	);
+
 	/// \brief Frees memory allocated for fl::Engine
 	virtual ~Processor();
 

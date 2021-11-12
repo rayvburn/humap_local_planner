@@ -12,8 +12,11 @@ namespace fuzz {
 
 // ------------------------------------------------------------------- //
 
-TrapezoidLocIndep::TrapezoidLocIndep(std::string name, double intersection_deg, double length_deg)
-		: TrapezoidParted::TrapezoidParted(name, intersection_deg), interval_(IGN_DTOR(length_deg)) {}
+TrapezoidLocIndep::TrapezoidLocIndep(std::string name, double intersection_deg, double length_deg, bool dtor_deletes):
+	TrapezoidParted::TrapezoidParted(name, intersection_deg, dtor_deletes),
+	// check whether `length_deg` is valid, let values above threshold be OK; `interval_` is half of the `length_deg`
+	interval_(IGN_DTOR(std::max(length_deg, 1e-03)) / 2.0)
+{}
 
 // ------------------------------------------------------------------- //
 
