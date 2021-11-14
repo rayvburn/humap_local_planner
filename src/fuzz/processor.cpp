@@ -9,6 +9,8 @@
 #include <hubero_local_planner/fuzz/processor.h>
 #include <hubero_local_planner/geometry/angle.h>
 
+#include <fl/fuzzylite.h>
+
 // ------------------------------------------------------------------- //
 
 namespace hubero_local_planner {
@@ -26,6 +28,10 @@ Processor::Processor():
 	social_behavior_ptr_(new fl::OutputVariable()),
 	rule_block_ptr_(new fl::RuleBlock())
 {
+	// Helpful while debugging results of the output variable
+	// fl::fuzzylite::setLogging(true);
+	// fl::fuzzylite::setDebugging(true);
+
 	/* Initialize engine */
 	engine_ptr_->setName("SocialBehaviors");
 	engine_ptr_->setDescription("");
@@ -35,16 +41,24 @@ Processor::Processor():
 	location_ptr_->setDescription("");
 	location_ptr_->setEnabled(true);
 	location_ptr_->setRange(-IGN_PI, +IGN_PI);
-	location_ptr_->setLockValueInRange(false);
+	location_ptr_->setLockValueInRange(true);
 
+	// Explicitly set height of terms
+	const double TERM_HEIGHT = 1.0;
+
+	/**
+	 * NOTE: it is crucial that Triangle/Trapezoid vertices are defined as monotonically INCREASING sets of values,
+	 * Such configuration produces NaN output when investigated in separation (i.e., when only terms defined in
+	 * an improper way are present in FIS).
+	 */
 	// `location` regions
-	location_ptr_->addTerm(new fl::Triangle( "back",        IGN_DTOR(-180.0), IGN_DTOR(-180.0), IGN_DTOR(-160.0)));
-	location_ptr_->addTerm(new fl::Trapezoid("back_right",  IGN_DTOR(-180.0), IGN_DTOR(-150.0), IGN_DTOR(-120.0), IGN_DTOR(-90.0)));
-	location_ptr_->addTerm(new fl::Trapezoid("front_right", IGN_DTOR(-120.0), IGN_DTOR(-90.0),  IGN_DTOR(-30.0),  IGN_DTOR(0.0)));
-	location_ptr_->addTerm(new fl::Triangle( "front",       IGN_DTOR(-20.0),  IGN_DTOR(0.0),    IGN_DTOR(+20.0)));
-	location_ptr_->addTerm(new fl::Trapezoid("front_left",  IGN_DTOR(0.0),    IGN_DTOR(30.0),   IGN_DTOR(90.0),   IGN_DTOR(120.0)));
-	location_ptr_->addTerm(new fl::Trapezoid("back_left",   IGN_DTOR(90.0),   IGN_DTOR(120.0),  IGN_DTOR(150.0),  IGN_DTOR(180.0)));
-	location_ptr_->addTerm(new fl::Triangle( "back",        IGN_DTOR(+160.0), IGN_DTOR(+180.0), IGN_DTOR(+180.0)));
+	location_ptr_->addTerm(new fl::Triangle( "back",        IGN_DTOR(-180.0), IGN_DTOR(-180.0), IGN_DTOR(-160.0),                  TERM_HEIGHT));
+	location_ptr_->addTerm(new fl::Trapezoid("back_right",  IGN_DTOR(-180.0), IGN_DTOR(-150.0), IGN_DTOR(-120.0), IGN_DTOR(-90.0), TERM_HEIGHT));
+	location_ptr_->addTerm(new fl::Trapezoid("front_right", IGN_DTOR(-120.0), IGN_DTOR(-90.0),  IGN_DTOR(-30.0),  IGN_DTOR(0.0),   TERM_HEIGHT));
+	location_ptr_->addTerm(new fl::Triangle( "front",       IGN_DTOR(-20.0),  IGN_DTOR(0.0),    IGN_DTOR(+20.0),                   TERM_HEIGHT));
+	location_ptr_->addTerm(new fl::Trapezoid("front_left",  IGN_DTOR(0.0),    IGN_DTOR(30.0),   IGN_DTOR(90.0),   IGN_DTOR(120.0), TERM_HEIGHT));
+	location_ptr_->addTerm(new fl::Trapezoid("back_left",   IGN_DTOR(90.0),   IGN_DTOR(120.0),  IGN_DTOR(150.0),  IGN_DTOR(180.0), TERM_HEIGHT));
+	location_ptr_->addTerm(new fl::Triangle( "back",        IGN_DTOR(+160.0), IGN_DTOR(+180.0), IGN_DTOR(+180.0),                  TERM_HEIGHT));
 	engine_ptr_->addInputVariable(location_ptr_);
 
 	/* Initialize second input variable */
@@ -52,7 +66,7 @@ Processor::Processor():
 	direction_ptr_->setDescription("");
 	direction_ptr_->setEnabled(true);
 	direction_ptr_->setRange(-IGN_PI, +IGN_PI);
-	direction_ptr_->setLockValueInRange(false);
+	direction_ptr_->setLockValueInRange(true);
 
 	// approach similar to VFH = vector field histogram
 	// `direction` regions must be configured dynamically,
@@ -80,40 +94,45 @@ Processor::Processor():
     social_behavior_ptr_->setDescription("");
     social_behavior_ptr_->setEnabled(true);
     social_behavior_ptr_->setRange(-IGN_PI, +IGN_PI);
-    social_behavior_ptr_->setLockValueInRange(false);
-    social_behavior_ptr_->setAggregation(new fl::Maximum());
-    social_behavior_ptr_->setDefuzzifier(new fl::Centroid());
+    social_behavior_ptr_->setLockValueInRange(true);
+    // NOTE: Aggregation with fl::AlgebraicSum() does not affect FIS output unit tests
+	social_behavior_ptr_->setAggregation(new fl::Maximum());
+    social_behavior_ptr_->setDefuzzifier(new fl::Centroid(100));
     social_behavior_ptr_->setDefaultValue(fl::nan);
     social_behavior_ptr_->setLockPreviousValue(false);
 
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("accelerate",            IGN_DTOR(-30),  IGN_DTOR(-15),  IGN_DTOR(-15),  IGN_DTOR(+30)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(-15),  IGN_DTOR(-30),  IGN_DTOR(-60),  IGN_DTOR(-75)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(-60),  IGN_DTOR(-75),  IGN_DTOR(-105), IGN_DTOR(-120)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_decelerate", IGN_DTOR(-105), IGN_DTOR(-120), IGN_DTOR(-140), IGN_DTOR(-155)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateA",           IGN_DTOR(-140), IGN_DTOR(-155), IGN_DTOR(-165), IGN_DTOR(-180)));
-	social_behavior_ptr_->addTerm(new fl::Triangle( "stopA",                 IGN_DTOR(-165), IGN_DTOR(-180), IGN_DTOR(-195)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateB",           IGN_DTOR(+140), IGN_DTOR(+155), IGN_DTOR(+165), IGN_DTOR(+180)));
-	social_behavior_ptr_->addTerm(new fl::Triangle( "stopB",                 IGN_DTOR(+165), IGN_DTOR(+180), IGN_DTOR(+195)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_decelerate",  IGN_DTOR(+105), IGN_DTOR(+120), IGN_DTOR(+140), IGN_DTOR(+155)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left",             IGN_DTOR(+60),  IGN_DTOR(+75),  IGN_DTOR(+105), IGN_DTOR(+120)));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_accelerate",  IGN_DTOR(+15),  IGN_DTOR(+30),  IGN_DTOR(+60),  IGN_DTOR(+75)));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("accelerate",            IGN_DTOR(-30),  IGN_DTOR(-15),  IGN_DTOR(-15),  IGN_DTOR(+30), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(-75),  IGN_DTOR(-60),  IGN_DTOR(-30),  IGN_DTOR(-15), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(-120), IGN_DTOR(-105), IGN_DTOR(-75), IGN_DTOR(-60),  TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_decelerate", IGN_DTOR(-155), IGN_DTOR(-140), IGN_DTOR(-120), IGN_DTOR(-105), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateA",           IGN_DTOR(-180), IGN_DTOR(-165), IGN_DTOR(-155), IGN_DTOR(-140), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Triangle( "stopA",                 IGN_DTOR(-195), IGN_DTOR(-180), IGN_DTOR(-165),                 TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateB",           IGN_DTOR(+140), IGN_DTOR(+155), IGN_DTOR(+165), IGN_DTOR(+180), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Triangle( "stopB",                 IGN_DTOR(+165), IGN_DTOR(+180), IGN_DTOR(+195),                 TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_decelerate",  IGN_DTOR(+105), IGN_DTOR(+120), IGN_DTOR(+140), IGN_DTOR(+155), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left",             IGN_DTOR(+60),  IGN_DTOR(+75),  IGN_DTOR(+105), IGN_DTOR(+120), TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_left_accelerate",  IGN_DTOR(+15),  IGN_DTOR(+30),  IGN_DTOR(+60),  IGN_DTOR(+75),  TERM_HEIGHT));
 	engine_ptr_->addOutputVariable(social_behavior_ptr_);
 
     /* Initialize rule block */
     rule_block_ptr_->setName("mamdani");
     rule_block_ptr_->setDescription("");
     rule_block_ptr_->setEnabled(true);
-    rule_block_ptr_->setConjunction(new fl::Minimum());      // fuzzylite/fuzzylite/fl/norm/t
-    rule_block_ptr_->setDisjunction(new fl::AlgebraicSum()); // fuzzylite/fuzzylite/fl/norm/s
-    // FIXME: AlgebraicProduct -> seems to choose not the highest membership term? IS THIS THE CAUSE?
-    rule_block_ptr_->setImplication(new fl::Minimum());      // AlgebraicProduct);
-    rule_block_ptr_->setActivation(new fl::General());       // https://fuzzylite.github.io/fuzzylite/df/d4b/classfl_1_1_activation.html
-    /*
-	terminate called after throwing an instance of 'fl::Exception'
-		what():  [conjunction error] the following rule requires a conjunction operator:
-	location is front_right and direction is cross_front
-	{at /src/rule/Antecedent.cpp::activationDegree() [line:114]}
-     */
+	/*
+	 * NOTE: Conjunction and Disjunction are required not to be `fl::null` for compound rules,
+	 * e.g., `dir is oppositeA or dir is opposite`
+	 */
+	rule_block_ptr_->setConjunction(new fl::Minimum());
+    rule_block_ptr_->setDisjunction(new fl::AlgebraicSum());
+	rule_block_ptr_->setImplication(new fl::AlgebraicProduct());
+    rule_block_ptr_->setActivation(new fl::General);
+
+	/*
+	 * terminate called after throwing an instance of 'fl::Exception'
+	 * 	what():  [conjunction error] the following rule requires a conjunction operator:
+	 * location is front_right and direction is cross_front
+	 * {at /src/rule/Antecedent.cpp::activationDegree() [line:114]}
+	 */
 
     /*
      * NOTE: It seems that there is a crucial aspect in `fuzzylite` Term naming convention.
@@ -156,8 +175,6 @@ Processor::Processor():
 	} catch (fl::Exception& what) {
 		std::cout << what.what() << std::endl;
 	}
-    // FIXME: below does not overwrite rule block's settings
-    engine_ptr_->configure("AlgebraicProduct", "AlgebraicSum", "AlgebraicProduct", "Maximum", "Centroid", "General");
 }
 
 // ------------------------------------------------------------------- //
