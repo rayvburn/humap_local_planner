@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(hubero_local_planner)
 
+# prevent some unrelated warnings
+cmake_policy(SET CMP0054 OLD)
+include(FindPackageHandleStandardArgs)
+set(FPHSA_NAME_MISMATCHED TRUE)
+
 # fuzzylite library - external dependency
 # path to the .so file
 find_library(fuzzylite_LIBRARY fuzzylite $ENV{HOME}/libraries/fuzzylite/fuzzylite/release/bin)
