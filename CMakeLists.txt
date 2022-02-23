@@ -23,7 +23,10 @@ find_package(catkin REQUIRED
         tf
 )
 
-set(IGN_MATH_VER 3)
+if(NOT DEFINED IGN_MATH_VER)
+   # this version is valid for Ubuntu 16 with ROS Kinetic
+   set(IGN_MATH_VER 3)
+endif(NOT DEFINED IGN_MATH_VER)
 find_package(ignition-math${IGN_MATH_VER} REQUIRED system)
 
 find_package(Eigen3 REQUIRED)
