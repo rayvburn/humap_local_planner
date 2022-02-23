@@ -79,26 +79,11 @@ set(SOURCES_FUZZY
     src/fuzz/social_conductor.cpp
 )
 
-set(HEADERS_INFLATION
-    include/${PROJECT_NAME}/inflation/border.h
-    include/${PROJECT_NAME}/inflation/box.h
-    include/${PROJECT_NAME}/inflation/circle.h
-    include/${PROJECT_NAME}/inflation/ellipse.h
-)
-set(SOURCES_INFLATION
-    src/inflation/border.cpp
-    src/inflation/box.cpp
-    src/inflation/circle.cpp
-    src/inflation/ellipse.cpp
-)
-
 set(HEADERS_SFM
-    include/${PROJECT_NAME}/sfm/inflator.h
     include/${PROJECT_NAME}/sfm/social_force_model.h
     include/${PROJECT_NAME}/sfm/sfm_debug.h
 )
 set(SOURCES_SFM
-    src/sfm/inflator.cpp
     src/sfm/social_force_model.cpp
     src/sfm/sfm_debug.cpp
 )
@@ -167,17 +152,13 @@ set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
 target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-### Inflation
-add_library(inflation ${HEADERS_INFLATION} ${SOURCES_INFLATION})
-target_link_libraries(inflation ${IGNITION-MATH_LIBRARIES})
-set_target_properties(inflation PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### World - ontology
 add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
 target_link_libraries(world geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(world PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### SFM
 add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
-target_link_libraries(sfm inflation config geometry ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization - Helper library
 add_library(vis_helper ${HEADERS_VIS} ${SOURCES_VIS})
@@ -203,7 +184,7 @@ add_library(hubero_local_planner
     include/hubero_local_planner/robot_footprint_model.h
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy inflation sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES})
 
 ## Executables
 add_executable(test_executable
