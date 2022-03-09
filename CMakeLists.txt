@@ -25,7 +25,8 @@ find_package(catkin REQUIRED
         pluginlib
         pcl_conversions
         roscpp
-        tf
+        tf2
+        tf2_ros
 )
 
 if(NOT DEFINED IGN_MATH_VER)
@@ -62,6 +63,8 @@ catkin_package(
         roscpp
         teb_local_planner
         costmap_converter
+        tf2
+        tf2_ros
 )
 
 set(HEADERS_FUZZY
