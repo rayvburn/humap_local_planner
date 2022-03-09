@@ -550,7 +550,7 @@ void HuberoPlannerROS::computeTwist(
 		cfg_->getSfm()->mass,
 		cfg_->getLimits()->min_vel_x,
 		cfg_->getLimits()->max_vel_x,
-		cfg_->getLimits()->max_rot_vel,
+		cfg_->getLimits()->min_vel_theta,
 		cfg_->getGeneral()->twist_rotation_compensation,
 		cmd_vel
 	);
