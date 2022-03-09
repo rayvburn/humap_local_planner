@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(hubero_local_planner)
+
+add_definitions(-std=c++17)
 
 # prevent some unrelated warnings
 cmake_policy(SET CMP0054 OLD)
