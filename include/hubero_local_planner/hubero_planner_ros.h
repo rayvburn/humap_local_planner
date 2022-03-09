@@ -3,8 +3,8 @@
 // shared_ptr
 #include <memory>
 
-#include <tf/transform_listener.h>
-#include <tf/transform_broadcaster.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_broadcaster.h>
 #include <angles/angles.h>
 
 #include <costmap_2d/costmap_2d_ros.h>
@@ -47,10 +47,10 @@ public:
     /**
      * @brief  Constructs the ros wrapper
      * @param name The name to give this instance of the trajectory planner
-     * @param tf A pointer to a transform listener
+     * @param tf_buffer A pointer to a tf2 Buffer
      * @param costmap The cost map to use for assigning costs to trajectories
      */
-    void initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros);
+    virtual void initialize(std::string name, tf2_ros::Buffer* tf_buffer, costmap_2d::Costmap2DROS* costmap_ros) override;
 
     /**
      * @brief Set the plan that the controller is following
@@ -193,12 +193,12 @@ protected:
 	std::shared_ptr<HuberoConfigROS> cfg_;
 
 	/// @section Odometry
-	tf::TransformListener* tf_;
+	tf2_ros::Buffer* tf_buffer_;
 	base_local_planner::OdometryHelperRos odom_helper_;
 	std::string odom_topic_;
-	tf::Stamped<tf::Pose> current_pose_;
+	geometry_msgs::PoseStamped current_pose_;
 	// helpers
-	tf::TransformBroadcaster tf_broadcaster_;
+	tf2_ros::TransformBroadcaster tf_broadcaster_;
 
 	Visualization vis_;
 

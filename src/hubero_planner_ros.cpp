@@ -36,7 +36,7 @@ HuberoPlannerROS::HuberoPlannerROS():
 		obstacles_(nullptr),
 		dsrv_(nullptr),
 		cfg_(nullptr),
-		tf_(nullptr),
+		tf_buffer_(nullptr),
 		odom_helper_("odom"),
 		vis_("odom") {
 }
@@ -46,21 +46,21 @@ HuberoPlannerROS::~HuberoPlannerROS(){
 	delete dsrv_;
 }
 
-void HuberoPlannerROS::initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros) {
+void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, costmap_2d::Costmap2DROS* costmap_ros) {
 	// check if the plugin is already initialized
 	if (!isInitialized()) {
 		// create Node Handle with name of plugin (as used in move_base for loading)
 		ros::NodeHandle private_nh("~/" + name);
 
 		// assign args
-		tf_ = tf;
+		tf_buffer_ = tf_buffer;
 		costmap_ros_ = costmap_ros;
 		costmap_ros_->getRobotPose(current_pose_);
 
 		costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
 
 		planner_util_ = std::make_shared<base_local_planner::LocalPlannerUtil>();
-		planner_util_->initialize(tf, costmap, costmap_ros_->getGlobalFrameID());
+		planner_util_->initialize(tf_buffer, costmap, costmap_ros_->getGlobalFrameID());
 
 		// reserve some memory for obstacles
 		obstacles_ = std::make_shared<ObstContainer>();
@@ -142,12 +142,21 @@ bool HuberoPlannerROS::isGoalReached() {
 	}
 
 	//we assume the global goal is the last point in the global plan
-	tf::Stamped<tf::Pose> goal;
+	geometry_msgs::PoseStamped goal;
 	planner_util_->getGoal(goal);
-	tf::Stamped<tf::Pose> pose;
+	geometry_msgs::PoseStamped pose;
 	costmap_ros_->getRobotPose(pose);
 
-	bool reached = planner_->checkGoalReached(pose, goal);
+    // conversion from geometry_msgs/PoseStamped to tf::Stamped
+    tf::Stamped<tf::Pose> pose_tf = geometry::Pose(pose).getAsTfPose();
+    pose_tf.stamp_ = pose.header.stamp;
+    pose_tf.frame_id_ = pose.header.frame_id;
+
+    tf::Stamped<tf::Pose> goal_tf = geometry::Pose(goal).getAsTfPose();
+    goal_tf.stamp_ = goal.header.stamp;
+    goal_tf.frame_id_ = goal.header.frame_id;
+
+	bool reached = planner_->checkGoalReached(pose_tf, goal_tf);
 	if (reached) {
 		ROS_INFO("Goal reached!");
 	}
@@ -165,9 +174,9 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// retrieve environment information and pass them to the HuBeRo planner
 
 	// Get robot pose
-	tf::Stamped<tf::Pose> robot_pose_tf;
-	costmap_ros_->getRobotPose(robot_pose_tf);
-	Pose robot_pose(robot_pose_tf);
+	geometry_msgs::PoseStamped robot_pose_geom;
+	costmap_ros_->getRobotPose(robot_pose_geom);
+	Pose robot_pose(robot_pose_geom);
 	debug_print_verbose("pose: x %2.4f / y %2.4f / z %2.4f / Rr %2.4f, Rp %2.4f, Ry %2.4f | frame: %s \r\n",
 		robot_pose.getX(),
 		robot_pose.getY(),
@@ -179,9 +188,9 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	);
 
 	// Get robot velocity
-	tf::Stamped<tf::Pose> robot_vel_tf;
-	odom_helper_.getRobotVel(robot_vel_tf);
-	Vector robot_vel(robot_vel_tf);
+	geometry_msgs::PoseStamped robot_vel_geom;
+	odom_helper_.getRobotVel(robot_vel_geom);
+	Vector robot_vel(robot_vel_geom);
 	debug_print_verbose("vel: x %2.4f / y %2.4f / yaw %2.4f \r\n",
 		robot_vel.getX(),
 		robot_vel.getY(),
@@ -189,14 +198,14 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	);
 
 	// Get robot goal
-	tf::Stamped<tf::Pose> robot_goal_tf;
-	planner_util_->getGoal(robot_goal_tf);
-	Pose robot_goal(robot_goal_tf);
+	geometry_msgs::PoseStamped robot_goal_geom;
+	planner_util_->getGoal(robot_goal_geom);
+	Pose robot_goal(robot_goal_geom);
 	debug_print_verbose("goal: x %2.4f / y %2.4f / yaw %2.4f | frame: %s \r\n",
 			robot_goal.getX(),
 			robot_goal.getY(),
 			robot_goal.getYaw(),
-			robot_goal_tf.frame_id_.c_str()
+			robot_goal_geom.header.frame_id.c_str()
 	);
 
 	// prepare obstacles
