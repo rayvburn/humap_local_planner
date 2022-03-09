@@ -12,6 +12,7 @@
 #include <tgmath.h>			// fabs()
 #include <math.h>			// exp()
 #include <algorithm>    	// std::find
+#include <random>           // std::normal_distribution
 
 // ----------------------------------------
 
