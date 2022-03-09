@@ -42,31 +42,31 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 
 	// Limits
 	printf("Parameter section: `LIMITS` - default values \r\n");
-	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_trans_vel);
-	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_trans_vel);
+	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_vel_trans);
+	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_vel_trans);
 	printf("\t - max_vel_x: %5.5f \r\n", limits_->max_vel_x);
 	printf("\t - min_vel_x: %5.5f \r\n", limits_->min_vel_x);
 	printf("\t - max_vel_y: %5.5f \r\n", limits_->max_vel_y);
 	printf("\t - min_vel_y: %5.5f \r\n", limits_->min_vel_y);
-	printf("\t - max_rot_vel: %5.5f \r\n", limits_->max_rot_vel);
-	printf("\t - min_rot_vel: %5.5f \r\n", limits_->min_rot_vel);
+	printf("\t - max_rot_vel: %5.5f \r\n", limits_->max_vel_theta);
+	printf("\t - min_rot_vel: %5.5f \r\n", limits_->min_vel_theta);
 	printf("\t - acc_lim_x: %5.5f \r\n", limits_->acc_lim_x);
 	printf("\t - acc_lim_y: %5.5f \r\n", limits_->acc_lim_y);
 	printf("\t - acc_lim_theta: %5.5f \r\n", limits_->acc_lim_theta);
-	printf("\t - acc_limit_trans: %5.5f \r\n", limits_->acc_limit_trans);
+	printf("\t - acc_limit_trans: %5.5f \r\n", limits_->acc_lim_trans);
 	printf("\t - prune_plan: %d \r\n", limits_->prune_plan);
 	printf("\t - xy_goal_tolerance: %5.5f \r\n", limits_->xy_goal_tolerance);
 	printf("\t - yaw_goal_tolerance: %5.5f \r\n", limits_->yaw_goal_tolerance);
 	printf("\t - trans_stopped_vel: %5.5f \r\n", limits_->trans_stopped_vel);
-	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->rot_stopped_vel);
+	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->theta_stopped_vel);
 //	nh.param("max_trans_vel", limits_->max_trans_vel, limits_->max_trans_vel);
 //	nh.param("min_trans_vel", limits_->min_trans_vel, limits_->min_trans_vel);
 	nh.param("max_vel_x", limits_->max_vel_x, limits_->max_vel_x);
 	nh.param("min_vel_x", limits_->min_vel_x, limits_->min_vel_x);
 //	nh.param("max_vel_y", limits_->max_vel_y, limits_->max_vel_y);
 //	nh.param("min_vel_y", limits_->min_vel_y, limits_->min_vel_y);
-	nh.param("max_rot_vel", limits_->max_rot_vel, limits_->max_rot_vel);
-	nh.param("min_rot_vel", limits_->min_rot_vel, limits_->min_rot_vel);
+	nh.param("max_rot_vel", limits_->max_vel_theta, limits_->max_vel_theta);
+	nh.param("min_rot_vel", limits_->min_vel_theta, limits_->min_vel_theta);
 //	nh.param("acc_lim_x", limits_->acc_lim_x, limits_->acc_lim_x);
 //	nh.param("acc_lim_y", limits_->acc_lim_y, limits_->acc_lim_y);
 //	nh.param("acc_lim_theta", limits_->acc_lim_theta, limits_->acc_lim_theta);
@@ -75,26 +75,26 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("xy_goal_tolerance", limits_->xy_goal_tolerance, limits_->xy_goal_tolerance);
 	nh.param("yaw_goal_tolerance", limits_->yaw_goal_tolerance, limits_->yaw_goal_tolerance);
 	nh.param("trans_stopped_vel", limits_->trans_stopped_vel, limits_->trans_stopped_vel);
-	nh.param("rot_stopped_vel", limits_->rot_stopped_vel, limits_->rot_stopped_vel);
+	nh.param("rot_stopped_vel", limits_->theta_stopped_vel, limits_->theta_stopped_vel);
 
 	printf("Parameter section: `LIMITS` \r\n");
-	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_trans_vel);
-	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_trans_vel);
+	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_vel_trans);
+	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_vel_trans);
 	printf("\t - max_vel_x: %5.5f \r\n", limits_->max_vel_x);
 	printf("\t - min_vel_x: %5.5f \r\n", limits_->min_vel_x);
 	printf("\t - max_vel_y: %5.5f \r\n", limits_->max_vel_y);
 	printf("\t - min_vel_y: %5.5f \r\n", limits_->min_vel_y);
-	printf("\t - max_rot_vel: %5.5f \r\n", limits_->max_rot_vel);
-	printf("\t - min_rot_vel: %5.5f \r\n", limits_->min_rot_vel);
+	printf("\t - max_rot_vel: %5.5f \r\n", limits_->max_vel_theta);
+	printf("\t - min_rot_vel: %5.5f \r\n", limits_->min_vel_theta);
 	printf("\t - acc_lim_x: %5.5f \r\n", limits_->acc_lim_x);
 	printf("\t - acc_lim_y: %5.5f \r\n", limits_->acc_lim_y);
 	printf("\t - acc_lim_theta: %5.5f \r\n", limits_->acc_lim_theta);
-	printf("\t - acc_limit_trans: %5.5f \r\n", limits_->acc_limit_trans);
+	printf("\t - acc_limit_trans: %5.5f \r\n", limits_->acc_lim_trans);
 	printf("\t - prune_plan: %d \r\n", limits_->prune_plan);
 	printf("\t - xy_goal_tolerance: %5.5f \r\n", limits_->xy_goal_tolerance);
 	printf("\t - yaw_goal_tolerance: %5.5f \r\n", limits_->yaw_goal_tolerance);
 	printf("\t - trans_stopped_vel: %5.5f \r\n", limits_->trans_stopped_vel);
-	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->rot_stopped_vel);
+	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->theta_stopped_vel);
 
 	// InflatorParams
 	// unsigned short int - needed reference so static_cast will not do
@@ -196,18 +196,18 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	limits_->acc_lim_theta = cfg.acc_lim_theta;
 	limits_->acc_lim_x = cfg.acc_lim_x;
 	limits_->acc_lim_y = cfg.acc_lim_y;
-	limits_->acc_limit_trans = cfg.acc_limit_trans;
-	limits_->max_rot_vel = cfg.max_rot_vel;
-	limits_->max_trans_vel = cfg.max_trans_vel;
+	limits_->acc_lim_trans = cfg.acc_lim_trans;
+	limits_->max_vel_theta = cfg.max_vel_theta;
+	limits_->max_vel_trans = cfg.max_vel_trans;
 	limits_->max_vel_x = cfg.max_vel_x;
 	limits_->max_vel_y = cfg.max_vel_y;
-	limits_->min_rot_vel = cfg.min_rot_vel;
-	limits_->min_trans_vel = cfg.min_trans_vel;
+	limits_->min_vel_theta = cfg.min_vel_theta;
+	limits_->min_vel_trans = cfg.min_vel_trans;
 	limits_->min_vel_x = cfg.min_vel_x;
 	limits_->min_vel_y = cfg.min_vel_y;
 	limits_->prune_plan = cfg.prune_plan;
 	// limits_->restore_defaults
-	limits_->rot_stopped_vel = cfg.rot_stopped_vel;
+	limits_->theta_stopped_vel = cfg.theta_stopped_vel;
 	limits_->trans_stopped_vel = cfg.trans_stopped_vel;
 	limits_->xy_goal_tolerance = cfg.xy_goal_tolerance;
 	limits_->yaw_goal_tolerance = cfg.yaw_goal_tolerance;
