@@ -232,7 +232,7 @@ public:
 		setLine(line_start, line_end);
 	}
 	LineRobotFootprint(const Eigen::Vector2d& line_start, const Eigen::Vector2d& line_end)
-		: teb_local_planner::LineRobotFootprint(line_start, line_end) {
+		: teb_local_planner::LineRobotFootprint(line_start, line_end, (line_end - line_start).norm()) {
 		setLine(line_start, line_end);
 	}
 	virtual ~LineRobotFootprint() {
