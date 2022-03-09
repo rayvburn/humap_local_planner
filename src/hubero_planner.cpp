@@ -203,13 +203,14 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
 }
 
 bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
-	tf::Stamped<tf::Pose> pose_tf = pose_.getAsTfPose();
-	pose_tf.frame_id_ = planner_util_->getGlobalFrame();
-	pose_tf.stamp_ = ros::Time::now();
+	geometry_msgs::PoseStamped pose_stamped;
+    pose_stamped.pose = pose_.getAsMsgPose();
+	pose_stamped.header.frame_id = planner_util_->getGlobalFrame();
+	pose_stamped.header.stamp = ros::Time::now();
 
 	std::vector<geometry_msgs::PoseStamped> plan_local_pruned;
 	// this prunes plan if appropriate parameter is set
-	planner_util_->getLocalPlan(pose_tf, plan_local_pruned);
+	planner_util_->getLocalPlan(pose_stamped, plan_local_pruned);
 
 	// NOTE: global_plan_ is not stored currently!
 	// base_local_planner::prunePlan(poseTf, plan_local_, global_plan_);
