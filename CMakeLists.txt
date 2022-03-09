@@ -55,6 +55,7 @@ catkin_package(
     INCLUDE_DIRS include
     LIBRARIES hubero_local_planner
     CATKIN_DEPENDS
+        base_local_planner
         dynamic_reconfigure
         nav_msgs
         pluginlib
@@ -147,6 +148,7 @@ target_link_libraries(geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(geometry PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Config
 add_library(config ${HEADERS_CONFIG})
+target_link_libraries(config ${catkin_LIBRARIES})
 set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Fuzzy
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
