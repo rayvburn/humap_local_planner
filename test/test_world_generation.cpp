@@ -45,6 +45,31 @@ TEST(HuberoWorldGeneration, robotTargetDistance) {
     EXPECT_FLOAT_EQ(IGN_DTOR(45.0), Angle(robot.target.dist_v).getRadian());
 }
 
+TEST(HuberoWorldGeneration, predict) {
+    const Pose ROBOT_POSE(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    const Pose GOAL_LOCAL(2.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    const Pose GOAL_GLOBAL(3.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    const Pose OBSTACLE_POSE = GOAL_LOCAL;
+
+    const Vector ROBOT_VEL(0.5, 0.0, 0.0);
+    const Vector OBSTACLE_VEL(-0.25, 0.0, 0.0);
+
+    World world = World(ROBOT_POSE, ROBOT_VEL, GOAL_LOCAL, GOAL_GLOBAL);
+    // point obstacle, robot also represented as a point
+    world.addObstacle(ROBOT_POSE, OBSTACLE_POSE, OBSTACLE_VEL);
+    world.predict(1.0);
+
+    EXPECT_EQ(world.getRobotData().centroid.getX(), ROBOT_POSE.getX() + ROBOT_VEL.getX());
+    EXPECT_EQ(world.getRobotData().centroid.getY(), ROBOT_POSE.getY() + ROBOT_VEL.getY());
+    EXPECT_EQ(world.getRobotData().centroid.getZ(), ROBOT_POSE.getZ() + ROBOT_VEL.getZ());
+
+    ASSERT_EQ(world.getDynamicObjectsData().size(), 1);
+    auto obstacle = world.getDynamicObjectsData().at(0);
+    EXPECT_EQ(obstacle.object.getX(), OBSTACLE_POSE.getX() + OBSTACLE_VEL.getX());
+    EXPECT_EQ(obstacle.object.getY(), OBSTACLE_POSE.getY() + OBSTACLE_VEL.getY());
+    EXPECT_EQ(obstacle.object.getZ(), OBSTACLE_POSE.getZ() + OBSTACLE_VEL.getZ());
+}
+
 int main(int argc, char** argv) {
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

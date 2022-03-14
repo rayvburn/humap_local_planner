@@ -146,6 +146,12 @@ public:
 			bool force_dynamic_type = false
 	);
 
+    /**
+     * @brief Computes prediction of the world state for @ref sim_period forward
+     * @details Modifies class instance
+     */
+    void predict(const double& sim_period);
+
 	inline Robot getRobotData() const {
 		return robot_;
 	}

@@ -6,6 +6,7 @@
  */
 
 #include <hubero_local_planner/world.h>
+#include <hubero_local_planner/utils/transformations.h>
 
 namespace hubero_local_planner {
 
@@ -72,6 +73,38 @@ void World::addObstacles(
 	for (size_t i = 0; i < robot_pose_closest.size(); i++) {
 		addObstacle(robot_pose_closest.at(i), obstacle_pose_closest.at(i), obstacle_vel.at(i), force_dynamic_type);
 	}
+}
+
+void World::predict(const double& sim_period) {
+	auto robot_centroid_new = computeNextPose(robot_.centroid, robot_.vel, sim_period);
+	auto robot_pose_diff = robot_centroid_new.getRawPose() - robot_.centroid.getRawPose();
+	auto robot_pose_new_temp = robot_.target.robot.getRawPose() + robot_pose_diff;
+	geometry::Pose robot_pose_new(robot_pose_new_temp.Pos(), robot_pose_new_temp.Rot());
+
+	auto world_prediction = World(
+		robot_centroid_new,
+		robot_pose_new,
+		robot_.vel,
+		robot_.target.object,
+		robot_.goal.object
+	);
+
+	// only dynamic obstacles will change their poses - static ones do not need to be changed
+	for (auto& obstacle: obstacle_dynamic_) {
+		auto robot_new_pose_temp = obstacle.robot.getRawPose() + robot_pose_diff;
+		geometry::Pose robot_new_pose(robot_new_pose_temp.Pos(), robot_new_pose_temp.Rot());
+		geometry::Pose obstacle_new_pose = computeNextPose(obstacle.object, obstacle.vel, sim_period);
+		world_prediction.addObstacle(robot_new_pose, obstacle_new_pose, obstacle.vel);
+	}
+
+	for (auto& obstacle: obstacle_static_) {
+		auto robot_new_pose_temp = obstacle.robot.getRawPose() + robot_pose_diff;
+		geometry::Pose robot_new_pose(robot_new_pose_temp.Pos(), robot_new_pose_temp.Rot());
+		world_prediction.addObstacle(robot_new_pose, obstacle.object, geometry::Vector(0.0, 0.0, 0.0));
+	}
+
+	// override this world instance
+	*this = world_prediction;
 }
 
 StaticObject World::createObstacleStatic(
