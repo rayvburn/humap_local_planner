@@ -102,14 +102,15 @@ Vector HuberoPlanner::computeForce() {
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestPath(
-        tf::Stamped<tf::Pose> global_pose,
-        tf::Stamped<tf::Pose> global_vel,
-        tf::Stamped<tf::Pose>& drive_velocities) {
+	const geometry_msgs::PoseStamped& global_pose,
+	const geometry_msgs::PoseStamped& global_vel,
+	geometry_msgs::PoseStamped& drive_velocities
+) {
 	printf("[HuberoPlanner::findBestPath] \r\n");
 	return base_local_planner::Trajectory();
 }
 
-void HuberoPlanner::updatePlanAndLocalCosts(tf::Stamped<tf::Pose> global_pose,
+void HuberoPlanner::updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& global_pose,
 		const std::vector<geometry_msgs::PoseStamped>& new_plan,
 		const std::vector<geometry_msgs::Point>& footprint_spec) {
 	printf("[HuberoPlanner::updatePlanAndLocalCosts] \r\n");
