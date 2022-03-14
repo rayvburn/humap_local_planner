@@ -129,9 +129,9 @@ public:
 	 * @return The highest scoring trajectory. A cost >= 0 means the trajectory is legal to execute.
 	 */
 	base_local_planner::Trajectory findBestPath(
-		tf::Stamped<tf::Pose> global_pose,
-		tf::Stamped<tf::Pose> global_vel,
-		tf::Stamped<tf::Pose>& drive_velocities
+		const geometry_msgs::PoseStamped& global_pose,
+		const geometry_msgs::PoseStamped& global_vel,
+		geometry_msgs::PoseStamped& drive_velocities
 	);
 
 	/**
@@ -145,7 +145,7 @@ public:
 	 * The alignment cost functions get a version of the global plan
 	 *   that is modified based on the global_pose
 	 */
-    void updatePlanAndLocalCosts(tf::Stamped<tf::Pose> global_pose,
+	void updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& global_pose,
 		const std::vector<geometry_msgs::PoseStamped>& new_plan,
 		const std::vector<geometry_msgs::Point>& footprint_spec
 	);
