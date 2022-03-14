@@ -151,7 +151,7 @@ void computeVelocityGlobal(
 		sin(yaw), 0, 0,
 		0, 0, 1;
 	// compute global velocity vector
-	Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local.getAsEigen();
+	Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local.getAsEigen<Eigen::Vector3d>();
 	// prepare twist expressed in global coordinates
 	vel_global = Vector(vel_global_eigen);
 

@@ -101,7 +101,18 @@ public:
     /// NOTE: makes sense only if one of the Pose-connected constructors was used (getZ returns Yaw then)
     geometry_msgs::Pose getAsMsgPose() const;
 
-	Eigen::Vector3d getAsEigen() const;
+    /**
+     * @brief Converts vector to Eigen::Vector3X type
+     * @tparam T type of the Eigen::Vector3, e.g., Eigen::Vector3d, Eigen::Vector3f
+     */
+    template <typename T>
+	T getAsEigen() const {
+        T v_out;
+        v_out[0] = getX();
+        v_out[1] = getY();
+        v_out[2] = getZ();
+        return v_out;
+    }
 
     geometry_msgs::Twist getAsTwist() const;
 

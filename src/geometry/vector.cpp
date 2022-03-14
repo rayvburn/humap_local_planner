@@ -90,14 +90,6 @@ geometry_msgs::Pose Vector::getAsMsgPose() const {
     return pose;
 }
 
-Eigen::Vector3d Vector::getAsEigen() const {
-    Eigen::Vector3d v_out;
-    v_out[0] = getX();
-    v_out[1] = getY();
-    v_out[2] = getZ();
-    return v_out;
-}
-
 geometry_msgs::Twist Vector::getAsTwist() const {
     geometry_msgs::Twist twist;
     twist.linear.x = getX();
