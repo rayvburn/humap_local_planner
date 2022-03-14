@@ -109,7 +109,7 @@ TEST(HuberoGeometryVector, conversion) {
 
     Eigen::Vector3d v_eigen3d(v_ref.getX(), v_ref.getY(), v_ref.getZ());
     Vector v_from_eigen3d(v_eigen3d);
-    ASSERT_EQ(v_from_eigen3d.getAsEigen(), v_eigen3d);
+    ASSERT_EQ(v_from_eigen3d.getAsEigen<Eigen::Vector3d>(), v_eigen3d);
 
     geometry_msgs::Twist v_twist;
     v_twist.linear.x = v_ref.getX();
