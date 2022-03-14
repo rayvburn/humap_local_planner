@@ -6,6 +6,26 @@
 namespace hubero_local_planner {
 
 /**
+ * @brief Computes new pose based on previous one and velocity setpoint (expressed in local=base coordinate system)
+ * @note Constant velocity model applied here
+ */
+geometry::Pose computeNextPoseBaseVel(
+	const geometry::Pose& pose,
+	const geometry::Vector& vel,
+	double dt
+);
+
+/**
+ * @brief Computes a new pose based on previous one and velocity setpoint expressed in global coordinate system
+ * @note Constant velocity model applied here
+ */
+geometry::Pose computeNextPose(
+	const geometry::Pose& pose,
+	const geometry::Vector& vel,
+	double dt
+);
+
+/**
  * @defgroup velocitytransformations Velocity Transformations
  * @{
  */
