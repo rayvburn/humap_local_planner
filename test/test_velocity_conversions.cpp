@@ -1,7 +1,7 @@
 
 #include <gtest/gtest.h>
 #include <ros/ros.h>
-#include <hubero_local_planner/hubero_planner_ros.h>
+#include <hubero_local_planner/utils/transformations.h>
 #include <hubero_local_planner/geometry/geometry.h>
 
 #include "gtest_cout.h"
@@ -19,7 +19,7 @@ TEST(HuberoVelocityConversions, computeVelocityGlobal) {
 	Pose pose(0.0, 0.0, yaw.getRadian());
 
 	Vector vel_global;
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
+	computeVelocityGlobal(vel_local, pose, vel_global);
 	// GTEST_COUT << "1)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
 	// GTEST_COUT << "1) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " yaw " << vel_local.getZ()  << std::endl;
 	// GTEST_COUT << "1) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " yaw " << vel_global.getZ() << std::endl;
@@ -31,7 +31,7 @@ TEST(HuberoVelocityConversions, computeVelocityGlobal) {
 	// 2nd case: robot orientation Euler, Z 45 deg
 	yaw = Angle(IGN_PI_4);
 	pose.setOrientation(0.0, 0.0, yaw.getRadian());
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
+	computeVelocityGlobal(vel_local, pose, vel_global);
 	// GTEST_COUT << "2)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
 	// GTEST_COUT << "2) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " yaw " << vel_local.getZ()  << std::endl;
 	// GTEST_COUT << "2) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " yaw " << vel_global.getZ() << std::endl;
@@ -44,7 +44,7 @@ TEST(HuberoVelocityConversions, computeVelocityGlobal) {
 	// 3rd case: robot orientation Euler, Z -90 deg
 	yaw = Angle(-IGN_PI_2);
 	pose.setOrientation(0.0, 0.0, yaw.getRadian());
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
+	computeVelocityGlobal(vel_local, pose, vel_global);
 	// GTEST_COUT << "3)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
 	// GTEST_COUT << "3) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " yaw " << vel_local.getZ()  << std::endl;
 	// GTEST_COUT << "3) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " yaw " << vel_global.getZ() << std::endl;
@@ -56,7 +56,7 @@ TEST(HuberoVelocityConversions, computeVelocityGlobal) {
 	// 4th case: robot orientation Euler, Z +90, local.angular.z negative
 	yaw = Angle(IGN_PI_2);
 	pose.setOrientation(0.0, 0.0, yaw.getRadian());
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
+	computeVelocityGlobal(vel_local, pose, vel_global);
 	// GTEST_COUT << "4)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
 	// GTEST_COUT << "4) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " z " << vel_local.getZ()  << std::endl;
 	// GTEST_COUT << "4) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
@@ -86,8 +86,8 @@ TEST(HuberoVelocityConversions, computeTwist) {
 	// no force - no movement (note that force does not sum up throughout simulation - it's not complaint with physical laws, but we simplify things there)
 	force = Vector(0.0, 0.0, 0.0);
 
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
-	HuberoPlannerROS::computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
+	computeVelocityGlobal(vel_local, pose, vel_global);
+	computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
 	// GTEST_COUT << "1) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
 	// GTEST_COUT << "1) Local  Velocity: x " << cmd_vel.getX()    << " y " << cmd_vel.getY()    << " z " << cmd_vel.getZ()    << std::endl;
 	// force made robot maintain its speed
@@ -99,8 +99,8 @@ TEST(HuberoVelocityConversions, computeTwist) {
 	vel_local = Vector(1.0, 0.0, 0.0);
 	force = Vector(1.0, 0.0, 0.0);
 
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
-	HuberoPlannerROS::computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
+	computeVelocityGlobal(vel_local, pose, vel_global);
+	computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
 	// GTEST_COUT << "2) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
 	// GTEST_COUT << "2) Local  Velocity: x " << cmd_vel.getX()  << " y " << cmd_vel.getY()  << " z " << cmd_vel.getZ()  << std::endl;
 	EXPECT_DOUBLE_EQ(cmd_vel.getX(), (force.getX() / ROBOT_MASS) / SIM_PERIOD);
@@ -111,8 +111,8 @@ TEST(HuberoVelocityConversions, computeTwist) {
 	vel_local = Vector(1.0, 0.0, 0.0);
 	force = Vector(-0.5, -0.5, 0.0);
 
-	HuberoPlannerROS::computeVelocityGlobal(vel_local, pose, vel_global);
-	HuberoPlannerROS::computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
+	computeVelocityGlobal(vel_local, pose, vel_global);
+	computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
 	// GTEST_COUT << "3) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
 	// GTEST_COUT << "3) Local  Velocity: x " << cmd_vel.getX()  << " y " << cmd_vel.getY()  << " z " << cmd_vel.getZ()  << std::endl;
 	// force made robot turn in place

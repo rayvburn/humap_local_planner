@@ -151,6 +151,10 @@ set(SOURCES_GEOMETRY
 add_library(geometry ${HEADERS_GEOMETRY} ${SOURCES_GEOMETRY})
 target_link_libraries(geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(geometry PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
+### Transformations
+add_library(transformations include/${PROJECT_NAME}/utils/transformations.h src/utils/transformations.cpp)
+target_link_libraries(transformations geometry)
+set_target_properties(transformations PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Config
 add_library(config ${HEADERS_CONFIG})
 target_link_libraries(config ${catkin_LIBRARIES})
@@ -161,7 +165,7 @@ target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### World - ontology
 add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
-target_link_libraries(world geometry ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(world geometry transformations ${IGNITION-MATH_LIBRARIES})
 set_target_properties(world PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### SFM
 add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
@@ -191,7 +195,7 @@ add_library(hubero_local_planner
     include/hubero_local_planner/robot_footprint_model.h
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world transformations ${IGNITION-MATH_LIBRARIES})
 
 ## Executables
 add_executable(test_executable
