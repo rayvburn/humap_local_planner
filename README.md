@@ -4,6 +4,12 @@ A local planning module for A Framework to Simulate Human Behaviour in Robot Res
 
 ## Prerequisites
 
+### `apt` packages
+
+```bash
+sudo apt install ros-$ROS_DISTRO-costmap-converter
+```
+
 ### `teb_local_planner`
 
 Slightly modified `teb_local_planner` (its 'utils' in particular) is currently required for operation:
