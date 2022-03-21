@@ -95,6 +95,30 @@ namespace hubero_local_planner {
 		double			decelerate						= 500.0;
 	};
 
+	/**
+	 * @brief Set of trajectory generator parameters with default values
+	 *
+	 * Granularities define how many equidistant amplifiers will be investigated (in how many samples to divide the
+	 * given dimension)
+	 */
+	struct TrajectorySamplingParams {
+		double force_internal_amplifier_min = 0.5;
+		double force_internal_amplifier_max = 1.5;
+		double force_internal_amplifier_granularity = 0.5;
+
+		double force_interaction_dynamic_amplifier_min = 0.5;
+		double force_interaction_dynamic_amplifier_max = 1.5;
+		double force_interaction_dynamic_amplifier_granularity = 0.5;
+
+		double force_interaction_social_amplifier_min = 0.5;
+		double force_interaction_social_amplifier_max = 1.5;
+		double force_interaction_social_amplifier_granularity = 0.5;
+
+		double force_interaction_static_amplifier_min = 0.5;
+		double force_interaction_static_amplifier_max = 1.5;
+		double force_interaction_static_amplifier_granularity = 0.5;
+	};
+
 class HuberoConfig {
 public:
 	HuberoConfig() {
@@ -103,6 +127,7 @@ public:
 		inflator_ = std::make_shared<InflatorParams>();
 		sfm_ = std::make_shared<SfmParams>();
 		behaviour_ = std::make_shared<BehaviourParams>();
+		traj_sampling_ = std::make_shared<TrajectorySamplingParams>();
 	}
 
 	std::shared_ptr<const base_local_planner::LocalPlannerLimits> getLimits() const {
@@ -125,6 +150,10 @@ public:
 		return behaviour_;
 	}
 
+	std::shared_ptr<const TrajectorySamplingParams> getTrajectorySampling() const {
+		return traj_sampling_;
+	}
+
 	virtual ~HuberoConfig() = default;
 
 protected:
@@ -133,6 +162,7 @@ protected:
 	std::shared_ptr<InflatorParams> inflator_;
 	std::shared_ptr<SfmParams> sfm_;
 	std::shared_ptr<BehaviourParams> behaviour_;
+	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;
 };
 
 typedef std::shared_ptr<const HuberoConfig> HuberoConfigConstPtr;
