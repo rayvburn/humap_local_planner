@@ -101,11 +101,15 @@ protected:
 	/**
 	 * @brief Get the current robot footprint/contour model
 	 * @param nh const reference to the local ros::NodeHandle
-	 * @return Robot footprint model used for optimization
+	 * @return Tuple with
+	 * - robot footprint model used for distance calculations
+	 * - vector of points used for costmap planning
 	 *
-	 * @note This method is copied from TEB Local Planner. Aim is to avoid reinterpret cast to the higher-level class
+	 * @note This method is mostly copied from TEB Local Planner. Aim is to avoid reinterpret cast to the higher-level class
 	 */
-	RobotFootprintModelPtr getRobotFootprintFromParamServer(const ros::NodeHandle& nh);
+	std::tuple<RobotFootprintModelPtr, std::vector<geometry_msgs::Point>> getRobotFootprintFromParamServer(
+		const ros::NodeHandle& nh
+	);
 
 	void computeTwist(
 		const Pose& pose,

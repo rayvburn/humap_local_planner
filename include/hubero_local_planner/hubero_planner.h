@@ -83,7 +83,8 @@ public:
 	HuberoPlanner(
 			const std::string& name,
 			std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util,
-			RobotFootprintModelPtr footprint_model
+			RobotFootprintModelPtr robot_model,
+			std::vector<geometry_msgs::Point> footprint_spec
 	);
 
 	/**
