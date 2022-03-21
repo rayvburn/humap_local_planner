@@ -90,11 +90,11 @@ public:
 	/**
 	 * @brief  Destructor for the planner
 	 */
-    virtual ~HuberoPlanner();
+	virtual ~HuberoPlanner();
 
-    void initialize(HuberoConfigConstPtr cfg);
+	void initialize(HuberoConfigConstPtr cfg);
 
-    bool compute(
+	bool compute(
 			const Pose& pose,
 			const Vector& velocity,
 			const Pose& goal,
@@ -102,10 +102,10 @@ public:
 			Vector& force
 	);
 
-    // grid `visualization` version, ignores storing meaningful_interactions data
-    bool compute(const Pose& pose, Vector& force);
+	// grid `visualization` version, ignores storing meaningful_interactions data
+	bool compute(const Pose& pose, Vector& force);
 
-    bool plan();
+	bool plan();
 
 	/**
 	 * @brief  Check if a trajectory is legal for a position/velocity pair
@@ -120,7 +120,7 @@ public:
 		const Eigen::Vector3f vel_samples
 	);
 
-    Vector computeForce();
+	Vector computeForce();
 
 	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
@@ -236,6 +236,7 @@ private:
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
 	double sim_period_; ///< @brief The number of seconds to use to compute max/min vels for the planner
+	/// Stores the trajectory with a highest score, updated by the SimpleScoredSamplingPlanner instance
 	base_local_planner::Trajectory result_traj_;
 
 	std::vector<geometry_msgs::PoseStamped> global_plan_;

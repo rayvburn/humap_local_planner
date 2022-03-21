@@ -206,7 +206,7 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
 
 bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
 	geometry_msgs::PoseStamped pose_stamped;
-    pose_stamped.pose = pose_.getAsMsgPose();
+	pose_stamped.pose = pose_.getAsMsgPose();
 	pose_stamped.header.frame_id = planner_util_->getGlobalFrame();
 	pose_stamped.header.stamp = ros::Time::now();
 
