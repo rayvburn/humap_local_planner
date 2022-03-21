@@ -30,7 +30,7 @@ HuberoPlanner::~HuberoPlanner() {
 	printf("[HuberoPlanner::HuberoPlanner] dtor \r\n");
 }
 
-void HuberoPlanner::initialize(HuberoConfigConstPtr cfg) {
+void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 	// make sure that our configuration doesn't change mid-run
 	std::lock_guard<std::mutex> l(configuration_mutex_);
 	cfg_ = cfg;

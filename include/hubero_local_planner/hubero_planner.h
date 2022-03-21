@@ -92,7 +92,7 @@ public:
 	 */
 	virtual ~HuberoPlanner();
 
-	void initialize(HuberoConfigConstPtr cfg);
+	void reconfigure(HuberoConfigConstPtr cfg);
 
 	bool compute(
 			const Pose& pose,
