@@ -8,27 +8,6 @@
 #include <base_local_planner/local_planner_limits.h>
 
 namespace hubero_local_planner {
-
-//	/// \brief Declaration of an ActorParams typedef'ed struct;
-//	/// default values are provided
-//	struct GeneralParams {
-//
-//		std::vector<double> init_pose; 						// if empty - there will be .world file values chosen
-//		std::vector<double> init_target;					// if empty - there will be random values chosen
-//		unsigned short int	init_stance						= 0;
-//
-//		std::string 		global_frame_name				= "world";
-//		double 				animation_factor				= 4.5;				/// \brief Time scaling factor. Used to coordinate translational motion with the actor_ptr_'s walking animation.
-//		double 				animation_speed_rotation 		= 0.007;
-//		double 				target_tolerance				= 1.25;
-//		double 				target_reach_max_time 			= 60.0;
-//		double 				target_reachable_check_period 	= 2.0;
-//		bool 				limit_actors_workspace			= true;
-//	    std::vector<double> world_bound_x					{-3.20, +3.80};
-//	    std::vector<double> world_bound_y					{-10.20, +3.80};
-//
-//	};
-
 	struct GeneralParams {
 		double sim_time										= 1.2;
 		double sim_granularity								= 0.025;
