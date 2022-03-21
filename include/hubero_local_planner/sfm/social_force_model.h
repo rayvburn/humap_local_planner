@@ -139,6 +139,9 @@ public:
 		cfg_ = cfg;
 	}
 
+	/// \brief Returns true if interaction forces were disabled in the provided config struct
+	bool areInteractionForcesDisabled() const;
+
 	/// \brief Function which calculates social force
 	/// for an actor taking whole world's objects
 	/// into consideration

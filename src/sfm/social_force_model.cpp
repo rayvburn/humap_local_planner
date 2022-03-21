@@ -61,6 +61,14 @@ SocialForceModel::SocialForceModel():
 	setParameters();
 }
 
+bool SocialForceModel::areInteractionForcesDisabled() const {
+	// enabled by default
+	if (cfg_ == nullptr) {
+		return false;
+	}
+	return cfg_->disable_interaction_forces;
+}
+
 // ------------------------------------------------------------------- //
 
 bool SocialForceModel::computeSocialForce(
