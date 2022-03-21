@@ -31,6 +31,8 @@ HuberoPlanner::~HuberoPlanner() {
 }
 
 void HuberoPlanner::initialize(HuberoConfigConstPtr cfg) {
+	// make sure that our configuration doesn't change mid-run
+	std::lock_guard<std::mutex> l(configuration_mutex_);
 	cfg_ = cfg;
 	sfm_.init(cfg->getSfm());
 	social_conductor_.initialize(cfg->getBehaviour());
@@ -107,8 +109,8 @@ base_local_planner::Trajectory HuberoPlanner::findBestPath(
 	const geometry_msgs::PoseStamped& global_vel,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
-	printf("[HuberoPlanner::findBestPath] \r\n");
-	return base_local_planner::Trajectory();
+	// make sure that our configuration doesn't change mid-run
+	std::lock_guard<std::mutex> l(configuration_mutex_);
 }
 
 void HuberoPlanner::updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& global_pose,
