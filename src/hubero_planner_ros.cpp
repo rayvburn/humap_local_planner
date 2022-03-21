@@ -52,6 +52,8 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 	if (!isInitialized()) {
 		// create Node Handle with name of plugin (as used in move_base for loading)
 		ros::NodeHandle private_nh("~/" + name);
+		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
+		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
 
 		// assign args
 		tf_buffer_ = tf_buffer;
