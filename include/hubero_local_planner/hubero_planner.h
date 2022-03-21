@@ -156,7 +156,7 @@ public:
 	 * @return The simulation period
 	 */
 	inline double getSimPeriod() {
-		return sim_period_;
+		return cfg_->getGeneral()->sim_period;
 	}
 
 	/**
@@ -235,7 +235,6 @@ private:
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
-	double sim_period_; ///< @brief The number of seconds to use to compute max/min vels for the planner
 	/// Stores the trajectory with a highest score, updated by the SimpleScoredSamplingPlanner instance
 	base_local_planner::Trajectory result_traj_;
 
