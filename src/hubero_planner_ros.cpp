@@ -70,7 +70,9 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		obstacles_->reserve(500);
 
 		// create robot footprint/contour model
-		RobotFootprintModelPtr robot_model = getRobotFootprintFromParamServer(private_nh);
+		RobotFootprintModelPtr robot_model;
+		std::vector<geometry_msgs::Point> footprint_spec;
+		std::tie(robot_model, footprint_spec) = getRobotFootprintFromParamServer(private_nh);
 
 		debug_print_basic("Robot model - inscribed radius = %2.4f \r\n",
 				robot_model->getInscribedRadius()
@@ -81,7 +83,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		cfg_->loadFromParamServer(private_nh);
 
 		// local planner
-		planner_ = std::make_shared<HuberoPlanner>(name, planner_util_, robot_model);
+		planner_ = std::make_shared<HuberoPlanner>(name, planner_util_, robot_model, footprint_spec);
 		planner_->initialize(cfg_);
 
 		// visualization
@@ -323,18 +325,23 @@ bool HuberoPlannerROS::updateObstacleContainerWithCostmapConverter() {
 }
 
 // protected
-/// from TEB
-RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const ros::NodeHandle& nh) {
+std::tuple<RobotFootprintModelPtr, std::vector<geometry_msgs::Point>>
+HuberoPlannerROS::getRobotFootprintFromParamServer(const ros::NodeHandle& nh) {
+	// let the point model be a very small circle in fact
+	const double POINT_MODEL_RADIUS = 0.001;
+	// used if shape params cannot be defined
+	const auto FOOTPRINT_FALLBACK = costmap_2d::makeFootprintFromRadius(POINT_MODEL_RADIUS);
+
 	std::string model_name;
 	if (!nh.getParam("footprint_model/type", model_name)) {
 		ROS_INFO("No robot footprint model specified for trajectory optimization. Using point-shaped model.");
-		return std::make_shared<PointRobotFootprint>();
+		return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 	}
 
 	// point
 	if (model_name.compare("point") == 0) {
 		ROS_INFO("Footprint model 'point' loaded for trajectory optimization.");
-		return std::make_shared<PointRobotFootprint>();
+		return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 	}
 
 	// circular
@@ -344,10 +351,11 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 		if (!nh.getParam("footprint_model/radius", radius)) {
 			ROS_ERROR_STREAM("Footprint model 'circular' cannot be loaded for trajectory optimization, since param '" << nh.getNamespace()
 						   << "/footprint_model/radius' does not exist. Using point-model instead.");
-			return std::make_shared<PointRobotFootprint>();
+			return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 		}
 		ROS_INFO_STREAM("Footprint model 'circular' (radius: " << radius <<"m) loaded for trajectory optimization.");
-		return std::make_shared<CircularRobotFootprint>(radius);
+		auto footprint_geom = costmap_2d::makeFootprintFromRadius(radius);
+		return std::make_tuple(std::make_shared<CircularRobotFootprint>(radius), footprint_geom);
 	}
 
 	// line
@@ -356,7 +364,7 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 		if (!nh.hasParam("footprint_model/line_start") || !nh.hasParam("footprint_model/line_end")) {
 			ROS_ERROR_STREAM("Footprint model 'line' cannot be loaded for trajectory optimization, since param '" << nh.getNamespace()
 						   << "/footprint_model/line_start' and/or '.../line_end' do not exist. Using point-model instead.");
-			return std::make_shared<PointRobotFootprint>();
+			return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 		}
 		// get line coordinates
 		std::vector<double> line_start, line_end;
@@ -365,14 +373,24 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 		if (line_start.size() != 2 || line_end.size() != 2) {
 			ROS_ERROR_STREAM("Footprint model 'line' cannot be loaded for trajectory optimization, since param '" << nh.getNamespace()
 						   << "/footprint_model/line_start' and/or '.../line_end' do not contain x and y coordinates (2D). Using point-model instead.");
-			return std::make_shared<PointRobotFootprint>();
+			return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 		}
 
 		ROS_INFO_STREAM("Footprint model 'line' (line_start: [" << line_start[0] << "," << line_start[1] <<"]m, line_end: ["
 					 << line_end[0] << "," << line_end[1] << "]m) loaded for trajectory optimization.");
-		return std::make_shared<LineRobotFootprint>(
+		// create a string that is used to recreate valid costmap footprint
+		std::string model_spec =
+			"[[" + std::to_string(line_start[0]) + "," + std::to_string(line_start[1]) + "],"
+			+ "[" + std::to_string(line_end[0]) + "," + std::to_string(line_end[1]) + "]]";
+		std::vector<geometry_msgs::Point> footprint_geom;
+		costmap_2d::makeFootprintFromString(model_spec, footprint_geom);
+
+		return std::make_tuple(
+			std::make_shared<LineRobotFootprint>(
 				Eigen::Map<const Eigen::Vector2d>(line_start.data()),
 				Eigen::Map<const Eigen::Vector2d>(line_end.data())
+			),
+			footprint_geom
 		);
 	}
 
@@ -383,7 +401,7 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 				|| !nh.hasParam("footprint_model/rear_offset") || !nh.hasParam("footprint_model/rear_radius")) {
 			ROS_ERROR_STREAM("Footprint model 'two_circles' cannot be loaded for trajectory optimization, since params '" << nh.getNamespace()
 						   << "/footprint_model/front_offset', '.../front_radius', '.../rear_offset' and '.../rear_radius' do not exist. Using point-model instead.");
-			return std::make_shared<PointRobotFootprint>();
+			return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 		}
 		double front_offset, front_radius, rear_offset, rear_radius;
 		nh.getParam("footprint_model/front_offset", front_offset);
@@ -392,7 +410,20 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 		nh.getParam("footprint_model/rear_radius", rear_radius);
 		ROS_INFO_STREAM("Footprint model 'two_circles' (front_offset: " << front_offset <<"m, front_radius: " << front_radius
 					<< "m, rear_offset: " << rear_offset << "m, rear_radius: " << rear_radius << "m) loaded for trajectory optimization.");
-		return std::make_shared<TwoCirclesRobotFootprint>(front_offset, front_radius, rear_offset, rear_radius);
+		// footprint model (for costmap) can be created from 2 separate circles, but must be ordered properly
+		throw std::runtime_error(
+			"`two_circles` footprint specification is currently not supported, use another model: "
+			"`point`, `circular`, `line`, `polygon`"
+		);
+		return std::make_tuple(
+			std::make_shared<TwoCirclesRobotFootprint>(
+				front_offset,
+				front_radius,
+				rear_offset,
+				rear_radius
+			),
+			FOOTPRINT_FALLBACK
+		);
 	}
 
 	// polygon
@@ -402,27 +433,38 @@ RobotFootprintModelPtr HuberoPlannerROS::getRobotFootprintFromParamServer(const 
 		if (!nh.getParam("footprint_model/vertices", footprint_xmlrpc) ) {
 			ROS_ERROR_STREAM("Footprint model 'polygon' cannot be loaded for trajectory optimization, since param '" << nh.getNamespace()
 						   << "/footprint_model/vertices' does not exist. Using point-model instead.");
-			return std::make_shared<PointRobotFootprint>();
+			return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 		}
 		// get vertices
 		if (footprint_xmlrpc.getType() == XmlRpc::XmlRpcValue::TypeArray) {
 			try {
 				teb::Point2dContainer polygon = teb::LocalPlannerROS::makeFootprintFromXMLRPC(footprint_xmlrpc, "/footprint_model/vertices");
 				ROS_INFO_STREAM("Footprint model 'polygon' loaded for trajectory optimization.");
-				return std::make_shared<PolygonRobotFootprint>(polygon);
+
+				// create a string representation of polygon-footprint spec
+				std::string model_spec = "[";
+				for (const auto& pt: polygon) {
+					auto str_pt = "[" + std::to_string(pt[0]) + ", " + std::to_string(pt[1]) + "]";
+					model_spec += str_pt;
+				}
+				model_spec += "]";
+				std::vector<geometry_msgs::Point> footprint_geom;
+				costmap_2d::makeFootprintFromString(model_spec, footprint_geom);
+
+				return std::make_tuple(std::make_shared<PolygonRobotFootprint>(polygon), footprint_geom);
 			} catch (const std::exception& ex) {
 				ROS_ERROR_STREAM("Footprint model 'polygon' cannot be loaded for trajectory optimization: " << ex.what() << ". Using point-model instead.");
-				return std::make_shared<PointRobotFootprint>();
+				return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 			}
 		} else {
 			ROS_ERROR_STREAM("Footprint model 'polygon' cannot be loaded for trajectory optimization, since param '" << nh.getNamespace()
 						   << "/footprint_model/vertices' does not define an array of coordinates. Using point-model instead.");
-			return std::make_shared<PointRobotFootprint>();
+			return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 		}
 	}
 	// otherwise
 	ROS_WARN_STREAM("Unknown robot footprint model specified with parameter '" << nh.getNamespace() << "/footprint_model/type'. Using point model instead.");
-	return std::make_shared<PointRobotFootprint>();
+	return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 }
 
 void HuberoPlannerROS::computeTwist(

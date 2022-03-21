@@ -11,14 +11,15 @@ namespace hubero_local_planner {
 HuberoPlanner::HuberoPlanner(
 		const std::string& name,
 		std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util,
-		RobotFootprintModelPtr footprint_model
+		RobotFootprintModelPtr robot_model,
+		std::vector<geometry_msgs::Point> footprint_spec
 ):
 	planner_util_(planner_util),
 	// TODO: make it param
 	sim_period_(0.2),
 	goal_reached_(false),
 	obstacles_(nullptr),
-	robot_model_(footprint_model)
+	robot_model_(robot_model)
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
