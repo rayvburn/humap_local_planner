@@ -84,7 +84,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 
 		// local planner
 		planner_ = std::make_shared<HuberoPlanner>(name, planner_util_, robot_model, footprint_spec);
-		planner_->initialize(cfg_);
+		planner_->reconfigure(cfg_);
 
 		// visualization
 		vis_.initialize(private_nh);
@@ -249,8 +249,14 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 // protected
 void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
+	// fill cfg_ with updated config
 	cfg_->reconfigure(config);
+
+	// update visualization-related objects
 	vis_.reconfigure(cfg_->getSfm()->max_force);
+
+	// update Hubero planner with social trajectory generator
+	planner_->reconfigure(cfg_);
 }
 
 // protected
