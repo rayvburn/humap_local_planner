@@ -9,10 +9,20 @@
                 // e.g., action, msg, srv files
                 "${workspaceFolder}/../../devel/include/**",
                 "${workspaceFolder}/../../devel/.private/hubero_local_planner/include/**",
-                "${workspaceFolder}/include/**"
+                "${workspaceFolder}/include/**",
+                // C++
+                "/usr/include/c++/7/**",
+                // e.g., Gazebo headers
+                "/usr/include/**",
+                // ROS headers
+                "/opt/ros/melodic/include/**",
+                // external libraries
+                "${env:HOME}/libraries/fuzzylite/fuzzylite"
             ],
             "name": "ROS",
-            "defines": [],
+            "defines": [
+                "IGN_MATH_VER=4"
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
