@@ -242,6 +242,7 @@ private:
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	bool goal_reached_;
 
+	std::mutex configuration_mutex_;
 	/// @brief Parameters of the planner
 	HuberoConfigConstPtr cfg_;
 	/// @brief The most recent robot pose expressed in the planner's frame
