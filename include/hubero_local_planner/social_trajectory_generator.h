@@ -232,6 +232,7 @@ protected:
 	 */
 	void computeForces(
 		const World& world_model,
+		const double& dt,
 		geometry::Vector& force_internal,
 		geometry::Vector& force_interaction_dynamic,
 		geometry::Vector& force_interaction_static,
