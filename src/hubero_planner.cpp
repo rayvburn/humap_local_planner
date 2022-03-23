@@ -1,4 +1,7 @@
 #include <hubero_local_planner/hubero_planner.h>
+#include <hubero_local_planner/utils/transformations.h>
+#include <hubero_local_planner/sfm/social_force_model.h>
+
 #include <math.h>
 
 #include <hubero_local_planner/utils/debug.h>
@@ -15,15 +18,24 @@ HuberoPlanner::HuberoPlanner(
 		std::vector<geometry_msgs::Point> footprint_spec
 ):
 	planner_util_(planner_util),
-	// TODO: make it param
-	sim_period_(0.2),
 	goal_reached_(false),
 	obstacles_(nullptr),
 	robot_model_(robot_model)
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
-	fuzzy_processor_.printFisConfiguration();
+
+	// prints Fuzzy Inference System configuration, FIS used for trajectory generation
+	generator_.printFisConfiguration();
+	// set up all the cost functions that will be applied in order
+	// (any function returning negative values will abort scoring, so the order can improve performance)
+	std::vector<base_local_planner::TrajectoryCostFunction*> critics;
+	// trajectory generators
+	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
+	generator_list.push_back(&generator_);
+
+	// score sampled trajectories
+	scored_sampling_planner_ = base_local_planner::SimpleScoredSamplingPlanner(generator_list, critics);
 }
 
 HuberoPlanner::~HuberoPlanner() {
@@ -34,8 +46,14 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 	// make sure that our configuration doesn't change mid-run
 	std::lock_guard<std::mutex> l(configuration_mutex_);
 	cfg_ = cfg;
-	sfm_.init(cfg->getSfm());
-	social_conductor_.initialize(cfg->getBehaviour());
+
+	generator_.setParameters(
+		cfg->getSfm(),
+		cfg->getBehaviour(),
+		cfg->getGeneral()->sim_time,
+		cfg->getGeneral()->sim_granularity,
+		cfg->getGeneral()->angular_sim_granularity
+	);
 }
 
 bool HuberoPlanner::checkTrajectory(
@@ -46,12 +64,103 @@ bool HuberoPlanner::checkTrajectory(
 	return false;
 }
 
-bool HuberoPlanner::compute(
-		const Pose& pose,
-		const Vector& velocity,
-		const Pose& goal,
-		const ObstContainerConstPtr obstacles,
-		Vector& force
+base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
+	const geometry_msgs::PoseStamped& global_pose,
+	const geometry_msgs::PoseStamped& global_vel,
+	geometry_msgs::PoseStamped& drive_velocities
+) {
+	// make sure that our configuration doesn't change mid-run
+	std::lock_guard<std::mutex> l(configuration_mutex_);
+
+	Eigen::Vector3f pos(global_pose.pose.position.x, global_pose.pose.position.y, tf2::getYaw(global_pose.pose.orientation));
+	Eigen::Vector3f vel(global_vel.pose.position.x, global_vel.pose.position.y, tf2::getYaw(global_vel.pose.orientation));
+	geometry_msgs::PoseStamped goal_pose;
+	if (!global_plan_.empty()) {
+		goal_pose = global_plan_.back();
+	} else {
+		goal_pose.pose = goal_.getAsMsgPose();
+		goal_pose.header.frame_id = planner_util_->getGlobalFrame();
+		goal_pose.header.stamp = ros::Time::now();
+	}
+	Eigen::Vector3f goal(
+		goal_pose.pose.position.x,
+		goal_pose.pose.position.y,
+		tf2::getYaw(goal_pose.pose.orientation)
+	);
+	base_local_planner::LocalPlannerLimits limits = planner_util_->getCurrentLimits();
+	// prepare velocity vector of the base
+	geometry::Vector base_vel(
+		global_vel.pose.position.x,
+		global_vel.pose.position.y,
+		geometry::Quaternion(
+			global_vel.pose.orientation.x,
+			global_vel.pose.orientation.y,
+			global_vel.pose.orientation.z,
+			global_vel.pose.orientation.w
+		).getYaw()
+	);
+
+	// TSP: Trajectory Sampling Parameters
+	TrajectorySamplingParams tsp {};
+	tsp.force_internal_amplifier_min = cfg_->getTrajectorySampling()->force_internal_amplifier_min;
+	tsp.force_internal_amplifier_max = cfg_->getTrajectorySampling()->force_internal_amplifier_max;
+	tsp.force_interaction_static_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_min;
+	tsp.force_interaction_static_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_max;
+	tsp.force_interaction_dynamic_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_min;
+	tsp.force_interaction_dynamic_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_max;
+	tsp.force_interaction_social_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_min;
+	tsp.force_interaction_social_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_max;
+
+	// initialize generator with updated parameters
+	generator_.initialise(
+		world_model_,
+		base_vel,
+		tsp,
+		cfg_->getLimits(),
+		cfg_->getSfm()->mass,
+		cfg_->getGeneral()->twist_rotation_compensation,
+		true
+	);
+
+	result_traj_.cost_ = -7;
+	result_traj_.resetPoints();
+	// find best trajectory by sampling and scoring the samples
+	std::vector<base_local_planner::Trajectory> all_explored;
+	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &all_explored);
+
+	collectTrajectoryMotionData();
+
+	if (!traj_valid) {
+		return base_local_planner::Trajectory();
+	}
+
+	// no legal trajectory, command zero
+	if (result_traj_.cost_ < 0) {
+		drive_velocities.pose.position.x = 0;
+		drive_velocities.pose.position.y = 0;
+		drive_velocities.pose.position.z = 0;
+		drive_velocities.pose.orientation.w = 1;
+		drive_velocities.pose.orientation.x = 0;
+		drive_velocities.pose.orientation.y = 0;
+		drive_velocities.pose.orientation.z = 0;
+	} else {
+		drive_velocities.pose.position.x = result_traj_.xv_;
+		drive_velocities.pose.position.y = result_traj_.yv_;
+		drive_velocities.pose.position.z = 0;
+		tf2::Quaternion q;
+		q.setRPY(0, 0, result_traj_.thetav_);
+		tf2::convert(q, drive_velocities.pose.orientation);
+	}
+
+	return result_traj_;
+}
+
+base_local_planner::Trajectory HuberoPlanner::findTrajectory(
+	const Pose& pose,
+	const Vector& velocity,
+	const Pose& goal,
+	const ObstContainerConstPtr obstacles,
+	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// assign, will likely be useful for planning
 	pose_ = pose;
@@ -61,56 +170,38 @@ bool HuberoPlanner::compute(
 	goal_local_ = goal_;
 	chooseGoalBasedOnGlobalPlan();
 
-	// store vectors of poses of closest points between robot and other objects; makes use out of obstacles
-	// representation (extracted from costmap) and robot's footprint;
-	// these, in fact, are used only for visualisation
-	std::vector<Distance> meaningful_interaction_static;
-	std::vector<Distance> meaningful_interaction_dynamic;
+	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
+	Vector robot_vel_glob;
+	computeVelocityGlobal(velocity, pose, robot_vel_glob);
 
-	// perform SFM and fuzzy logic computations
-	compute(pose, force, meaningful_interaction_static, meaningful_interaction_dynamic);
+	world_model_ = World(pose, robot_vel_glob, goal_local_, goal_);
+	createEnvironmentModel(pose);
 
-	// prepare data for visualization
-	motion_data_.force_internal = sfm_.getForceInternal();
-	motion_data_.force_interaction = sfm_.getForceInteraction();
-	motion_data_.force_social = social_conductor_.getSocialVector();
-	motion_data_.force_combined = force;
-	motion_data_.behaviour_active = social_conductor_.getBehaviourActive();
+	// initialize generator with updated parameters
+	generator_.initialise(
+		world_model_,
+		velocity,
+		cfg_->getLimits(),
+		cfg_->getSfm()->mass,
+		cfg_->getGeneral()->twist_rotation_compensation
+	);
 
-	motion_data_.closest_points.clear();
-	for (const auto& dist_static: meaningful_interaction_static) {
-		motion_data_.closest_points.push_back(dist_static.object);
-		motion_data_.closest_points.push_back(dist_static.robot);
-	}
-	for (const auto& dist_dynamic: meaningful_interaction_dynamic) {
-		motion_data_.closest_points.push_back(dist_dynamic.object);
-		motion_data_.closest_points.push_back(dist_dynamic.robot);
-	}
+	// trajectory that stores velocity commands, contains only seed vels
+	base_local_planner::Trajectory traj;
 
-	return true;
-}
+	// perform SFM and fuzzy logic computations without planning
+	generator_.generateTrajectoryWithoutPlanning(traj);
 
-bool HuberoPlanner::compute(const Pose& pose, Vector& force) {
-	std::vector<Distance> meaningful_interaction_static;
-	std::vector<Distance> meaningful_interaction_dynamic;
-	return compute(pose, force, meaningful_interaction_static, meaningful_interaction_dynamic);
-}
+	drive_velocities.pose.position.x = traj.xv_;
+	drive_velocities.pose.position.y = traj.yv_;
+	drive_velocities.pose.position.z = 0;
+	tf2::Quaternion q;
+	q.setRPY(0, 0, traj.thetav_);
+	tf2::convert(q, drive_velocities.pose.orientation);
 
-bool HuberoPlanner::plan() {
-	return false;
-}
+	collectTrajectoryMotionData();
 
-Vector HuberoPlanner::computeForce() {
-	return Vector();
-}
-
-base_local_planner::Trajectory HuberoPlanner::findBestPath(
-	const geometry_msgs::PoseStamped& global_pose,
-	const geometry_msgs::PoseStamped& global_vel,
-	geometry_msgs::PoseStamped& drive_velocities
-) {
-	// make sure that our configuration doesn't change mid-run
-	std::lock_guard<std::mutex> l(configuration_mutex_);
+	return traj;
 }
 
 void HuberoPlanner::updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& global_pose,
@@ -234,65 +325,17 @@ bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
 	return false;
 }
 
-bool HuberoPlanner::compute(
-	const Pose& pose,
-	Vector& force,
-	std::vector<Distance>& meaningful_interaction_static,
-	std::vector<Distance>& meaningful_interaction_dynamic
-) {
-	world_model_ = World(pose, vel_, goal_local_, goal_);
-	createEnvironmentModel(pose);
 
-	sfm_.computeSocialForce(
-		world_model_,
-		cfg_->getGeneral()->sim_period,
-		meaningful_interaction_static,
-		meaningful_interaction_dynamic
-	);
-
-	// actual `social` vector
-	Vector human_action_force;
-
-	std::vector<StaticObject> objects_static = world_model_.getStaticObjectsData();
-	std::vector<DynamicObject> objects_dynamic = world_model_.getDynamicObjectsData();
-	// evaluate whether more complex forces are supposed to be calculated
-	// TODO: add param `disable fuzzy behaviours`
-	if (!cfg_->getSfm()->disable_interaction_forces) {
-		// All multi-element data are vectors of the same length whose corresponding elements are related
-		// to the same \beta object (i.e. i-th index of each vector variable is related to the same \beta
-		// object). Note: \beta objects can be considered as obstacles
-		//
-		// vector of \beta objects direction of motion
-		std::vector<double> dir_beta_dynamic;
-		// vector of \beta objects' relative to \f$\alpha\f$ locations
-		std::vector<double> rel_loc_dynamic;
-		// set of dynamic objects vector directions. Each of these vectors connect \f$\alpha\f$ with \beta_i
-		std::vector<double> dist_angle_dynamic;
-		// set of lengths of vectors connecting \beta -s and \alpha -s
-		std::vector<double> dist_dynamic;
-		// \f$\alpha\f$'s direction of motion expressed in world coordinate system
-		double dir_alpha = world_model_.getRobotData().heading_dir.getRadian();
-
-		for (const DynamicObject& object: objects_dynamic) {
-			dir_beta_dynamic.push_back(object.dir_beta.getRadian());
-			rel_loc_dynamic.push_back(object.rel_loc_angle.getRadian());
-			dist_angle_dynamic.push_back(object.dist_angle.getRadian());
-			dist_dynamic.push_back(object.dist);
-		}
-
-		// execute fuzzy operations block
-		fuzzy_processor_.process(dir_alpha, dir_beta_dynamic, rel_loc_dynamic, dist_angle_dynamic);
-
-		// create a force vector according to the activated `social behaviour`
-		social_conductor_.computeBehaviourForce(pose, fuzzy_processor_.getOutput(), dist_dynamic);
-
-		// assign `social` vector
-		human_action_force = social_conductor_.getSocialVector();
-	}
-
-	force = sfm_.getForceCombined() + human_action_force;
-
-	return true;
+void HuberoPlanner::collectTrajectoryMotionData() {
+	motion_data_.behaviour_active = generator_.getActiveFuzzyBehaviour();
+	motion_data_.closest_points = generator_.getRobotObstacleDistances();
+	motion_data_.force_combined =
+		generator_.getForceInternal()
+		+ generator_.getForceInteraction()
+		+ generator_.getForceSocial();
+	motion_data_.force_interaction = generator_.getForceInteraction();
+	motion_data_.force_internal = generator_.getForceInternal();
+	motion_data_.force_social = generator_.getForceSocial();
 }
 
 }; // namespace hubero_local_planner
