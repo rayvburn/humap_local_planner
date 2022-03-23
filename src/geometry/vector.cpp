@@ -26,7 +26,7 @@ Vector::Vector(const tf::Stamped<tf::Pose>& pose):
 
 Vector::Vector(const geometry_msgs::Pose& pose) {
     ignition::math::Vector3d pos(pose.position.x, pose.position.y, pose.position.z);
-    ignition::math::Quaterniond quat(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    ignition::math::Quaterniond quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
     v_ = ignition::math::Vector3d(pos.X(), pos.Y(), quat.Yaw());
 }
 
