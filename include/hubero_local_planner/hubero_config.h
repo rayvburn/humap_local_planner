@@ -9,13 +9,20 @@
 
 namespace hubero_local_planner {
 	struct GeneralParams {
-		double sim_time										= 1.2;
-		double sim_granularity								= 0.025;
-		double angular_sim_granularity						= 0.1;
-		double sim_period									= 0.2;
-		double forward_point_distance						= 0.5;
-		double twist_rotation_compensation					= 0.25;
+		/// Whether to use planning (True) or proactive approach (False) for trajectory generation
 		bool planning_approach = true;
+		/// The amount of time to roll trajectories out for in seconds
+		double sim_time										= 1.2;
+		/// The granularity with which to check for collisions along each trajectory in meters
+		double sim_granularity								= 0.025;
+		/// The granularity with which to check for collisions for rotations in radians
+		double angular_sim_granularity						= 0.1;
+		/// How often planning executes
+		double sim_period									= 0.2;
+		/// The distance from the center point of the robot to place a local goal
+		double forward_point_distance						= 0.5;
+		/// How much robot tries to follow force direction compared to pure transformation of force into local velocity
+		double twist_rotation_compensation					= 0.25;
 	};
 
 	/// \brief Declaration of an ActorParams typedef'ed struct;
