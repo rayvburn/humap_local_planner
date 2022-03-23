@@ -182,6 +182,24 @@ void SocialTrajectoryGenerator::initialise(
 	);
 }
 
+void SocialTrajectoryGenerator::initialise(
+	const World& world_model,
+	const geometry::Vector& robot_local_vel,
+	std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+	const double& robot_mass,
+	const double& twist_rotation_compensation,
+	bool discretize_by_time
+) {
+	// save copies for later use
+	world_model_ = world_model;
+	vel_local_ = robot_local_vel;
+	limits_planner_ptr_ = limits_lp_ptr;
+	discretize_by_time_ = discretize_by_time;
+
+	robot_mass_ = robot_mass;
+	twist_rotation_compensation_ = twist_rotation_compensation;
+}
+
 bool SocialTrajectoryGenerator::nextTrajectory(Trajectory& traj) {
 	bool result = false;
 	if (hasMoreTrajectories()) {
@@ -347,6 +365,48 @@ void SocialTrajectoryGenerator::printFisConfiguration() const {
 	fuzzy_processor_.printFisConfiguration();
 }
 
+bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_planner::Trajectory& traj) {
+	geometry::Vector force_internal;
+	geometry::Vector force_interaction_dynamic;
+	geometry::Vector force_interaction_static;
+	geometry::Vector force_human_action;
+
+	computeForces(
+		world_model_,
+		force_internal,
+		force_interaction_dynamic,
+		force_interaction_static,
+		force_human_action,
+		true // update motion data
+	);
+
+	// force vectors are already multiplied by proper factors
+	geometry::Vector twist_cmd;
+	computeTwist(
+		world_model_.getRobotData().centroid,
+		force_internal + force_interaction_dynamic + force_interaction_static + force_human_action,
+		world_model_.getRobotData().vel,
+		sim_granularity_,
+		robot_mass_,
+		limits_planner_ptr_->min_vel_x,
+		limits_planner_ptr_->max_vel_x,
+		limits_planner_ptr_->max_vel_theta,
+		twist_rotation_compensation_,
+		twist_cmd
+	);
+
+	// cost will not be evaluated at all
+	traj.cost_ = 0.0;
+	traj.time_delta_ = sim_granularity_;
+	traj.xv_ = twist_cmd.getX();
+	traj.yv_ = twist_cmd.getY();
+	traj.thetav_ = twist_cmd.getZ();
+
+	double sampled_speed_linear = std::hypot(twist_cmd.getX(), twist_cmd.getY());
+	double sampled_speed_angular = twist_cmd.getZ();
+	return areVelocityLimitsFulfilled(sampled_speed_linear, sampled_speed_angular, 1e-4);
+}
+
 void SocialTrajectoryGenerator::computeVelocityLimitsWithCA(
 	const World& world_model,
 	Eigen::Vector3f& min_vel,
@@ -435,8 +495,12 @@ void SocialTrajectoryGenerator::computeForces(
 	geometry::Vector& force_internal,
 	geometry::Vector& force_interaction_dynamic,
 	geometry::Vector& force_interaction_static,
-	geometry::Vector& force_human_action
+	geometry::Vector& force_human_action,
+	bool update_motion_data
 ) {
+	// store vectors of poses of closest points between robot and other objects; makes use out of obstacles
+	// representation (extracted from costmap) and robot's footprint;
+	// these, in fact, are used only for visualisation
 	std::vector<Distance> meaningful_interaction_static;
 	std::vector<Distance> meaningful_interaction_dynamic;
 
@@ -495,6 +559,23 @@ void SocialTrajectoryGenerator::computeForces(
 	force_interaction_dynamic = 0.0;
 	force_interaction_static = sfm_.getForceInteraction();
 	force_human_action = social_conductor_.getSocialVector();
+
+	if (update_motion_data) {
+		diag_force_internal_ = sfm_.getForceInternal();
+		diag_force_interaction_ = sfm_.getForceInteraction();
+		diag_force_social_ = social_conductor_.getSocialVector();
+		diag_behaviour_active_ = social_conductor_.getBehaviourActive();
+
+		diag_closest_points_.clear();
+		for (const auto& dist_static: meaningful_interaction_static) {
+			diag_closest_points_.push_back(dist_static.object);
+			diag_closest_points_.push_back(dist_static.robot);
+		}
+		for (const auto& dist_dynamic: meaningful_interaction_dynamic) {
+			diag_closest_points_.push_back(dist_dynamic.object);
+			diag_closest_points_.push_back(dist_dynamic.robot);
+		}
+	}
 }
 
 } // namespace hubero_local_planner
