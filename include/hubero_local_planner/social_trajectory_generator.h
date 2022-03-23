@@ -35,12 +35,23 @@ public:
 
 	SocialTrajectoryGenerator();
 
+	/**
+	 * @brief Update parameters used in trajectory generation
+	 *
+	 * @param sfm_params_ptr
+	 * @param beh_params_ptr
+	 * @param sim_time The amount of time to roll trajectories out for in seconds
+	 * @param sim_granularity The granularity with which to check for collisions along each trajectory in meters
+	 * @param angular_sim_granularity The granularity with which to check for collisions for rotations in radians
+	 * @param sim_period How often planning executes
+	 */
 	void setParameters(
 		std::shared_ptr<const hubero_local_planner::SfmParams> sfm_params_ptr,
 		std::shared_ptr<const hubero_local_planner::BehaviourParams> beh_params_ptr,
 		double sim_time,
 		double sim_granularity,
-		double angular_sim_granularity
+		double angular_sim_granularity,
+		double sim_period
 	);
 
 	inline bool isConfigured() const {
@@ -253,6 +264,7 @@ protected:
 	double angular_sim_granularity_;
 	/// How far in the future the local plan will be generated
 	double sim_time_;
+	double sim_period_;
 
 	/// True if number of points in the trajectory only depends on simulation granularity and not depends on distance
 	bool discretize_by_time_;

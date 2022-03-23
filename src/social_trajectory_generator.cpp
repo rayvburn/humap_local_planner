@@ -22,7 +22,8 @@ void SocialTrajectoryGenerator::setParameters(
 	std::shared_ptr<const hubero_local_planner::BehaviourParams> beh_params_ptr,
 	double sim_time,
 	double sim_granularity,
-	double angular_sim_granularity
+	double angular_sim_granularity,
+	double sim_period
 ) {
 	sfm_.init(sfm_params_ptr);
 	social_conductor_.initialize(beh_params_ptr);
@@ -30,6 +31,7 @@ void SocialTrajectoryGenerator::setParameters(
 	sim_time_ = sim_time;
 	sim_granularity_ = sim_granularity;
 	angular_sim_granularity_ = angular_sim_granularity;
+	sim_period_ = sim_period;
 
 	params_set_ = true;
 }

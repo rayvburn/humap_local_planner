@@ -52,7 +52,8 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 		cfg->getBehaviour(),
 		cfg->getGeneral()->sim_time,
 		cfg->getGeneral()->sim_granularity,
-		cfg->getGeneral()->angular_sim_granularity
+		cfg->getGeneral()->angular_sim_granularity,
+		cfg->getGeneral()->sim_period
 	);
 }
 
