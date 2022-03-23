@@ -66,41 +66,31 @@ bool HuberoPlanner::checkTrajectory(
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
-	const geometry_msgs::PoseStamped& global_pose,
-	const geometry_msgs::PoseStamped& global_vel,
+	const Pose& pose,
+	const Vector& velocity,
+	const Pose& goal,
+	const ObstContainerConstPtr obstacles,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
 	std::lock_guard<std::mutex> l(configuration_mutex_);
 
-	Eigen::Vector3f pos(global_pose.pose.position.x, global_pose.pose.position.y, tf2::getYaw(global_pose.pose.orientation));
-	Eigen::Vector3f vel(global_vel.pose.position.x, global_vel.pose.position.y, tf2::getYaw(global_vel.pose.orientation));
-	geometry_msgs::PoseStamped goal_pose;
-	if (!global_plan_.empty()) {
-		goal_pose = global_plan_.back();
-	} else {
-		goal_pose.pose = goal_.getAsMsgPose();
-		goal_pose.header.frame_id = planner_util_->getGlobalFrame();
-		goal_pose.header.stamp = ros::Time::now();
-	}
-	Eigen::Vector3f goal(
-		goal_pose.pose.position.x,
-		goal_pose.pose.position.y,
-		tf2::getYaw(goal_pose.pose.orientation)
-	);
-	base_local_planner::LocalPlannerLimits limits = planner_util_->getCurrentLimits();
-	// prepare velocity vector of the base
-	geometry::Vector base_vel(
-		global_vel.pose.position.x,
-		global_vel.pose.position.y,
-		geometry::Quaternion(
-			global_vel.pose.orientation.x,
-			global_vel.pose.orientation.y,
-			global_vel.pose.orientation.z,
-			global_vel.pose.orientation.w
-		).getYaw()
-	);
+	// assign, will likely be useful for planning
+	pose_ = pose;
+	vel_ = velocity;
+	goal_ = goal;
+	obstacles_ = obstacles;
+	goal_local_ = goal_;
+	chooseGoalBasedOnGlobalPlan();
 
+	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
+	Vector robot_vel_glob;
+	computeVelocityGlobal(velocity, pose, robot_vel_glob);
+
+	world_model_ = World(pose, robot_vel_glob, goal_local_, goal_);
+	createEnvironmentModel(pose);
+
+	// prepare data for planning
 	// TSP: Trajectory Sampling Parameters
 	TrajectorySamplingParams tsp {};
 	tsp.force_internal_amplifier_min = cfg_->getTrajectorySampling()->force_internal_amplifier_min;
@@ -112,10 +102,15 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	tsp.force_interaction_social_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_min;
 	tsp.force_interaction_social_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_max;
 
+	tsp.force_internal_amplifier_granularity = cfg_->getTrajectorySampling()->force_internal_amplifier_granularity;
+	tsp.force_interaction_static_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_granularity;
+	tsp.force_interaction_dynamic_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_granularity;
+	tsp.force_interaction_social_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_granularity;
+
 	// initialize generator with updated parameters
 	generator_.initialise(
 		world_model_,
-		base_vel,
+		vel_,
 		tsp,
 		cfg_->getLimits(),
 		cfg_->getSfm()->mass,
@@ -123,20 +118,16 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		true
 	);
 
+	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_` internally
 	result_traj_.cost_ = -7;
 	result_traj_.resetPoints();
-	// find best trajectory by sampling and scoring the samples
 	std::vector<base_local_planner::Trajectory> all_explored;
 	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &all_explored);
 
 	collectTrajectoryMotionData();
 
-	if (!traj_valid) {
-		return base_local_planner::Trajectory();
-	}
-
 	// no legal trajectory, command zero
-	if (result_traj_.cost_ < 0) {
+	if (!traj_valid || result_traj_.cost_ < 0) {
 		drive_velocities.pose.position.x = 0;
 		drive_velocities.pose.position.y = 0;
 		drive_velocities.pose.position.z = 0;
@@ -152,7 +143,6 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		q.setRPY(0, 0, result_traj_.thetav_);
 		tf2::convert(q, drive_velocities.pose.orientation);
 	}
-
 	return result_traj_;
 }
 
