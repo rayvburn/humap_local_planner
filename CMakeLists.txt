@@ -200,13 +200,7 @@ add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catk
 target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world transformations ${IGNITION-MATH_LIBRARIES})
 
 ## Executables
-add_executable(test_executable
-	src/test_executable.cpp
-)
-target_link_libraries(test_executable
-	hubero_local_planner
-	${catkin_LIBRARIES}
-)
+# None
 
 ## Install
 install(TARGETS hubero_local_planner
