@@ -79,6 +79,7 @@ void computeTwist(
 
 	// global force affects global acceleration directly
 	Vector acc_v = force / robot_mass;
+	// compute how much force affects global velocity of the robot
 	Vector vel_v_new = acc_v * dt;
 
 	// inverted rotation matrix expressed as 2 eqn
@@ -91,7 +92,7 @@ void computeTwist(
 	// EXPERIMENTAL
 	Angle ang_z_force_diff(force_dir.getRadian() - yaw);
     // strengthen rotation
-	double vw_mod = vw + twist_rotation_compensation * ang_z_force_diff.getRadian();
+	vw += twist_rotation_compensation * ang_z_force_diff.getRadian();
 
 	// logging section
 	debug_print_verbose("force - x: %2.3f, y: %2.3f, th: %2.3f, mass - %2.3f\r\n",

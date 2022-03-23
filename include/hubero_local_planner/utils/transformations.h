@@ -68,7 +68,7 @@ void computeTwist(
  *
  * @param vel_local input
  * @param pose input
- * @param vel_global output
+ * @param vel_global output, x, y and theta velocities
  */
 void computeVelocityGlobal(
 	const geometry::Vector& vel_local,
