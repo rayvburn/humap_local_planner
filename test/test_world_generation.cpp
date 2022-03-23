@@ -57,7 +57,7 @@ TEST(HuberoWorldGeneration, predict) {
     World world = World(ROBOT_POSE, ROBOT_VEL, GOAL_LOCAL, GOAL_GLOBAL);
     // point obstacle, robot also represented as a point
     world.addObstacle(ROBOT_POSE, OBSTACLE_POSE, OBSTACLE_VEL);
-    world.predict(1.0);
+    world.predict(ROBOT_VEL, 1.0);
 
     EXPECT_EQ(world.getRobotData().centroid.getX(), ROBOT_POSE.getX() + ROBOT_VEL.getX());
     EXPECT_EQ(world.getRobotData().centroid.getY(), ROBOT_POSE.getY() + ROBOT_VEL.getY());

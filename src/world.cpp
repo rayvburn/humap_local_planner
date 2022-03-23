@@ -75,8 +75,8 @@ void World::addObstacles(
 	}
 }
 
-void World::predict(const double& sim_period) {
-	auto robot_centroid_new = computeNextPose(robot_.centroid, robot_.vel, sim_period);
+void World::predict(const geometry::Vector& robot_vel, const double& sim_period) {
+	auto robot_centroid_new = computeNextPose(robot_.centroid, robot_vel, sim_period);
 	auto robot_pose_diff = robot_centroid_new.getRawPose() - robot_.centroid.getRawPose();
 	auto robot_pose_new_temp = robot_.target.robot.getRawPose() + robot_pose_diff;
 	geometry::Pose robot_pose_new(robot_pose_new_temp.Pos(), robot_pose_new_temp.Rot());
@@ -84,7 +84,7 @@ void World::predict(const double& sim_period) {
 	auto world_prediction = World(
 		robot_centroid_new,
 		robot_pose_new,
-		robot_.vel,
+		robot_vel,
 		robot_.target.object,
 		robot_.goal.object
 	);
