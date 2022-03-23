@@ -49,6 +49,9 @@ void computeTwistNonholonomic(
  *
  * @details Converts 2D forces into robot forces with non-holonomic contraints.
  * Main reason to separate computeTwist from this helper method is unit testing
+ *
+ * @param force x-y plane force, z is assumed to be the rotational component (theta)
+ * @param robot_vel_glob velocity of the robot in global coordinate system, z represents rotational component
  */
 void computeTwist(
 	const geometry::Pose& pose,
@@ -68,7 +71,7 @@ void computeTwist(
  *
  * @param vel_local input
  * @param pose input
- * @param vel_global output
+ * @param vel_global output, x, y and theta velocities
  */
 void computeVelocityGlobal(
 	const geometry::Vector& vel_local,
