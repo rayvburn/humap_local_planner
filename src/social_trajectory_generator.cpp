@@ -322,6 +322,13 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			return false;
 		}
 
+		// trajectory seems to be valid - seed it with initial velocities
+		if (i == 0) {
+			traj.xv_ = twist_cmd.getX();
+			traj.yv_ = twist_cmd.getY();
+			traj.thetav_ = twist_cmd.getZ();
+		}
+
 		// compute robot position if the computed twist command would be applied
 		auto new_pos = SimpleTrajectoryGenerator::computeNewPositions(
 			Eigen::Vector3f(
