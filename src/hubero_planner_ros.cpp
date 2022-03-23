@@ -245,8 +245,8 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishGoal(robot_goal.getPosition());
 	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());
 
-	//publishLocalPlan(/*TODO*/);
-	publishGlobalPlan(global_plan_);
+	base_local_planner::publishPlan(createLocalPlan(trajectory), l_plan_pub_);
+	base_local_planner::publishPlan(global_plan_, g_plan_pub_);
 	return true;
 }
 
@@ -260,18 +260,6 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 
 	// update Hubero planner with social trajectory generator
 	planner_->reconfigure(cfg_);
-}
-
-// protected
-void HuberoPlannerROS::publishLocalPlan(std::vector<geometry_msgs::PoseStamped>& path) {
-	ROS_INFO("[HuberoPlannerROS] publishLocalPlan()");
-	base_local_planner::publishPlan(path, l_plan_pub_);
-}
-
-// protected
-void HuberoPlannerROS::publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>& path) {
-	ROS_INFO("[HuberoPlannerROS] publishGlobalPlan()");
-	base_local_planner::publishPlan(path, g_plan_pub_);
 }
 
 // protected
@@ -495,6 +483,29 @@ void HuberoPlannerROS::computeTwist(
 		cfg_->getGeneral()->twist_rotation_compensation,
 		cmd_vel
 	);
+}
+
+std::vector<geometry_msgs::PoseStamped> HuberoPlannerROS::createLocalPlan(
+	const base_local_planner::Trajectory& traj
+) const {
+	std::vector<geometry_msgs::PoseStamped> path;
+	// Fill out the local plan
+	for(unsigned int i = 0; i < traj.getPointsSize(); ++i) {
+		double p_x, p_y, p_th;
+		traj.getPoint(i, p_x, p_y, p_th);
+
+		geometry_msgs::PoseStamped p;
+		p.header.frame_id = planner_util_->getGlobalFrame();
+		p.header.stamp = ros::Time::now();
+		p.pose.position.x = p_x;
+		p.pose.position.y = p_y;
+		p.pose.position.z = 0.0;
+		tf2::Quaternion q;
+		q.setRPY(0, 0, p_th);
+		tf2::convert(q, p.pose.orientation);
+		path.push_back(p);
+	}
+	return path;
 }
 
 }; // namespace hubero_local_planner

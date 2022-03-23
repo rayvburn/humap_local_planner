@@ -87,10 +87,6 @@ protected:
 	*/
 	void reconfigureCB(HuberoPlannerConfig &config, uint32_t level);
 
-	void publishLocalPlan(std::vector<geometry_msgs::PoseStamped>& path);
-
-	void publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>& path);
-
 	/**
 	 * @brief Updates @ref obstacles_ with costmap converter's data
 	 *
@@ -117,6 +113,13 @@ protected:
 		const Vector& robot_vel_glob,
 		Vector& cmd_vel
 	) const;
+
+	/**
+	 * @brief Transforms Trajectory object into vector of PoseStamped to create a local plan
+	 *
+	 * @note Based on dwa_local_planner::DWAPlannerROS::dwaComputeVelocityCommands authored by Eitan Marder-Eppstein
+	 */
+	std::vector<geometry_msgs::PoseStamped> createLocalPlan(const base_local_planner::Trajectory& traj) const;
 
 	/// @brief nav_core status
 	bool initialized_;
