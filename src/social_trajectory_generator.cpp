@@ -259,6 +259,7 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		geometry::Vector force_human_action;
 		computeForces(
 			world_model_trajectory,
+			dt,
 			force_internal,
 			force_interaction_dynamic,
 			force_interaction_static,
@@ -377,8 +378,12 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 	geometry::Vector force_interaction_static;
 	geometry::Vector force_human_action;
 
+	// for how far into the future the trajectory will be applied
+	double dt = sim_period_;
+
 	computeForces(
 		world_model_,
+		dt,
 		force_internal,
 		force_interaction_dynamic,
 		force_interaction_static,
@@ -392,7 +397,7 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 		world_model_.getRobotData().centroid,
 		force_internal + force_interaction_dynamic + force_interaction_static + force_human_action,
 		world_model_.getRobotData().vel,
-		sim_granularity_,
+		dt,
 		robot_mass_,
 		limits_planner_ptr_->min_vel_x,
 		limits_planner_ptr_->max_vel_x,
@@ -403,7 +408,7 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 
 	// cost will not be evaluated at all
 	traj.cost_ = 0.0;
-	traj.time_delta_ = sim_granularity_;
+	traj.time_delta_ = dt;
 	traj.xv_ = twist_cmd.getX();
 	traj.yv_ = twist_cmd.getY();
 	traj.thetav_ = twist_cmd.getZ();
@@ -498,6 +503,7 @@ int SocialTrajectoryGenerator::computeStepsNumber(const double& speed_linear, co
 
 void SocialTrajectoryGenerator::computeForces(
 	const World& world_model,
+	const double& dt,
 	geometry::Vector& force_internal,
 	geometry::Vector& force_interaction_dynamic,
 	geometry::Vector& force_interaction_static,
@@ -512,7 +518,7 @@ void SocialTrajectoryGenerator::computeForces(
 
 	sfm_.computeSocialForce(
 		world_model,
-		sim_granularity_,
+		dt,
 		meaningful_interaction_static,
 		meaningful_interaction_dynamic
 	);
