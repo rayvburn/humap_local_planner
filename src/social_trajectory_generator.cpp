@@ -263,7 +263,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			force_internal,
 			force_interaction_dynamic,
 			force_interaction_static,
-			force_human_action
+			force_human_action,
+			i == 0 // motion data updated only at first iteration
 		);
 
 		// multiply SFM and Fuzzy Inference outputs
