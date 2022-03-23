@@ -212,6 +212,19 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	limits_->trans_stopped_vel = cfg.trans_stopped_vel;
 	limits_->xy_goal_tolerance = cfg.xy_goal_tolerance;
 	limits_->yaw_goal_tolerance = cfg.yaw_goal_tolerance;
+
+	traj_sampling_->force_internal_amplifier_min = cfg.force_internal_amplifier_min;
+	traj_sampling_->force_internal_amplifier_max = cfg.force_internal_amplifier_max;
+	traj_sampling_->force_internal_amplifier_granularity = cfg.force_internal_amplifier_granularity;
+	traj_sampling_->force_interaction_static_amplifier_min = cfg.force_interaction_static_amplifier_min;
+	traj_sampling_->force_interaction_static_amplifier_max = cfg.force_interaction_static_amplifier_max;
+	traj_sampling_->force_interaction_static_amplifier_granularity = cfg.force_interaction_static_amplifier_granularity;
+	traj_sampling_->force_interaction_dynamic_amplifier_min = cfg.force_interaction_dynamic_amplifier_min;
+	traj_sampling_->force_interaction_dynamic_amplifier_max = cfg.force_interaction_dynamic_amplifier_max;
+	traj_sampling_->force_interaction_dynamic_amplifier_granularity = cfg.force_interaction_dynamic_amplifier_granularity;
+	traj_sampling_->force_interaction_social_amplifier_min = cfg.force_interaction_social_amplifier_min;
+	traj_sampling_->force_interaction_social_amplifier_max = cfg.force_interaction_social_amplifier_max;
+	traj_sampling_->force_interaction_social_amplifier_granularity = cfg.force_interaction_social_amplifier_granularity;
 }
 
 } /* namespace hubero_local_planner */
