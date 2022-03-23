@@ -248,7 +248,7 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 	traj.time_delta_ = dt;
 
 	// copy the initial model of world as it may be reused
-	auto world_model_trajectory = world_model;
+	auto world_model_plan = world_model;
 
 	for (int i = 0; i < num_steps; ++i) {
 		ROS_DEBUG_NAMED("SocTrajGen", "Starting trajectory generation step %3d / %3d", i, num_steps);
@@ -258,7 +258,7 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		geometry::Vector force_interaction_static;
 		geometry::Vector force_human_action;
 		computeForces(
-			world_model_trajectory,
+			world_model_plan,
 			dt,
 			force_internal,
 			force_interaction_dynamic,
@@ -284,9 +284,9 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		// force vectors are already multiplied by proper factors
 		geometry::Vector twist_cmd;
 		computeTwist(
-			world_model_trajectory.getRobotData().centroid,
+			world_model_plan.getRobotData().centroid,
 			force_internal + force_interaction_dynamic + force_interaction_static + force_human_action,
-			world_model_trajectory.getRobotData().vel,
+			world_model_plan.getRobotData().vel,
 			dt,
 			robot_mass_,
 			limits_planner_ptr_->min_vel_x,
@@ -321,9 +321,14 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			return false;
 		}
 
+		// compute robot position if the computed twist command would be applied
 		auto new_pos = SimpleTrajectoryGenerator::computeNewPositions(
-			world_model.getRobotData().centroid.getPosition().getAsEigen<Eigen::Vector3f>(),
-			world_model.getRobotData().vel.getAsEigen<Eigen::Vector3f>(),
+			Eigen::Vector3f(
+				world_model_plan.getRobotData().centroid.getPosition().getX(),
+				world_model_plan.getRobotData().centroid.getPosition().getY(),
+				world_model_plan.getRobotData().centroid.getYaw()
+			),
+			twist_cmd.getAsEigen<Eigen::Vector3f>(),
 			dt
 		);
 
@@ -335,15 +340,13 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		computeVelocityGlobal(twist_cmd, world_model_plan.getRobotData().centroid, twist_cmd_glob);
 
 		// apply predictions to dynamic objects in the world
-		world_model_trajectory.predict(twist_cmd_glob, dt);
+		world_model_plan.predict(twist_cmd_glob, dt);
 
 		ROS_DEBUG_NAMED("SocTrajGen", "Finished trajectory generation step %3d / %3d", i, num_steps);
 	}  // end for simulation steps
 
 	return true;
 }
-
-
 
 // static
 std::vector<double> SocialTrajectoryGenerator::computeAmplifierSamples(
