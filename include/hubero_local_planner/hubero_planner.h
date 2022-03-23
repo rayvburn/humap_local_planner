@@ -6,9 +6,7 @@
 
 #include <hubero_local_planner/hubero_config.h>
 #include <hubero_local_planner/world.h>
-#include <hubero_local_planner/sfm/social_force_model.h>
-#include <hubero_local_planner/fuzz/processor.h>
-#include <hubero_local_planner/fuzz/social_conductor.h>
+#include <hubero_local_planner/social_trajectory_generator.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -20,7 +18,6 @@
 #include <base_local_planner/trajectory.h>
 #include <base_local_planner/local_planner_limits.h>
 #include <base_local_planner/local_planner_util.h>
-#include <base_local_planner/simple_trajectory_generator.h>
 
 #include <base_local_planner/oscillation_cost_function.h>
 #include <base_local_planner/map_grid_cost_function.h>
@@ -94,19 +91,6 @@ public:
 
 	void reconfigure(HuberoConfigConstPtr cfg);
 
-	bool compute(
-			const Pose& pose,
-			const Vector& velocity,
-			const Pose& goal,
-			const ObstContainerConstPtr obstacles,
-			Vector& force
-	);
-
-	// grid `visualization` version, ignores storing meaningful_interactions data
-	bool compute(const Pose& pose, Vector& force);
-
-	bool plan();
-
 	/**
 	 * @brief  Check if a trajectory is legal for a position/velocity pair
 	 * @param pos The robot's position
@@ -120,8 +104,6 @@ public:
 		const Eigen::Vector3f vel_samples
 	);
 
-	Vector computeForce();
-
 	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
 	 * @param global_pose The current position of the robot
@@ -129,11 +111,29 @@ public:
 	 * @param drive_velocities The velocities to send to the robot base
 	 * @return The highest scoring trajectory. A cost >= 0 means the trajectory is legal to execute.
 	 */
-	base_local_planner::Trajectory findBestPath(
+	base_local_planner::Trajectory findBestTrajectory(
 		const geometry_msgs::PoseStamped& global_pose,
 		const geometry_msgs::PoseStamped& global_vel,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
+
+	/**
+	 * @brief Performs one-shoot force calculation of next velocity without evaluation further than 1 step forward
+	 * @param pose robot pose in the global frame of the local planner (usually `odom`)
+	 * @param velocity robot velocity in the base coordinate system
+	 * @param goal global goal
+	 * @param obstacles robot environment model
+	 * @param drive_velocities trajectory generation output, stores x, y and theta velocities
+	 */
+	base_local_planner::Trajectory findTrajectory(
+		const Pose& pose,
+		const Vector& velocity,
+		const Pose& goal,
+		const ObstContainerConstPtr obstacles,
+		geometry_msgs::PoseStamped& drive_velocities
+	);
+
+	// TODO: add grid `visualization` version, ignores storing `meaningful_interactions` data
 
 	/**
 	 * @brief  Update the cost functions before planning
@@ -226,12 +226,10 @@ private:
 	 */
 	bool chooseGoalBasedOnGlobalPlan();
 
-	bool compute(
-		const Pose& pose,
-		Vector& force,
-		std::vector<Distance>& meaningful_interaction_static,
-		std::vector<Distance>& meaningful_interaction_dynamic
-	);
+	/**
+	 * @brief Updates motion driving factors based on the newest data from trajectory generator
+	 */
+	void collectTrajectoryMotionData();
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
@@ -259,12 +257,16 @@ private:
 	/// @brief World model
 	World world_model_;
 
-	sfm::SocialForceModel sfm_;
-	fuzz::Processor fuzzy_processor_; //!< produces segmentation fault in destructor when ran in a separated executable (Segmentation fault (core dumped))
-	fuzz::SocialConductor social_conductor_;
-
 	// sampling? copies for visualization
 	MotionDriverData motion_data_;
+
+	/**
+	 * @defgroup planning Search-based planning utils
+	 * @{
+	 */
+	SocialTrajectoryGenerator generator_;
+	base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
+	/// @}
 
 }; // class HuberoPlanner
 

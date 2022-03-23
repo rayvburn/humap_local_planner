@@ -215,17 +215,19 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	// prepare obstacles
 	updateObstacleContainerWithCostmapConverter();
-	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
-	Vector robot_vel_glob;
-	computeVelocityGlobal(robot_vel, robot_pose, robot_vel_glob);
 
-	// compute force exerted on the particle (robot)
-	Vector force;
-	planner_->compute(robot_pose, robot_vel_glob, robot_goal, obstacles_, force);
+	geometry_msgs::PoseStamped drive_cmds;
+	base_local_planner::Trajectory trajectory;
+	// use planning or proactive approach
+	if (cfg_->getGeneral()->planning_approach) {
+		trajectory = planner_->findBestTrajectory(robot_pose_geom, robot_vel_geom, drive_cmds);
+	} else {
+		trajectory = planner_->findTrajectory(robot_pose, robot_vel, robot_goal, obstacles_, drive_cmds);
+	}
 
-	Vector velocity_cmd;
-	computeTwist(robot_pose, force, robot_vel_glob, velocity_cmd);
-	cmd_vel = velocity_cmd.getAsTwist();
+	cmd_vel.linear.x = drive_cmds.pose.position.x;
+	cmd_vel.linear.y = drive_cmds.pose.position.y;
+	cmd_vel.angular.z = tf2::getYaw(drive_cmds.pose.orientation);
 
 	// visualization
 	auto vis_data = planner_->getMotionData();
@@ -237,7 +239,8 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active);
 	vis_.publishClosestPoints(vis_data.closest_points);
 	vis_.publishPath(robot_pose);
-	vis_.publishGrid(robot_pose, *planner_);
+	// TODO: handle this on visualization and planner sides
+	// vis_.publishGrid(robot_pose, *planner_);
 	vis_.publishRobotFootprint(robot_pose, planner_->getRobotFootprintModel());
 	vis_.publishGoal(robot_goal.getPosition());
 	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());
