@@ -150,7 +150,7 @@ public:
      * @brief Computes prediction of the world state for @ref sim_period forward
      * @details Modifies class instance
      */
-    void predict(const double& sim_period);
+    void predict(const geometry::Vector& robot_vel, const double& sim_period);
 
 	inline Robot getRobotData() const {
 		return robot_;

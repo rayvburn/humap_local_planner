@@ -327,8 +327,12 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		// extend trajectory with new point
 		traj.addPoint(new_pos[0], new_pos[1], new_pos[2]);
 
+		// prepare data for state prediction
+		Vector twist_cmd_glob;
+		computeVelocityGlobal(twist_cmd, world_model_plan.getRobotData().centroid, twist_cmd_glob);
+
 		// apply predictions to dynamic objects in the world
-		world_model_trajectory.predict(dt);
+		world_model_trajectory.predict(twist_cmd_glob, dt);
 
 		ROS_DEBUG_NAMED("SocTrajGen", "Finished trajectory generation step %3d / %3d", i, num_steps);
 	}  // end for simulation steps
