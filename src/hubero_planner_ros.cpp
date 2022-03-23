@@ -220,7 +220,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	base_local_planner::Trajectory trajectory;
 	// use planning or proactive approach
 	if (cfg_->getGeneral()->planning_approach) {
-		trajectory = planner_->findBestTrajectory(robot_pose_geom, robot_vel_geom, drive_cmds);
+		trajectory = planner_->findBestTrajectory(robot_pose, robot_vel, robot_goal, obstacles_, drive_cmds);
 	} else {
 		trajectory = planner_->findTrajectory(robot_pose, robot_vel, robot_goal, obstacles_, drive_cmds);
 	}

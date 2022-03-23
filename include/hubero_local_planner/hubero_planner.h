@@ -106,14 +106,18 @@ public:
 
 	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
-	 * @param global_pose The current position of the robot
-	 * @param global_vel The current velocity of the robot
+	 * @param pose robot pose in the global frame of the local planner (usually `odom`)
+	 * @param velocity robot velocity in the base coordinate system
+	 * @param goal global goal
+	 * @param obstacles robot environment model
 	 * @param drive_velocities The velocities to send to the robot base
 	 * @return The highest scoring trajectory. A cost >= 0 means the trajectory is legal to execute.
 	 */
 	base_local_planner::Trajectory findBestTrajectory(
-		const geometry_msgs::PoseStamped& global_pose,
-		const geometry_msgs::PoseStamped& global_vel,
+		const Pose& pose,
+		const Vector& velocity,
+		const Pose& goal,
+		const ObstContainerConstPtr obstacles,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
 
