@@ -121,8 +121,8 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_` internally
 	result_traj_.cost_ = -7;
 	result_traj_.resetPoints();
-	std::vector<base_local_planner::Trajectory> all_explored;
-	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &all_explored);
+	traj_explored_.clear();
+	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &traj_explored_);
 
 	collectTrajectoryMotionData();
 
