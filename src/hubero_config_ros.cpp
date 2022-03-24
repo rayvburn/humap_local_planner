@@ -173,6 +173,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->twist_rotation_compensation = cfg.twist_rotation_compensation;
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
+	general_->publish_cost_grid_pcl = cfg.publish_cost_grid_pcl;
 
 	sfm_->fov = cfg.fov;
 	sfm_->max_speed = cfg.max_speed;
