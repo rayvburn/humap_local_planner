@@ -124,6 +124,18 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	traj_explored_.clear();
 	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &traj_explored_);
 
+	ROS_DEBUG_NAMED(
+		"HuberoPlanner",
+		"Explored %lu trajectories. Best trajectory consists of %u points and has cost of %2.2f. "
+		"Commands base with x: %2.3f, y: %2.3f, th: %2.3f",
+		traj_explored_.size(),
+		result_traj_.getPointsSize(),
+		result_traj_.cost_,
+		result_traj_.xv_,
+		result_traj_.yv_,
+		result_traj_.thetav_
+	);
+
 	collectTrajectoryMotionData();
 
 	// no legal trajectory, command zero
@@ -135,6 +147,11 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		drive_velocities.pose.orientation.x = 0;
 		drive_velocities.pose.orientation.y = 0;
 		drive_velocities.pose.orientation.z = 0;
+		ROS_ERROR_NAMED(
+			"HuberoPlanner",
+			"Could not find a valid trajectory (cost %2.2f), applying zero velocity to base",
+			result_traj_.cost_
+		);
 	} else {
 		drive_velocities.pose.position.x = result_traj_.xv_;
 		drive_velocities.pose.position.y = result_traj_.yv_;
