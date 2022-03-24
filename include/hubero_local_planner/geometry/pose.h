@@ -31,7 +31,7 @@ public:
     );
     Pose(
         const ignition::math::Vector3d& pos,
-        const ignition::math::Quaterniond& quat = ignition::math::Quaterniond(0.0, 0.0, 0.0, 1.0)
+        const ignition::math::Quaterniond& quat = ignition::math::Quaterniond(1.0, 0.0, 0.0, 0.0)
     );
     Pose(const Vector& position, const Quaternion& orientation);
     Pose(const geometry_msgs::Twist& twist);
