@@ -10,6 +10,8 @@
 
 #include <base_local_planner/goal_functions.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
+
 #include <memory>
 
 #include <hubero_local_planner/utils/debug.h>
@@ -54,6 +56,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		ros::NodeHandle private_nh("~/" + name);
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
+		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
 
 		// assign args
 		tf_buffer_ = tf_buffer;
@@ -247,6 +250,11 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	base_local_planner::publishPlan(createLocalPlan(trajectory), l_plan_pub_);
 	base_local_planner::publishPlan(global_plan_, g_plan_pub_);
+
+	// publish point cloud with explored trajectories only if the topic is subscribed as parameter set accordingly
+	if (traj_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_traj_pcl) {
+		traj_pcl_pub_.publish(createExploredTrajectoriesPcl());
+	}
 	return true;
 }
 
@@ -506,6 +514,68 @@ std::vector<geometry_msgs::PoseStamped> HuberoPlannerROS::createLocalPlan(
 		path.push_back(p);
 	}
 	return path;
+}
+
+sensor_msgs::PointCloud2 HuberoPlannerROS::createExploredTrajectoriesPcl() const {
+	auto explored_trajs = planner_->getExploredTrajectories();
+
+	sensor_msgs::PointCloud2 traj_cloud;
+	traj_cloud.header.frame_id = planner_util_->getGlobalFrame();
+	traj_cloud.header.stamp = ros::Time::now();
+
+	if (explored_trajs.empty()) {
+		return traj_cloud;
+	}
+
+	sensor_msgs::PointCloud2Modifier cloud_mod(traj_cloud);
+	cloud_mod.setPointCloud2Fields(
+		5,
+		"x", 1, sensor_msgs::PointField::FLOAT32,
+		"y", 1, sensor_msgs::PointField::FLOAT32,
+		"z", 1, sensor_msgs::PointField::FLOAT32,
+		"theta", 1, sensor_msgs::PointField::FLOAT32,
+		"cost", 1, sensor_msgs::PointField::FLOAT32
+	);
+
+	// check how many points there will be in a point cloud
+	unsigned int num_points = 0;
+	for (
+		std::vector<base_local_planner::Trajectory>::const_iterator t = explored_trajs.begin();
+		t != explored_trajs.end();
+		++t
+	) {
+		// ignore trajectories with negative cost
+		if (t->cost_ < 0) {
+			continue;
+		}
+		num_points += t->getPointsSize();
+	}
+
+	cloud_mod.resize(num_points);
+	sensor_msgs::PointCloud2Iterator<float> iter_x(traj_cloud, "x");
+	for (
+		std::vector<base_local_planner::Trajectory>::const_iterator t = explored_trajs.begin();
+		t != explored_trajs.end();
+		++t
+	) {
+		// this should not happen (previous loop), but ignore trajectories with negative cost
+		if (t->cost_ < 0) {
+			continue;
+		}
+
+		// Fill out the plan
+		for(unsigned int i = 0; i < t->getPointsSize(); ++i) {
+			double p_x, p_y, p_th;
+			t->getPoint(i, p_x, p_y, p_th);
+			iter_x[0] = p_x;
+			iter_x[1] = p_y;
+			iter_x[2] = 0.0;
+			iter_x[3] = p_th;
+			iter_x[4] = t->cost_;
+			++iter_x;
+		}
+	}
+	return traj_cloud;
 }
 
 }; // namespace hubero_local_planner
