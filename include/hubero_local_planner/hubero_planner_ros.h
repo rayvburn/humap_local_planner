@@ -25,6 +25,8 @@
 #include <hubero_local_planner/hubero_planner.h> //!< Planner
 #include <hubero_local_planner/visualization.h>
 
+#include <sensor_msgs/PointCloud2.h>
+
 namespace hubero_local_planner {
 using namespace geometry;
 /**
@@ -121,6 +123,13 @@ protected:
 	 */
 	std::vector<geometry_msgs::PoseStamped> createLocalPlan(const base_local_planner::Trajectory& traj) const;
 
+	/**
+	 * @brief Create a PCL message with all explored trajectories (retrieved from planner)
+	 *
+	 * @note Based on dwa_local_planner::DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
+	 */
+	sensor_msgs::PointCloud2 createExploredTrajectoriesPcl() const;
+
 	/// @brief nav_core status
 	bool initialized_;
 
@@ -129,6 +138,9 @@ protected:
 	ros::Publisher g_plan_pub_;
 	/// @brief Local plan publisher (for visualisation)
 	ros::Publisher l_plan_pub_;
+	/// @brief Explored trajectories PCL publisher (for visualisation)
+	ros::Publisher traj_pcl_pub_;
+
 	/// @section Global planning
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	/// @section Local planning
