@@ -23,6 +23,8 @@ namespace hubero_local_planner {
 		double forward_point_distance						= 0.5;
 		/// How much robot tries to follow force direction compared to pure transformation of force into local velocity
 		double twist_rotation_compensation					= 0.25;
+		/// Whether to publish PCL with explored trajectories
+		bool publish_traj_pcl = true;
 	};
 
 	/// \brief Declaration of an ActorParams typedef'ed struct;
