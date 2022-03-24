@@ -162,7 +162,9 @@ void SocialTrajectoryGenerator::initialise(
 					amp_set.force_interaction_social_amplifier = amp_social;
 					sample_amplifier_params_v_.push_back(amp_set);
 
-					ROS_INFO_NAMED("SocTrajGen", "Sample - internal %2.5f, static %2.5f, dynamic %2.5f, social %2.5f",
+					ROS_DEBUG_NAMED(
+						"SocTrajGen",
+						"Sample - internal %2.5f, static %2.5f, dynamic %2.5f, social %2.5f",
 						amp_set.force_internal_amplifier,
 						amp_set.force_interaction_static_amplifier,
 						amp_set.force_interaction_dynamic_amplifier,
@@ -175,7 +177,7 @@ void SocialTrajectoryGenerator::initialise(
 
 	ROS_DEBUG_NAMED(
 		"SocTrajGen",
-		"Initialized with %lu parameter samples (p_i0: %lu, p_ij: %lu, p_is: %lu, p_ik: %lu)",
+		"Initialized %lu parameter samples (|p_i0| %lu, |p_ij| %lu, |p_is| %lu, |p_ik| %lu)",
 		sample_amplifier_params_v_.size(),
 		force_internal_amps.size(),
 		force_interaction_static_amps.size(),
@@ -273,15 +275,6 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		force_interaction_static *= sample_amplifiers.force_interaction_static_amplifier;
 		force_human_action *= sample_amplifiers.force_interaction_social_amplifier;
 
-		ROS_DEBUG_NAMED(
-			"SocTrajGen",
-			"Computed forces: f_i0: %3.5f, f_ij: %3.5f, f_is: %3.5f, f_ik: %3.5f",
-			force_internal.calculateLength(),
-			force_interaction_dynamic.calculateLength(),
-			force_human_action.calculateLength(),
-			force_interaction_static.calculateLength()
-		);
-
 		// force vectors are already multiplied by proper factors
 		geometry::Vector twist_cmd;
 		computeTwist(
@@ -297,14 +290,6 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			twist_cmd
 		);
 
-		ROS_DEBUG_NAMED(
-			"SocTrajGen",
-			"Computed velocity: x %3.5f, y %3.5f, theta %3.5f",
-			twist_cmd.getX(),
-			twist_cmd.getY(),
-			twist_cmd.getZ()
-		);
-
 		// evaluate effect if the computed forces would be applied -
 		// check if velocity limits will be violated after application of the computed velocity
 		double sampled_speed_linear = std::hypot(twist_cmd.getX(), twist_cmd.getY());
@@ -312,11 +297,16 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		if (!areVelocityLimitsFulfilled(sampled_speed_linear, sampled_speed_angular, 1e-4)) {
 			ROS_ERROR_NAMED(
 				"SocTrajGen",
-				"Cannot generate trajectory due to violated velocity limits (linear: {value %3.2f, limit %3.2f}, "
-				"angular: {value %3.2f, limit %3.2f})",
+				"Cannot generate trajectory %3u / %3lu due to violated velocity limits ("
+				"lin: %3.2f, limits [%3.2f; %3.2f], "
+				"ang: %3.2f, limits [%3.2f; %3.2f])",
+				next_sample_index_ + 1,
+				sample_amplifier_params_v_.size(),
 				sampled_speed_linear,
+				limits_planner_ptr_->min_vel_trans,
 				limits_planner_ptr_->max_vel_trans,
 				sampled_speed_angular,
+				limits_planner_ptr_->min_vel_theta,
 				limits_planner_ptr_->max_vel_theta
 			);
 			return false;
@@ -350,7 +340,22 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		// apply predictions to dynamic objects in the world
 		world_model_plan.predict(twist_cmd_glob, dt);
 
-		ROS_DEBUG_NAMED("SocTrajGen", "Finished trajectory generation step %3d / %3d", i, num_steps);
+		ROS_DEBUG_NAMED(
+			"SocTrajGen",
+			"Trajectory %3u / %3lu step %3d / %3d  "
+			"forces: |f_i0| %3.3f, |f_ij| %3.3f, |f_is| %3.3f, |f_ik| %3.3f; twist: x %3.3f, y %3.3f, th %3.3f",
+			next_sample_index_ + 1,
+			sample_amplifier_params_v_.size(),
+			i + 1,
+			num_steps,
+			force_internal.calculateLength(),
+			force_interaction_dynamic.calculateLength(),
+			force_human_action.calculateLength(),
+			force_interaction_static.calculateLength(),
+			twist_cmd.getX(),
+			twist_cmd.getY(),
+			twist_cmd.getZ()
+		);
 	}  // end for simulation steps
 
 	return true;
