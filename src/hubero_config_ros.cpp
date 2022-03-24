@@ -35,10 +35,17 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 //	nh.param("world_bound_y", general_->world_bound_y, general_->world_bound_y);
 
 	// GeneralParams
-	nh.param("sim_period", general_->sim_period, general_->sim_period);
 	nh.param("sim_time", general_->sim_time, general_->sim_time);
 	nh.param("sim_granularity", general_->sim_granularity, general_->sim_granularity);
 	nh.param("angular_sim_granularity", general_->angular_sim_granularity, general_->angular_sim_granularity);
+
+	// `sim_period` is handled differently - derived from `controller_frequency`
+	std::string controller_frequency_param;
+	nh.searchParam("controller_frequency", controller_frequency_param);
+	double controller_frequency = 10.0;
+	if (nh.param(controller_frequency_param, controller_frequency, controller_frequency)) {
+		general_->sim_period = 1.0 / controller_frequency;
+	}
 
 	// Limits
 	printf("Parameter section: `LIMITS` - default values \r\n");
@@ -161,7 +168,6 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 
 	general_->angular_sim_granularity = cfg.angular_sim_granularity;
 	general_->sim_granularity = cfg.sim_granularity;
-	general_->sim_period = cfg.sim_period; // TODO: is this still useful?
 	general_->sim_time = cfg.sim_time;
 	general_->forward_point_distance = cfg.forward_point_distance;
 	general_->twist_rotation_compensation = cfg.twist_rotation_compensation;
