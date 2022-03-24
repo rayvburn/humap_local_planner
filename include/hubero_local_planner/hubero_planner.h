@@ -221,6 +221,13 @@ public:
 		return goal_local_;
 	}
 
+	/**
+	 * @brief Returns const reference to all recently explored trajectories
+	 */
+	inline const std::vector<base_local_planner::Trajectory>& getExploredTrajectories() const {
+		return traj_explored_;
+	}
+
 private:
 	// fills up the world model with static and dynamic obstacles
 	void createEnvironmentModel(const Pose& pose_ref);
@@ -236,6 +243,9 @@ private:
 	void collectTrajectoryMotionData();
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
+
+	/// Stores all trajectories explored in last @ref findBestTrajectory execution
+	std::vector<base_local_planner::Trajectory> traj_explored_;
 
 	/// Stores the trajectory with a highest score, updated by the SimpleScoredSamplingPlanner instance
 	base_local_planner::Trajectory result_traj_;
