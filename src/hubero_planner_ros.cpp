@@ -57,6 +57,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
 		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
+		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
 
 		// assign args
 		tf_buffer_ = tf_buffer;
@@ -255,6 +256,16 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	if (traj_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_traj_pcl) {
 		traj_pcl_pub_.publish(createExploredTrajectoriesPcl());
 	}
+
+	// publish the visualization of the grid costs
+	if (cost_grid_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_cost_grid_pcl) {
+		cost_grid_pcl_pub_.publish(createCostGridPcl());
+	}
+	return true;
+}
+
+bool HuberoPlannerROS::computeCellCost(int cx, int cy, float &total_cost) const {
+	total_cost = planner_util_->getCostmap()->getCost(cx, cy);
 	return true;
 }
 
@@ -576,6 +587,44 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createExploredTrajectoriesPcl() const
 		}
 	}
 	return traj_cloud;
+}
+
+sensor_msgs::PointCloud2 HuberoPlannerROS::createCostGridPcl() const {
+	sensor_msgs::PointCloud2 cost_cloud;
+	cost_cloud.header.frame_id = planner_util_->getGlobalFrame();
+	cost_cloud.header.stamp = ros::Time::now();
+
+	sensor_msgs::PointCloud2Modifier cloud_mod(cost_cloud);
+	cloud_mod.setPointCloud2Fields(
+		4,
+		"x", 1, sensor_msgs::PointField::FLOAT32,
+		"y", 1, sensor_msgs::PointField::FLOAT32,
+		"z", 1, sensor_msgs::PointField::FLOAT32,
+		"total_cost", 1, sensor_msgs::PointField::FLOAT32
+	);
+
+	unsigned int x_size = planner_util_->getCostmap()->getSizeInCellsX();
+	unsigned int y_size = planner_util_->getCostmap()->getSizeInCellsY();
+	double z_coord = 0.0;
+	double x_coord, y_coord;
+
+	cloud_mod.resize(x_size * y_size);
+	sensor_msgs::PointCloud2Iterator<float> iter_x(cost_cloud, "x");
+
+	float total_cost;
+	for (unsigned int cx = 0; cx < x_size; cx++) {
+		for (unsigned int cy = 0; cy < y_size; cy++) {
+			planner_util_->getCostmap()->mapToWorld(cx, cy, x_coord, y_coord);
+			if (computeCellCost(cx, cy, total_cost)) {
+				iter_x[0] = x_coord;
+				iter_x[1] = y_coord;
+				iter_x[2] = z_coord;
+				iter_x[3] = total_cost;
+				++iter_x;
+			}
+		}
+	}
+	return cost_cloud;
 }
 
 }; // namespace hubero_local_planner
