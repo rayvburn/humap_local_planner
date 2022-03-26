@@ -139,8 +139,13 @@ bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& or
 	  return false;
 	}
 	ROS_INFO("Got a new plan");
+
+	// reset executed path only when goal changes
+	if (!global_plan_.empty() && orig_global_plan.back().pose != global_plan_.back().pose) {
+		vis_.resetPath();
+	}
+
 	global_plan_ = orig_global_plan;
-	vis_.resetPath();
 	return planner_->setPlan(orig_global_plan);
 }
 
