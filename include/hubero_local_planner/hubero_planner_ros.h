@@ -114,13 +114,6 @@ protected:
 		const ros::NodeHandle& nh
 	);
 
-	void computeTwist(
-		const Pose& pose,
-		const Vector& force,
-		const Vector& robot_vel_glob,
-		Vector& cmd_vel
-	) const;
-
 	/**
 	 * @brief Transforms Trajectory object into vector of PoseStamped to create a local plan
 	 *
