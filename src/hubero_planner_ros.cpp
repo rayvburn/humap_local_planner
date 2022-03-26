@@ -483,27 +483,6 @@ HuberoPlannerROS::getRobotFootprintFromParamServer(const ros::NodeHandle& nh) {
 	return std::make_tuple(std::make_shared<PointRobotFootprint>(), FOOTPRINT_FALLBACK);
 }
 
-void HuberoPlannerROS::computeTwist(
-	const Pose& pose,
-	const Vector& force,
-	const Vector& robot_vel_glob,
-	Vector& cmd_vel) const
-{
-	// call free funcion
-	hubero_local_planner::computeTwist(
-		pose,
-		force,
-		robot_vel_glob,
-		cfg_->getGeneral()->sim_period,
-		cfg_->getSfm()->mass,
-		cfg_->getLimits()->min_vel_x,
-		cfg_->getLimits()->max_vel_x,
-		cfg_->getLimits()->min_vel_theta,
-		cfg_->getGeneral()->twist_rotation_compensation,
-		cmd_vel
-	);
-}
-
 std::vector<geometry_msgs::PoseStamped> HuberoPlannerROS::createLocalPlan(
 	const base_local_planner::Trajectory& traj
 ) const {
