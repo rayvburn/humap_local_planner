@@ -65,10 +65,39 @@ bool HuberoPlanner::checkTrajectory(
 	return false;
 }
 
+bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
+	// make sure that our configuration doesn't change mid-run
+	std::lock_guard<std::mutex> l(configuration_mutex_);
+
+	// save for later use
+	pose_ = Pose(global_pose);
+
+	std::vector<geometry_msgs::PoseStamped> plan_local_pruned;
+	// this prunes plan if appropriate parameter is set
+	planner_util_->getLocalPlan(global_pose, plan_local_pruned);
+
+	if (plan_local_pruned.empty()) {
+		ROS_ERROR_NAMED("HuberoPlanner", "Could not update global plan - pruned plan is empty");
+		return false;
+	}
+
+	// copy contents of the new global plan
+	global_plan_.resize(plan_local_pruned.size());
+	std::copy(plan_local_pruned.cbegin(), plan_local_pruned.cend(), global_plan_.begin());
+
+	// try to update goal pose
+	goal_ = getGoalFromPlan();
+
+	// update local goal pose
+	if (!chooseLocalGoal()) {
+		ROS_ERROR_NAMED("HuberoPlanner", "Could not choose local goal during plan update");
+		return false;
+	}
+	return true;
+}
+
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
-	const Pose& pose,
 	const Vector& velocity,
-	const Pose& goal,
 	const ObstContainerConstPtr obstacles,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
@@ -76,19 +105,15 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	std::lock_guard<std::mutex> l(configuration_mutex_);
 
 	// assign, will likely be useful for planning
-	pose_ = pose;
 	vel_ = velocity;
-	goal_ = goal;
 	obstacles_ = obstacles;
-	goal_local_ = goal_;
-	chooseGoalBasedOnGlobalPlan();
 
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
 	Vector robot_vel_glob;
-	computeVelocityGlobal(velocity, pose, robot_vel_glob);
+	computeVelocityGlobal(vel_, pose_, robot_vel_glob);
 
-	world_model_ = World(pose, robot_vel_glob, goal_local_, goal_);
-	createEnvironmentModel(pose);
+	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
+	createEnvironmentModel(pose_);
 
 	// prepare data for planning
 	// TSP: Trajectory Sampling Parameters
@@ -164,26 +189,22 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 }
 
 base_local_planner::Trajectory HuberoPlanner::findTrajectory(
-	const Pose& pose,
 	const Vector& velocity,
-	const Pose& goal,
 	const ObstContainerConstPtr obstacles,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
-	// assign, will likely be useful for planning
-	pose_ = pose;
+	// make sure that our configuration doesn't change mid-run
+	std::lock_guard<std::mutex> l(configuration_mutex_);
+
 	vel_ = velocity;
-	goal_ = goal;
 	obstacles_ = obstacles;
-	goal_local_ = goal_;
-	chooseGoalBasedOnGlobalPlan();
 
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
 	Vector robot_vel_glob;
-	computeVelocityGlobal(velocity, pose, robot_vel_glob);
+	computeVelocityGlobal(vel_, pose_, robot_vel_glob);
 
-	world_model_ = World(pose, robot_vel_glob, goal_local_, goal_);
-	createEnvironmentModel(pose);
+	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
+	createEnvironmentModel(pose_);
 
 	// initialize generator with updated parameters
 	generator_.initialise(
@@ -295,34 +316,42 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
 	}
 }
 
-bool HuberoPlanner::chooseGoalBasedOnGlobalPlan() {
-	geometry_msgs::PoseStamped pose_stamped;
-	pose_stamped.pose = pose_.getAsMsgPose();
-	pose_stamped.header.frame_id = planner_util_->getGlobalFrame();
-	pose_stamped.header.stamp = ros::Time::now();
+bool HuberoPlanner::chooseLocalGoal() {
+	if (global_plan_.empty()) {
+		ROS_ERROR_NAMED("HuberoPlanner", "Cannot choose local goal because global plan is empty");
+		return false;
+	}
 
-	std::vector<geometry_msgs::PoseStamped> plan_local_pruned;
-	// this prunes plan if appropriate parameter is set
-	planner_util_->getLocalPlan(pose_stamped, plan_local_pruned);
-
-	// NOTE: global_plan_ is not stored currently!
-	// base_local_planner::prunePlan(poseTf, plan_local_, global_plan_);
-
-	if (plan_local_pruned.size() > 0) {
-		// find a point far enough so the social force can drive the robot towards instead of produce oscillations
-		for (const auto& pose_plan : plan_local_pruned) {
-			double dist_x = pose_plan.pose.position.x - pose_.getX();
-			double dist_y = pose_plan.pose.position.y - pose_.getY();
-			double dist_sq = dist_x * dist_x + dist_y * dist_y;
-			if (dist_sq > cfg_->getGeneral()->forward_point_distance) {
-				goal_local_ = Pose(pose_plan.pose);
-				return true;
-			}
+	// find a point far enough so the social force can drive the robot towards instead of produce oscillations
+	for (const auto& pose_plan: global_plan_) {
+		double dist_x = pose_plan.pose.position.x - pose_.getX();
+		double dist_y = pose_plan.pose.position.y - pose_.getY();
+		double dist_sq = dist_x * dist_x + dist_y * dist_y;
+		if (dist_sq > cfg_->getGeneral()->forward_point_distance) {
+			goal_local_ = Pose(pose_plan.pose);
+			return true;
 		}
 	}
-	return false;
+
+	// seems that we have reached the furthest point in the plan
+	goal_local_ = getGoalFromPlan();
+	return true;
 }
 
+Pose HuberoPlanner::getGoalFromPlan() const {
+	// it's safer to use second to last element, last may consist some strange pose,
+	// e.g. point backwards or unreachable goal pose
+	if (global_plan_.size() > 2) {
+		return Pose(global_plan_.end()[-2].pose);
+	}
+
+	ROS_DEBUG_NAMED(
+		"HuberoPlanner",
+		"Cannot retrieve goal from the plan since it is too short (%lu poses)",
+		global_plan_.size()
+	);
+	return goal_;
+}
 
 void HuberoPlanner::collectTrajectoryMotionData() {
 	motion_data_.behaviour_active = generator_.getActiveFuzzyBehaviour();

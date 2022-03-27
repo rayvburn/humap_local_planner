@@ -105,6 +105,15 @@ public:
 	);
 
 	/**
+	 * @brief Updates previously saved global plan, prunes the part located behind the robot
+	 * @param  global_pose The robot's current pose in the global frame of the local planner (usually `odom`)
+	 * @param  new_plan The new global plan
+
+	 * @note This should be called before @ref findBestTrajectory or @ref findTrajectory
+	 */
+	bool updatePlan(const geometry_msgs::PoseStamped& global_pose);
+
+	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
 	 * @param pose robot pose in the global frame of the local planner (usually `odom`)
 	 * @param velocity robot velocity in the base coordinate system
@@ -114,9 +123,7 @@ public:
 	 * @return The highest scoring trajectory. A cost >= 0 means the trajectory is legal to execute.
 	 */
 	base_local_planner::Trajectory findBestTrajectory(
-		const Pose& pose,
 		const Vector& velocity,
-		const Pose& goal,
 		const ObstContainerConstPtr obstacles,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
@@ -130,9 +137,7 @@ public:
 	 * @param drive_velocities trajectory generation output, stores x, y and theta velocities
 	 */
 	base_local_planner::Trajectory findTrajectory(
-		const Pose& pose,
 		const Vector& velocity,
-		const Pose& goal,
 		const ObstContainerConstPtr obstacles,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
@@ -212,9 +217,14 @@ private:
 	void createEnvironmentModel(const Pose& pose_ref);
 
 	/**
-	 * @return True if given @ref goal_local_ was modified, False otherwise
+	 * @brief Updates @ref goal_local_ with a pose that is located far enough from the robot or it is the global goal
 	 */
-	bool chooseGoalBasedOnGlobalPlan();
+	bool chooseLocalGoal();
+
+	/**
+	 * @brief Retrieves goal pose from the global plan
+	 */
+	Pose getGoalFromPlan() const;
 
 	/**
 	 * @brief Updates motion driving factors based on the newest data from trajectory generator
@@ -229,6 +239,7 @@ private:
 	/// Stores the trajectory with a highest score, updated by the SimpleScoredSamplingPlanner instance
 	base_local_planner::Trajectory result_traj_;
 
+	/// Global plan that gets pruned in @ref updatePlan call
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	bool goal_reached_;
 

@@ -224,13 +224,17 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// prepare obstacles
 	updateObstacleContainerWithCostmapConverter();
 
+	// prepare local plan
+	planner_->updatePlan(robot_pose_geom);
+
 	geometry_msgs::PoseStamped drive_cmds;
 	base_local_planner::Trajectory trajectory;
 	// use planning or proactive approach
 	if (cfg_->getGeneral()->planning_approach) {
-		trajectory = planner_->findBestTrajectory(robot_pose, robot_vel, robot_goal, obstacles_, drive_cmds);
+		// sample trajectories and choose the one with the lowest cost
+		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, drive_cmds);
 	} else {
-		trajectory = planner_->findTrajectory(robot_pose, robot_vel, robot_goal, obstacles_, drive_cmds);
+		trajectory = planner_->findTrajectory(robot_vel, obstacles_, drive_cmds);
 	}
 
 	cmd_vel.linear.x = drive_cmds.pose.position.x;
