@@ -62,7 +62,6 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		// assign args
 		tf_buffer_ = tf_buffer;
 		costmap_ros_ = costmap_ros;
-		costmap_ros_->getRobotPose(current_pose_);
 
 		costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
 
