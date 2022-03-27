@@ -231,6 +231,8 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	base_local_planner::Trajectory trajectory;
 	// use planning or proactive approach
 	if (cfg_->getGeneral()->planning_approach) {
+		// update costs for trajectory scoring
+		planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
 		// sample trajectories and choose the one with the lowest cost
 		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, drive_cmds);
 	} else {
@@ -578,11 +580,14 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createCostGridPcl() const {
 
 	sensor_msgs::PointCloud2Modifier cloud_mod(cost_cloud);
 	cloud_mod.setPointCloud2Fields(
-		4,
+		7,
 		"x", 1, sensor_msgs::PointField::FLOAT32,
 		"y", 1, sensor_msgs::PointField::FLOAT32,
 		"z", 1, sensor_msgs::PointField::FLOAT32,
-		"total_cost", 1, sensor_msgs::PointField::FLOAT32
+		"total_cost", 1, sensor_msgs::PointField::FLOAT32,
+		"path_cost", 1, sensor_msgs::PointField::FLOAT32,
+		"goal_cost", 1, sensor_msgs::PointField::FLOAT32,
+		"occ_cost", 1, sensor_msgs::PointField::FLOAT32
 	);
 
 	unsigned int x_size = planner_util_->getCostmap()->getSizeInCellsX();
@@ -594,14 +599,21 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createCostGridPcl() const {
 	sensor_msgs::PointCloud2Iterator<float> iter_x(cost_cloud, "x");
 
 	float total_cost;
+	float path_cost;
+	float goal_cost;
+	float occ_cost;
+
 	for (unsigned int cx = 0; cx < x_size; cx++) {
 		for (unsigned int cy = 0; cy < y_size; cy++) {
 			planner_util_->getCostmap()->mapToWorld(cx, cy, x_coord, y_coord);
-			if (planner_->computeCellCost(cx, cy, total_cost)) {
+			if (planner_->computeCellCost(cx, cy, path_cost, goal_cost, occ_cost, total_cost)) {
 				iter_x[0] = x_coord;
 				iter_x[1] = y_coord;
 				iter_x[2] = z_coord;
 				iter_x[3] = total_cost;
+				iter_x[4] = path_cost;
+				iter_x[5] = goal_cost;
+				iter_x[6] = occ_cost;
 				++iter_x;
 			}
 		}
