@@ -269,11 +269,6 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	return true;
 }
 
-bool HuberoPlannerROS::computeCellCost(int cx, int cy, float &total_cost) const {
-	total_cost = planner_util_->getCostmap()->getCost(cx, cy);
-	return true;
-}
-
 // protected
 void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
 	// fill cfg_ with updated config
@@ -599,7 +594,7 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createCostGridPcl() const {
 	for (unsigned int cx = 0; cx < x_size; cx++) {
 		for (unsigned int cy = 0; cy < y_size; cy++) {
 			planner_util_->getCostmap()->mapToWorld(cx, cy, x_coord, y_coord);
-			if (computeCellCost(cx, cy, total_cost)) {
+			if (planner_->computeCellCost(cx, cy, total_cost)) {
 				iter_x[0] = x_coord;
 				iter_x[1] = y_coord;
 				iter_x[2] = z_coord;

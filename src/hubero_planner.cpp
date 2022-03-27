@@ -218,13 +218,8 @@ void HuberoPlanner::updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& gl
 	printf("[HuberoPlanner::updatePlanAndLocalCosts] \r\n");
 }
 
-bool HuberoPlanner::getCellCosts(int cx,
-		int cy,
-		float &path_cost,
-		float &goal_cost,
-		float &occ_cost,
-		float &total_cost) {
-	printf("[HuberoPlanner::getCellCosts] \r\n");
+bool HuberoPlanner::computeCellCost(int cx, int cy, float &total_cost) {
+	total_cost = planner_util_->getCostmap()->getCost(cx, cy);
 	return true;
 }
 

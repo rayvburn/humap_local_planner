@@ -83,11 +83,6 @@ public:
       return initialized_;
     }
 
-	/**
-	 * @brief Computes cost function for a given cell in the costmap
-	 */
-	bool computeCellCost(int cx, int cy, float &total_cost) const;
-
 protected:
 	/**
 	* @brief Callback to update the local planner's parameters based on dynamic reconfigure

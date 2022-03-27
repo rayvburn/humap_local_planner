@@ -167,18 +167,13 @@ public:
 	 * @brief Compute the components and total cost for a map grid cell
 	 * @param cx The x coordinate of the cell in the map grid
 	 * @param cy The y coordinate of the cell in the map grid
-	 * @param path_cost Will be set to the path distance component of the cost function
-	 * @param goal_cost Will be set to the goal distance component of the cost function
-	 * @param occ_cost Will be set to the costmap value of the cell
 	 * @param total_cost Will be set to the value of the overall cost function, taking into account the scaling parameters
 	 * @return True if the cell is traversible and therefore a legal location for the robot to move to
 	 */
-	bool getCellCosts(int cx,
+	bool computeCellCost(
+		int cx,
 		int cy,
-		float &path_cost,
-		float &goal_cost,
-		float &occ_cost,
-		float &total_cost
+		float& total_cost
 	);
 
 	/**
