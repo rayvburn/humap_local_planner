@@ -127,6 +127,8 @@ Target World::createTarget(const geometry::Pose& robot_pose, const geometry::Pos
 	target.robot = robot_pose;
 	target.object = target_pose;
 	target.dist_v = geometry::Vector(target_pose.getRawPosition() - robot_pose.getRawPosition());
+	// assume planar poses
+	target.dist_v.setZ(0.0);
 	target.dist = target.dist_v.calculateLength();
 	return target;
 }
