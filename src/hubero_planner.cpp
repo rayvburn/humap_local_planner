@@ -212,11 +212,6 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	return traj;
 }
 
-void HuberoPlanner::updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& global_pose,
-		const std::vector<geometry_msgs::PoseStamped>& new_plan,
-		const std::vector<geometry_msgs::Point>& footprint_spec) {
-	printf("[HuberoPlanner::updatePlanAndLocalCosts] \r\n");
-}
 
 bool HuberoPlanner::computeCellCost(int cx, int cy, float &total_cost) {
 	total_cost = planner_util_->getCostmap()->getCost(cx, cy);

@@ -140,22 +140,6 @@ public:
 	// TODO: add grid `visualization` version, ignores storing `meaningful_interactions` data
 
 	/**
-	 * @brief  Update the cost functions before planning
-	 * @param  global_pose The robot's current pose
-	 * @param  new_plan The new global plan
-	 * @param  footprint_spec The robot's footprint
-	 *
-	 * The obstacle cost function gets the footprint.
-	 * The path and goal cost functions get the global_plan
-	 * The alignment cost functions get a version of the global plan
-	 *   that is modified based on the global_pose
-	 */
-	void updatePlanAndLocalCosts(const geometry_msgs::PoseStamped& global_pose,
-		const std::vector<geometry_msgs::PoseStamped>& new_plan,
-		const std::vector<geometry_msgs::Point>& footprint_spec
-	);
-
-	/**
 	 * @brief Get the period at which the local planner is expected to run
 	 * @return The simulation period
 	 */
