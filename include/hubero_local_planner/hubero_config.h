@@ -110,6 +110,23 @@ namespace hubero_local_planner {
 		double force_interaction_static_amplifier_granularity = 0.5;
 	};
 
+	struct CostParams {
+		/// The weight for the path distance part of the cost function
+		double path_distance_scale = 0.6;
+		/// The weight for the goal distance part of the cost function
+		double goal_distance_scale = 0.8;
+		/// The weight for the obstacle distance part of the cost function
+		double occdist_scale = 0.01;
+		/// The distance the robot must travel before oscillation flags are reset, in meters
+		double oscillation_reset_dist = 0.05;
+		/// The angle the robot must turn before oscillation flags are reset, in radians
+		double oscillation_reset_angle = 0.2;
+		/// The absolute value of the velocity at which to start scaling the robot's footprint, in m/s
+		double scaling_speed = 0.25;
+		/// The maximum factor to scale the robot's footprint by
+		double max_scaling_factor = 0.2;
+	};
+
 class HuberoConfig {
 public:
 	HuberoConfig() {
@@ -119,6 +136,7 @@ public:
 		sfm_ = std::make_shared<SfmParams>();
 		behaviour_ = std::make_shared<BehaviourParams>();
 		traj_sampling_ = std::make_shared<TrajectorySamplingParams>();
+		costs_ = std::make_shared<CostParams>();
 	}
 
 	std::shared_ptr<const base_local_planner::LocalPlannerLimits> getLimits() const {
@@ -145,6 +163,10 @@ public:
 		return traj_sampling_;
 	}
 
+	std::shared_ptr<const CostParams> getCost() const {
+		return costs_;
+	}
+
 	virtual ~HuberoConfig() = default;
 
 protected:
@@ -154,6 +176,7 @@ protected:
 	std::shared_ptr<SfmParams> sfm_;
 	std::shared_ptr<BehaviourParams> behaviour_;
 	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;
+	std::shared_ptr<CostParams> costs_;
 };
 
 typedef std::shared_ptr<const HuberoConfig> HuberoConfigConstPtr;

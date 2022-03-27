@@ -233,6 +233,14 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	traj_sampling_->force_interaction_social_amplifier_min = cfg.force_interaction_social_amplifier_min;
 	traj_sampling_->force_interaction_social_amplifier_max = cfg.force_interaction_social_amplifier_max;
 	traj_sampling_->force_interaction_social_amplifier_granularity = cfg.force_interaction_social_amplifier_granularity;
+
+	costs_->path_distance_scale = cfg.path_distance_scale;
+	costs_->goal_distance_scale = cfg.goal_distance_scale;
+	costs_->occdist_scale = cfg.occdist_scale;
+	costs_->oscillation_reset_dist = cfg.oscillation_reset_dist;
+	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
+	costs_->scaling_speed = cfg.scaling_speed;
+	costs_->max_scaling_factor = cfg.max_scaling_factor;
 }
 
 } /* namespace hubero_local_planner */
