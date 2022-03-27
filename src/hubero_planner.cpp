@@ -20,16 +20,32 @@ HuberoPlanner::HuberoPlanner(
 	planner_util_(planner_util),
 	goal_reached_(false),
 	obstacles_(nullptr),
-	robot_model_(robot_model)
+	robot_model_(robot_model),
+	obstacle_costs_(planner_util_->getCostmap()),
+	path_costs_(planner_util_->getCostmap()),
+	goal_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
+	alignment_costs_(planner_util_->getCostmap())
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
 
 	// prints Fuzzy Inference System configuration, FIS used for trajectory generation
 	generator_.printFisConfiguration();
+
+	// configure trajectory critics
+	alignment_costs_.setStopOnFailure(false);
+	// whether footprint cost is summed throughout each point or maximum cost is used, max by default
+	obstacle_costs_.setSumScores(false);
+	oscillation_costs_.resetOscillationFlags();
+
 	// set up all the cost functions that will be applied in order
 	// (any function returning negative values will abort scoring, so the order can improve performance)
 	std::vector<base_local_planner::TrajectoryCostFunction*> critics;
+	critics.push_back(&obstacle_costs_);
+	critics.push_back(&path_costs_);
+	critics.push_back(&goal_costs_);
+	critics.push_back(&alignment_costs_);
+
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
 	generator_list.push_back(&generator_);
@@ -55,6 +71,8 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 		cfg->getGeneral()->angular_sim_granularity,
 		cfg->getGeneral()->sim_period
 	);
+
+	updateCostParameters();
 }
 
 bool HuberoPlanner::checkTrajectory(
@@ -94,6 +112,17 @@ bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 		return false;
 	}
 	return true;
+}
+
+void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec) {
+	// update robot footprint so it won't crash with anything
+	obstacle_costs_.setFootprint(footprint_spec);
+	// costs for going away from path
+	path_costs_.setTargetPoses(global_plan_);
+	// costs for not going towards the local goal as much as possible
+	goal_costs_.setTargetPoses(global_plan_);
+	// costs for robot being aligned with path (nose on path)
+	alignment_costs_.setTargetPoses(global_plan_);
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
@@ -233,9 +262,34 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	return traj;
 }
 
+bool HuberoPlanner::computeCellCost(
+	int cx,
+	int cy,
+	float& path_cost,
+	float& goal_cost,
+	float& occ_cost,
+	float& total_cost
+) {
+	// initial checks if cell is traversible
+	path_cost = path_costs_.getCellCosts(cx, cy);
+	goal_cost = goal_costs_.getCellCosts(cx, cy);
+	occ_cost = planner_util_->getCostmap()->getCost(cx, cy);
 
-bool HuberoPlanner::computeCellCost(int cx, int cy, float &total_cost) {
-	total_cost = planner_util_->getCostmap()->getCost(cx, cy);
+	// evaluate if any component's cost is critical
+	bool cell_unreachable =
+		path_cost == path_costs_.obstacleCosts()
+		|| path_cost == path_costs_.unreachableCellCosts()
+		|| occ_cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+
+	if (cell_unreachable) {
+		return false;
+	}
+
+	// scale and sum retrieved costs
+	path_cost *= cfg_->getCost()->path_distance_scale;
+	goal_cost *= cfg_->getCost()->goal_distance_scale;
+	occ_cost *= cfg_->getCost()->occdist_scale;
+	total_cost = path_cost + goal_cost + occ_cost;
 	return true;
 }
 
@@ -279,6 +333,31 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 
 	goal_reached_ = true;
 	return true;
+}
+
+void HuberoPlanner::updateCostParameters() {
+	// update cost scales (adjust them with costmap resolution)
+	double cm_resolution = planner_util_->getCostmap()->getResolution();
+	double occdist_scale_adjusted = cfg_->getCost()->occdist_scale * cm_resolution;
+	double path_distance_scale_adjusted = cfg_->getCost()->path_distance_scale * cm_resolution;
+	double goal_distance_scale_adjusted = cfg_->getCost()->goal_distance_scale * cm_resolution;
+
+	obstacle_costs_.setScale(occdist_scale_adjusted);
+	path_costs_.setScale(path_distance_scale_adjusted);
+	goal_costs_.setScale(goal_distance_scale_adjusted);
+	alignment_costs_.setScale(path_distance_scale_adjusted);
+
+	// update other cost params
+	oscillation_costs_.setOscillationResetDist(
+		cfg_->getCost()->oscillation_reset_dist,
+		cfg_->getCost()->oscillation_reset_angle
+	);
+	obstacle_costs_.setParams(
+		cfg_->getLimits()->max_vel_trans,
+		cfg_->getCost()->max_scaling_factor,
+		cfg_->getCost()->scaling_speed
+	);
+	alignment_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {

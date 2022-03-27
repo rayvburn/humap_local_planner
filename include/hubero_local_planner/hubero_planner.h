@@ -114,6 +114,19 @@ public:
 	bool updatePlan(const geometry_msgs::PoseStamped& global_pose);
 
 	/**
+	 * @brief Prepares cost functions for planning
+	 * @param footprint_spec The robot's footprint
+	 *
+	 * The obstacle cost function gets the footprint.
+	 * The path and goal cost functions get the global_plan
+	 * The alignment cost functions get a version of the global plan that is modified based on the global_pose
+	 *
+	 * @note This should be called before @ref findBestTrajectory. Not needed before @ref findTrajectory
+	 * @note Based on dwa_local_planner::DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
+	 */
+	void updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec);
+
+	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
 	 * @param pose robot pose in the global frame of the local planner (usually `odom`)
 	 * @param velocity robot velocity in the base coordinate system
@@ -153,15 +166,26 @@ public:
 	}
 
 	/**
-	 * @brief Compute the components and total cost for a map grid cell
+	 * @brief Computes cost function for a given cell in the costmap
+	 *
+	 * Compute the components and total cost for a map grid cell
+	 *
 	 * @param cx The x coordinate of the cell in the map grid
 	 * @param cy The y coordinate of the cell in the map grid
+	 * @param path_cost Will be set to the path distance component of the cost function
+	 * @param goal_cost Will be set to the goal distance component of the cost function
+	 * @param occ_cost Will be set to the costmap value of the cell
 	 * @param total_cost Will be set to the value of the overall cost function, taking into account the scaling parameters
 	 * @return True if the cell is traversible and therefore a legal location for the robot to move to
+	 *
+	 * @note Based on Based on dwa_local_planner::DWAPlanner::getCellCosts authored by Eitan Marder-Eppstein
 	 */
 	bool computeCellCost(
 		int cx,
 		int cy,
+		float& path_cost,
+		float& goal_cost,
+		float& occ_cost,
 		float& total_cost
 	);
 
@@ -213,6 +237,12 @@ public:
 	}
 
 private:
+	/**
+	 * @brief Updates cost functions with the contents of the @ref HuberoConfig
+	 * @note Should be called once dynamic reconfigure event occurred
+	 */
+	void updateCostParameters();
+
 	// fills up the world model with static and dynamic obstacles
 	void createEnvironmentModel(const Pose& pose_ref);
 
@@ -270,6 +300,17 @@ private:
 	 */
 	SocialTrajectoryGenerator generator_;
 	base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
+
+	/// Cost function that discards trajectories that move into obstacles
+	base_local_planner::ObstacleCostFunction obstacle_costs_;
+	/// Cost function that discards oscillating motions (assisgns cost -1)
+	base_local_planner::OscillationCostFunction oscillation_costs_;
+	/// Cost function that prefers trajectories on global path
+	base_local_planner::MapGridCostFunction path_costs_;
+	/// Cost function that prefers trajectories that go towards (local) goal, based on wave propagation
+	base_local_planner::MapGridCostFunction goal_costs_;
+	/// Cost function that prefers trajectories that keep the robot nose on nose path
+	base_local_planner::MapGridCostFunction alignment_costs_;
 	/// @}
 
 }; // class HuberoPlanner
