@@ -319,21 +319,15 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			traj.thetav_ = twist_cmd.getZ();
 		}
 
-		// compute robot position if the computed twist command would be applied
-		auto new_pos = SimpleTrajectoryGenerator::computeNewPositions(
-			Eigen::Vector3f(
-				world_model_plan.getRobotData().centroid.getPosition().getX(),
-				world_model_plan.getRobotData().centroid.getPosition().getY(),
-				world_model_plan.getRobotData().centroid.getYaw()
-			),
-			twist_cmd.getAsEigen<Eigen::Vector3f>(),
-			dt
+		// extend trajectory with new point
+		traj.addPoint(
+			world_model_plan.getRobotData().centroid.getPosition().getX(),
+			world_model_plan.getRobotData().centroid.getPosition().getY(),
+			world_model_plan.getRobotData().centroid.getYaw()
 		);
 
-		// extend trajectory with new point
-		traj.addPoint(new_pos[0], new_pos[1], new_pos[2]);
-
-		// prepare data for state prediction
+		// now, compute robot position if the computed twist command would be applied
+		// prepare data for state prediction (global velocity is required, not the base's)
 		Vector twist_cmd_glob;
 		computeVelocityGlobal(twist_cmd, world_model_plan.getRobotData().centroid, twist_cmd_glob);
 
