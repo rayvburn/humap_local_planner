@@ -165,7 +165,6 @@ protected:
 	tf2_ros::Buffer* tf_buffer_;
 	base_local_planner::OdometryHelperRos odom_helper_;
 	std::string odom_topic_;
-	geometry_msgs::PoseStamped current_pose_;
 	// helpers
 	tf2_ros::TransformBroadcaster tf_broadcaster_;
 
