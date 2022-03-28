@@ -77,9 +77,9 @@ void World::addObstacles(
 
 void World::predict(const geometry::Vector& robot_vel, const double& sim_period) {
 	auto robot_centroid_new = computeNextPose(robot_.centroid, robot_vel, sim_period);
-	auto robot_pose_diff = robot_centroid_new.getRawPose() - robot_.centroid.getRawPose();
-	auto robot_pose_new_temp = robot_.target.robot.getRawPose() + robot_pose_diff;
-	geometry::Pose robot_pose_new(robot_pose_new_temp.Pos(), robot_pose_new_temp.Rot());
+	// NOTE: for unknown reason, result of poses difference using ignition library ignored Y-dimension difference
+	auto robot_centroid_diff = subtractPoses(robot_centroid_new, robot_.centroid);
+	auto robot_pose_new = addPoses(robot_.target.robot, robot_centroid_diff);
 
 	auto world_prediction = World(
 		robot_centroid_new,
@@ -91,15 +91,13 @@ void World::predict(const geometry::Vector& robot_vel, const double& sim_period)
 
 	// only dynamic obstacles will change their poses - static ones do not need to be changed
 	for (auto& obstacle: obstacle_dynamic_) {
-		auto robot_new_pose_temp = obstacle.robot.getRawPose() + robot_pose_diff;
-		geometry::Pose robot_new_pose(robot_new_pose_temp.Pos(), robot_new_pose_temp.Rot());
+		auto robot_new_pose = addPoses(obstacle.robot, robot_centroid_diff);
 		geometry::Pose obstacle_new_pose = computeNextPose(obstacle.object, obstacle.vel, sim_period);
 		world_prediction.addObstacle(robot_new_pose, obstacle_new_pose, obstacle.vel);
 	}
 
 	for (auto& obstacle: obstacle_static_) {
-		auto robot_new_pose_temp = obstacle.robot.getRawPose() + robot_pose_diff;
-		geometry::Pose robot_new_pose(robot_new_pose_temp.Pos(), robot_new_pose_temp.Rot());
+		auto robot_new_pose = addPoses(obstacle.robot, robot_centroid_diff);
 		world_prediction.addObstacle(robot_new_pose, obstacle.object, geometry::Vector(0.0, 0.0, 0.0));
 	}
 
