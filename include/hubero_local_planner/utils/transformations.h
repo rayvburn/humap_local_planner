@@ -76,6 +76,19 @@ void computeVelocityGlobal(
 	geometry::Vector& vel_global
 );
 
+/**
+ * @brief Computes pure difference between all pose components
+ *
+ * `pose_ref` element is used as a reference (e.g. as new pose, whereas `pose_other` is the previous one).
+ * Orientation is computed by subtraction of Euler angles.
+ */
+geometry::Pose subtractPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other);
+
+/**
+ * @brief Computes pure addition between all pose components
+ */
+geometry::Pose addPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other);
+
 /** @} */ // end of velocitytransformations
 
 } // namespace hubero_local_planner
