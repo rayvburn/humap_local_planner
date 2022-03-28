@@ -172,4 +172,26 @@ void computeVelocityGlobal(
 	);
 }
 
+geometry::Pose subtractPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other) {
+	return Pose(
+		pose_ref.getX() - pose_other.getX(),
+		pose_ref.getY() - pose_other.getY(),
+		pose_ref.getZ() - pose_other.getZ(),
+		pose_ref.getRoll() - pose_other.getRoll(),
+		pose_ref.getPitch() - pose_other.getPitch(),
+		pose_ref.getYaw() - pose_other.getYaw()
+	);
+}
+
+geometry::Pose addPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other) {
+	return Pose(
+		pose_ref.getX() + pose_other.getX(),
+		pose_ref.getY() + pose_other.getY(),
+		pose_ref.getZ() + pose_other.getZ(),
+		pose_ref.getRoll() + pose_other.getRoll(),
+		pose_ref.getPitch() + pose_other.getPitch(),
+		pose_ref.getYaw() + pose_other.getYaw()
+	);
+}
+
 } // namespace hubero_local_planner
