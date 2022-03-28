@@ -207,6 +207,7 @@ void SocialTrajectoryGenerator::initialise(
 bool SocialTrajectoryGenerator::nextTrajectory(Trajectory& traj) {
 	bool result = false;
 	if (hasMoreTrajectories()) {
+		// try to generate a new trajectory, starting with the initial world model given in `initialise`
 		if (generateTrajectory(
 			world_model_,
 			sample_amplifier_params_v_[next_sample_index_],
@@ -250,7 +251,7 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 	traj.time_delta_ = dt;
 
 	// copy the initial model of world as it may be reused
-	auto world_model_plan = world_model;
+	World world_model_plan = world_model;
 
 	for (int i = 0; i < num_steps; ++i) {
 		ROS_DEBUG_NAMED("SocTrajGen", "Starting trajectory generation step %3d / %3d", i, num_steps);
@@ -319,7 +320,7 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			traj.thetav_ = twist_cmd.getZ();
 		}
 
-		// extend trajectory with new point
+		// extend trajectory with the current pose
 		traj.addPoint(
 			world_model_plan.getRobotData().centroid.getPosition().getX(),
 			world_model_plan.getRobotData().centroid.getPosition().getY(),
@@ -536,8 +537,8 @@ void SocialTrajectoryGenerator::computeForces(
 	// actual `social` vector
 	geometry::Vector human_action_force;
 
-	std::vector<StaticObject> objects_static = world_model_.getStaticObjectsData();
-	std::vector<DynamicObject> objects_dynamic = world_model_.getDynamicObjectsData();
+	std::vector<StaticObject> objects_static = world_model.getStaticObjectsData();
+	std::vector<DynamicObject> objects_dynamic = world_model.getDynamicObjectsData();
 
 	// evaluate whether more complex forces are supposed to be calculated
 	if (!sfm_.areInteractionForcesDisabled()) {
@@ -554,7 +555,7 @@ void SocialTrajectoryGenerator::computeForces(
 		// set of lengths of vectors connecting \beta -s and \alpha -s
 		std::vector<double> dist_dynamic;
 		// \f$\alpha\f$'s direction of motion expressed in world coordinate system
-		double dir_alpha = world_model_.getRobotData().heading_dir.getRadian();
+		double dir_alpha = world_model.getRobotData().heading_dir.getRadian();
 
 		for (const DynamicObject& object: objects_dynamic) {
 			dir_beta_dynamic.push_back(object.dir_beta.getRadian());
