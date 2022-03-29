@@ -119,6 +119,8 @@ namespace hubero_local_planner {
 		double occdist_scale = 0.01;
 		/// The weight for the time to collision (TTC) cost function
 		double ttc_scale = 3.0;
+		/// The weight for the cost function that penalizes robot heading changes
+		double chc_scale = 1.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians
