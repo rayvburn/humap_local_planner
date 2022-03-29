@@ -24,7 +24,8 @@ HuberoPlanner::HuberoPlanner(
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
 	goal_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
-	alignment_costs_(planner_util_->getCostmap())
+	alignment_costs_(planner_util_->getCostmap()),
+	ttc_costs_(world_model_)
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
@@ -45,6 +46,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&path_costs_);
 	critics.push_back(&goal_costs_);
 	critics.push_back(&alignment_costs_);
+	critics.push_back(&ttc_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -123,6 +125,8 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	goal_costs_.setTargetPoses(global_plan_);
 	// costs for robot being aligned with path (nose on path)
 	alignment_costs_.setTargetPoses(global_plan_);
+	// reset TTC datasets collected during previous iteration
+	ttc_costs_.reset();
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
