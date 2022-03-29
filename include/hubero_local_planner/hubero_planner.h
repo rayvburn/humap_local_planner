@@ -237,6 +237,26 @@ public:
 		return traj_explored_;
 	}
 
+	/**
+	 * @brief Returns robot and obstacle positions for a TTC
+	 *
+	 * Outer vector: trajectories
+	 * Mid vector: timestamps
+	 * Inner vector: robot and obstacle poses
+	 *
+	 * @return std::vector<std::vector<std::vector<Distance>>>
+	 */
+	inline const std::vector<std::vector<std::vector<Distance>>>& getTTCPredictionsStatic() const {
+		return ttc_costs_.getPredictionStaticObjects();
+	}
+
+	/**
+	 * @see getTTCPredictionsStatic
+	 */
+	inline const std::vector<std::vector<std::vector<Distance>>>& getTTCPredictionsDynamic() const {
+		return ttc_costs_.getPredictionDynamicObjects();
+	}
+
 private:
 	/**
 	 * @brief Updates cost functions with the contents of the @ref HuberoConfig

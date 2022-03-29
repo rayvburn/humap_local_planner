@@ -57,6 +57,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
 		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
+		ttc_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("ttc_prediction", 1);
 		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
 
 		// assign args
@@ -265,6 +266,11 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// publish point cloud with explored trajectories only if the topic is subscribed as parameter set accordingly
 	if (traj_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_traj_pcl) {
 		traj_pcl_pub_.publish(createExploredTrajectoriesPcl());
+	}
+
+	// publish pcl with trajectory predictions used for TTC computation
+	if (ttc_pcl_pub_.getNumSubscribers() > 0) {
+		ttc_pcl_pub_.publish(createTTCTrajectoriesPcl());
 	}
 
 	// publish the visualization of the grid costs
@@ -568,6 +574,117 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createExploredTrajectoriesPcl() const
 			iter_x[3] = p_th;
 			iter_x[4] = t->cost_;
 			++iter_x;
+		}
+	}
+	return traj_cloud;
+}
+
+sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
+	// const reference here
+	auto data_static = planner_->getTTCPredictionsStatic();
+	auto data_dynamic = planner_->getTTCPredictionsDynamic();
+
+	sensor_msgs::PointCloud2 traj_cloud;
+	traj_cloud.header.frame_id = planner_util_->getGlobalFrame();
+	traj_cloud.header.stamp = ros::Time::now();
+
+	sensor_msgs::PointCloud2Modifier cloud_mod(traj_cloud);
+	// floats all over here to use handy iterator pattern
+	cloud_mod.setPointCloud2Fields(
+		6,
+		"x", 1, sensor_msgs::PointField::FLOAT32,
+		"y", 1, sensor_msgs::PointField::FLOAT32,
+		"z", 1, sensor_msgs::PointField::FLOAT32,
+		"theta", 1, sensor_msgs::PointField::FLOAT32,
+		"type", 1, sensor_msgs::PointField::FLOAT32,
+		"timestep", 1, sensor_msgs::PointField::FLOAT32
+	);
+
+	// differentiate types so they will be easier to distinguish visually
+	const float TYPE_ROBOT = 0.0;
+	const float TYPE_OBSTACLE_STATIC = 100.0;
+	const float TYPE_OBSTACLE_DYNAMIC = 200.0;
+
+	// check how many points there will be in a point cloud
+	unsigned int num_points = 0;
+	for (const auto& traj: data_static) {
+		// iterate over timestamps
+		for (const auto& ts: traj) {
+			// iterate over objects
+			for (const auto& obj: ts) {
+				// count obstacle
+				num_points++;
+				// count robot pose closest to the obstacle
+				num_points++;
+			}
+		}
+	}
+	for (const auto& traj: data_dynamic) {
+		// iterate over timestamps
+		for (const auto& ts: traj) {
+			// iterate over objects
+			for (const auto& obj: ts) {
+				// count obstacle
+				num_points++;
+				// count robot pose closest to the obstacle
+				num_points++;
+			}
+		}
+	}
+	cloud_mod.resize(num_points);
+
+	float timestep = 0;
+	sensor_msgs::PointCloud2Iterator<float> iter_x(traj_cloud, "x");
+	for (const auto& traj: data_static) {
+		// iterate over timestamps
+		for (const auto& ts: traj) {
+			// iterate over objects
+			for (const auto& obj: ts) {
+				// robot pose
+				iter_x[0] = obj.robot.getX();
+				iter_x[1] = obj.robot.getY();
+				iter_x[2] = obj.robot.getZ();
+				iter_x[3] = obj.robot.getYaw();
+				iter_x[4] = TYPE_ROBOT;
+				iter_x[5] = timestep;
+				++iter_x;
+				// obstacle pose
+				iter_x[0] = obj.object.getX();
+				iter_x[1] = obj.object.getY();
+				iter_x[2] = obj.object.getZ();
+				iter_x[3] = obj.object.getYaw();
+				iter_x[4] = TYPE_OBSTACLE_STATIC;
+				iter_x[5] = timestep;
+				++iter_x;
+			}
+			timestep += 1.0;
+		}
+	}
+
+	timestep = 0;
+	for (const auto& traj: data_dynamic) {
+		// iterate over timestamps
+		for (const auto& ts: traj) {
+			// iterate over objects
+			for (const auto& obj: ts) {
+				// robot pose
+				iter_x[0] = obj.robot.getX();
+				iter_x[1] = obj.robot.getY();
+				iter_x[2] = obj.robot.getZ();
+				iter_x[3] = obj.robot.getYaw();
+				iter_x[4] = TYPE_ROBOT;
+				iter_x[5] = timestep;
+				++iter_x;
+				// obstacle pose
+				iter_x[0] = obj.object.getX();
+				iter_x[1] = obj.object.getY();
+				iter_x[2] = obj.object.getZ();
+				iter_x[3] = obj.object.getYaw();
+				iter_x[4] = TYPE_OBSTACLE_DYNAMIC;
+				iter_x[5] = timestep;
+				++iter_x;
+			}
+			timestep += 1.0;
 		}
 	}
 	return traj_cloud;
