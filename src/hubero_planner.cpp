@@ -352,6 +352,7 @@ void HuberoPlanner::updateCostParameters() {
 	goal_costs_.setScale(goal_distance_scale_adjusted);
 	alignment_costs_.setScale(path_distance_scale_adjusted);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
+	chc_costs_.setScale(cfg_->getCost()->chc_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
