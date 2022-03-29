@@ -350,6 +350,7 @@ void HuberoPlanner::updateCostParameters() {
 	path_costs_.setScale(path_distance_scale_adjusted);
 	goal_costs_.setScale(goal_distance_scale_adjusted);
 	alignment_costs_.setScale(path_distance_scale_adjusted);
+	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -362,6 +363,7 @@ void HuberoPlanner::updateCostParameters() {
 		cfg_->getCost()->scaling_speed
 	);
 	alignment_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
+	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
