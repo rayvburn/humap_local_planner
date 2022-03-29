@@ -47,6 +47,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&goal_costs_);
 	critics.push_back(&alignment_costs_);
 	critics.push_back(&ttc_costs_);
+	critics.push_back(&chc_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;

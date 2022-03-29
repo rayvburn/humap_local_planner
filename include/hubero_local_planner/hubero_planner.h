@@ -7,6 +7,7 @@
 #include <hubero_local_planner/hubero_config.h>
 #include <hubero_local_planner/world.h>
 #include <hubero_local_planner/social_trajectory_generator.h>
+#include <hubero_local_planner/chc_cost_function.h>
 #include <hubero_local_planner/ttc_cost_function.h>
 
 //for creating a local cost grid
@@ -334,6 +335,8 @@ private:
 	base_local_planner::MapGridCostFunction alignment_costs_;
 	/// Cost function that penalizes trajectories that can cause collision in a longer horizon
 	TTCCostFunction ttc_costs_;
+	/// Cost function that penalizes robot heading changes
+	CHCCostFunction chc_costs_;
 	/// @}
 
 }; // class HuberoPlanner
