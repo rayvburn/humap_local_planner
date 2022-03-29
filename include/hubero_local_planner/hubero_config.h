@@ -117,6 +117,8 @@ namespace hubero_local_planner {
 		double goal_distance_scale = 0.8;
 		/// The weight for the obstacle distance part of the cost function
 		double occdist_scale = 0.01;
+		/// The weight for the time to collision (TTC) cost function
+		double ttc_scale = 3.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians
@@ -125,6 +127,10 @@ namespace hubero_local_planner {
 		double scaling_speed = 0.25;
 		/// The maximum factor to scale the robot's footprint by
 		double max_scaling_factor = 0.2;
+		/// The duration of maximum world state prediction to detect robot collision
+		double ttc_rollout_time = 3.0;
+		/// The distance threshold for collision detection in TTC prediction
+		double ttc_collision_distance = 0.05;
 	};
 
 class HuberoConfig {

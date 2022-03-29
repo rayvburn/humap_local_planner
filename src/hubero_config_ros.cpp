@@ -237,10 +237,13 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->path_distance_scale = cfg.path_distance_scale;
 	costs_->goal_distance_scale = cfg.goal_distance_scale;
 	costs_->occdist_scale = cfg.occdist_scale;
+	costs_->ttc_scale = cfg.ttc_scale;
 	costs_->oscillation_reset_dist = cfg.oscillation_reset_dist;
 	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
 	costs_->scaling_speed = cfg.scaling_speed;
 	costs_->max_scaling_factor = cfg.max_scaling_factor;
+	costs_->ttc_rollout_time = cfg.ttc_rollout_time;
+	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
 }
 
 } /* namespace hubero_local_planner */
