@@ -27,6 +27,9 @@
 
 #include <sensor_msgs/PointCloud2.h>
 
+#include <people_msgs/People.h>
+#include <hubero_local_planner/person.h>
+
 namespace hubero_local_planner {
 using namespace geometry;
 /**
@@ -88,6 +91,11 @@ protected:
 	* @brief Callback to update the local planner's parameters based on dynamic reconfigure
 	*/
 	void reconfigureCB(HuberoPlannerConfig &config, uint32_t level);
+
+	/**
+	* @brief Callback to update the recognized humans set
+	*/
+	void peopleCB(const people_msgs::PeopleConstPtr& msg);
 
 	/**
 	 * @brief Updates @ref obstacles_ with costmap converter's data
@@ -162,6 +170,10 @@ protected:
 	pluginlib::ClassLoader<costmap_converter::BaseCostmapToPolygons> costmap_converter_loader_; //!< Load costmap converter plugins at runtime
 	boost::shared_ptr<costmap_converter::BaseCostmapToPolygons> costmap_converter_; //!< Store the current costmap_converter
 	ObstContainerPtr obstacles_;
+
+	/// @brief Subscriber of aggregated data with people present in the environment
+	ros::Subscriber people_sub_;
+	std::shared_ptr<std::vector<Person>> people_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;

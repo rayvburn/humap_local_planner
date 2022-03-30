@@ -37,6 +37,7 @@ HuberoPlannerROS::HuberoPlannerROS():
 			"costmap_converter::BaseCostmapToPolygons"
 		),
 		obstacles_(nullptr),
+		people_(nullptr),
 		dsrv_(nullptr),
 		cfg_(nullptr),
 		tf_buffer_(nullptr),
@@ -60,6 +61,10 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		ttc_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("ttc_prediction", 1);
 		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
 
+		std::string people_topic("/people");
+		private_nh.param("people_topic", people_topic, people_topic);
+		people_sub_ = private_nh.subscribe(people_topic, 5, &HuberoPlannerROS::peopleCB, this);
+
 		// assign args
 		tf_buffer_ = tf_buffer;
 		costmap_ros_ = costmap_ros;
@@ -72,6 +77,8 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		// reserve some memory for obstacles
 		obstacles_ = std::make_shared<ObstContainer>();
 		obstacles_->reserve(500);
+
+		people_ = std::make_shared<std::vector<Person>>();
 
 		// create robot footprint/contour model
 		RobotFootprintModelPtr robot_model;
@@ -290,6 +297,65 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 
 	// update Hubero planner with social trajectory generator
 	planner_->reconfigure(cfg_);
+}
+
+// protected
+void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
+	if (people_ == nullptr) {
+		return;
+	}
+
+	if (msg->header.frame_id.empty()) {
+		ROS_ERROR("Cannot process people message due to lack of frame_id");
+		return;
+	}
+
+	// transform people poses to local planner's frame - by default = no transform
+	geometry_msgs::TransformStamped transform;
+	transform.child_frame_id = planner_util_->getGlobalFrame();
+	transform.header.frame_id = msg->header.frame_id;
+	transform.header.stamp = ros::Time::now();
+	// indicates no transform
+	transform.transform.rotation.w = 1.0;
+
+	// lookup transform if frame IDs are not equal
+	if (transform.child_frame_id != transform.header.frame_id) {
+		try {
+			transform = tf_buffer_->lookupTransform(transform.child_frame_id, transform.header.frame_id, ros::Time(0));
+		} catch (tf2::LookupException& ex) {
+			ROS_ERROR_NAMED(
+				"HuberoPlannerROS",
+				"Cannot find a valid transform to apply for people poses. Looking for transform from %s to %s. "
+				"Exception: %s",
+				transform.header.frame_id.c_str(),
+				transform.child_frame_id.c_str(),
+				ex.what()
+			);
+			return;
+		}
+	}
+
+	// clear vector, we receive a new aggregated info
+	people_->clear();
+
+	// transform position (if required) and overall message into concise class definition
+	for (const auto& person: msg->people) {
+		// in raw `person` we fully rely on position - create a HuBeRo-friendly `Person` object
+		// that has a properly parsed orientation data (possibly in tags)
+		Person hp(person);
+		geometry::Pose tf(
+			transform.transform.translation.x,
+			transform.transform.translation.y,
+			transform.transform.translation.z,
+			transform.transform.rotation.x,
+			transform.transform.rotation.y,
+			transform.transform.rotation.z,
+			transform.transform.rotation.w
+		);
+		hp.transform(tf);
+
+		people_->push_back(hp);
+	}
 }
 
 // protected
