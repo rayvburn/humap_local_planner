@@ -163,6 +163,10 @@ set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
 target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+### Person
+add_library(person include/hubero_local_planner/person.h src/person.cpp)
+target_link_libraries(person geometry)
+set_target_properties(person PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### World - ontology
 add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
 target_link_libraries(world geometry transformations ${IGNITION-MATH_LIBRARIES})
