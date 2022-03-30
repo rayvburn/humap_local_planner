@@ -1,7 +1,7 @@
 #pragma once
 
-// shared_ptr
 #include <memory>
+#include <mutex>
 
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -142,6 +142,9 @@ protected:
 	 * @note Based on dwa_local_planner::MapGridVisualizer::publishCostCloud
 	 */
 	sensor_msgs::PointCloud2 createCostGridPcl() const;
+
+	/// @brief Callback mutex
+	std::mutex cb_mutex_;
 
 	/// @brief nav_core status
 	bool initialized_;
