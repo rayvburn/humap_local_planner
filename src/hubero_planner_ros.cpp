@@ -289,6 +289,8 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 // protected
 void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level) {
+	std::lock_guard<std::mutex> l(cb_mutex_);
+
 	// fill cfg_ with updated config
 	cfg_->reconfigure(config);
 
@@ -301,6 +303,8 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 
 // protected
 void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
+	std::lock_guard<std::mutex> l(cb_mutex_);
+
 	if (people_ == nullptr) {
 		return;
 	}
