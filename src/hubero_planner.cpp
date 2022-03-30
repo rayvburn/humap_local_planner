@@ -34,6 +34,12 @@ HuberoPlanner::HuberoPlanner(
 	generator_.printFisConfiguration();
 
 	// configure trajectory critics
+	/*
+	 * Disabling of `setStopOnFailure` dramatically helps reaching goals hidden by an obstacle (wavefront propagation
+	 * cannot reach it so a valid trajectory may be rejected)
+	 */
+	path_costs_.setStopOnFailure(false);
+	goal_costs_.setStopOnFailure(false);
 	alignment_costs_.setStopOnFailure(false);
 	// whether footprint cost is summed throughout each point or maximum cost is used, max by default
 	obstacle_costs_.setSumScores(false);
