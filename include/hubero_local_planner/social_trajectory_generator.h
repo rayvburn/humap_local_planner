@@ -184,8 +184,15 @@ public:
 	/**
 	 * @brief Retrieves robot-obstacle poses computed during the last @ref computeForces with motion data update req.
 	 */
-	inline std::vector<geometry::Pose> getRobotObstacleDistances() const {
-		return diag_closest_points_;
+	inline std::vector<geometry::Pose> getRobotStaticObstacleDistances() const {
+		return diag_closest_points_static_;
+	}
+
+	/**
+	 * @brief Retrieves robot-obstacle poses computed during the last @ref computeForces with motion data update req.
+	 */
+	inline std::vector<geometry::Pose> getRobotDynamicObstacleDistances() const {
+		return diag_closest_points_dynamic_;
 	}
 
 	/**
@@ -289,7 +296,8 @@ protected:
 	geometry::Vector diag_force_internal_;
 	geometry::Vector diag_force_interaction_;
 	geometry::Vector diag_force_social_;
-	std::vector<geometry::Pose> diag_closest_points_;
+	std::vector<geometry::Pose> diag_closest_points_static_;
+	std::vector<geometry::Pose> diag_closest_points_dynamic_;
 	std::string diag_behaviour_active_;
 	/// @}
 

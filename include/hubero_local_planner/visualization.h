@@ -47,7 +47,7 @@ public:
 	bool publishForceCombined(const Vector& pos, const Vector& force);
 
 	bool publishBehaviourActive(const Vector& pos, const std::string& description);
-	bool publishClosestPoints(const std::vector<Pose>& pts);
+	bool publishClosestPoints(const std::vector<Pose>& pts_static, const std::vector<Pose>& pts_dynamic);
 	bool publishVelocity(const Vector& pos_start,
 			const double& angle_lin,
 			const double& linear_x,
@@ -88,7 +88,8 @@ private:
 
 	vis::Arrow marker_force_;
 	vis::Text marker_behaviour_;
-	vis::LineList marker_closest_pts_;
+	vis::LineList marker_closest_pts_static_;
+	vis::LineList marker_closest_pts_dynamic_;
 	nav_msgs::Path marker_path_;
 	std_msgs::Float32 marker_closest_dist_;
 	vis::GridForce marker_force_grid_;

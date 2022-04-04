@@ -259,7 +259,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishForceSocial(robot_pose.getPosition(), vis_data.force_social);
 	vis_.publishForceCombined(robot_pose.getPosition(), vis_data.force_combined);
 	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active);
-	vis_.publishClosestPoints(vis_data.closest_points);
+	vis_.publishClosestPoints(vis_data.closest_points_static, vis_data.closest_points_dynamic);
 	vis_.publishPath(robot_pose);
 	// TODO: handle this on visualization and planner sides
 	// vis_.publishGrid(robot_pose, *planner_);

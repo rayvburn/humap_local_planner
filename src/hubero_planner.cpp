@@ -448,7 +448,8 @@ Pose HuberoPlanner::getGoalFromPlan() const {
 
 void HuberoPlanner::collectTrajectoryMotionData() {
 	motion_data_.behaviour_active = generator_.getActiveFuzzyBehaviour();
-	motion_data_.closest_points = generator_.getRobotObstacleDistances();
+	motion_data_.closest_points_static = generator_.getRobotStaticObstacleDistances();
+	motion_data_.closest_points_dynamic = generator_.getRobotDynamicObstacleDistances();
 	motion_data_.force_combined =
 		generator_.getForceInternal()
 		+ generator_.getForceInteraction()

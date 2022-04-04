@@ -54,7 +54,8 @@ public:
 		Vector force_internal;
 		Vector force_interaction;
 		Vector force_social;
-		std::vector<Pose> closest_points;
+		std::vector<Pose> closest_points_static;
+		std::vector<Pose> closest_points_dynamic;
 		std::string behaviour_active;
 
 		MotionDriverData() {}
@@ -63,13 +64,15 @@ public:
 			const Vector& force_internal,
 			const Vector& force_interaction,
 			const Vector& force_social,
-			const std::vector<Pose>& closest_points,
+			const std::vector<Pose>& closest_points_static,
+			const std::vector<Pose>& closest_points_dynamic,
 			const std::string& behaviour_active):
 			force_combined(force_combined),
 			force_internal(force_internal),
 			force_interaction(force_interaction),
 			force_social(force_social),
-			closest_points(closest_points),
+			closest_points_static(closest_points_static),
+			closest_points_dynamic(closest_points_dynamic),
 			behaviour_active(behaviour_active)
 			{}
 	};
