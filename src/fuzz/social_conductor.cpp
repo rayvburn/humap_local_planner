@@ -11,11 +11,9 @@
 namespace hubero_local_planner {
 namespace fuzz {
 
-constexpr double SocialConductor::SOCIAL_BEHAVIOUR_RANGE;
-
 // ------------------------------------------------------------------- //
 
-void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::BehaviourParams> cfg) {
+void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg) {
 	cfg_ = cfg;
 }
 
@@ -95,21 +93,6 @@ std::string SocialConductor::getBehaviourActive() const {
 
 // ------------------------------------------------------------------- //
 
-double SocialConductor::computeBehaviourStrength(const double& dist_to_agent) {
-	// check if obstacle is too far away
-	if (dist_to_agent > SocialConductor::SOCIAL_BEHAVIOUR_RANGE) {
-		return (0.0);
-	}
-
-	// in fact (SOCIAL_BEHAVIOUR_RANGE_END - SOCIAL_BEHAVIOUR_RANGE_START) but the start is 0.0
-	double a = -1.0 / SocialConductor::SOCIAL_BEHAVIOUR_RANGE;
-	// form of a line equation for readability, the independent variable is `dist_to_agent`
-	double y = a * dist_to_agent + 1.0;
-	return y;
-}
-
-// ------------------------------------------------------------------- //
-
 void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
 
 	if ( behaviour_active_str_.empty() ) {
@@ -122,6 +105,19 @@ void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
 }
 
 // ------------------------------------------------------------------- //
+
+double SocialConductor::computeBehaviourStrength(const double& dist_to_agent) {
+	// check if obstacle is too far away
+	if (dist_to_agent > cfg_->human_action_range) {
+		return (0.0);
+	}
+
+	// in fact (SOCIAL_BEHAVIOUR_RANGE_END - SOCIAL_BEHAVIOUR_RANGE_START) but the start is 0.0
+	double a = -1.0 / cfg_->human_action_range;
+	// form of a line equation for readability, the independent variable is `dist_to_agent`
+	double y = a * dist_to_agent + 1.0;
+	return y;
+}
 
 } /* namespace fuzz */
 } /* namespace hubero_local_planner */

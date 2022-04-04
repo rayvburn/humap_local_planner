@@ -74,7 +74,7 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 
 	generator_.setParameters(
 		cfg->getSfm(),
-		cfg->getBehaviour(),
+		cfg->getFis(),
 		cfg->getGeneral()->sim_time,
 		cfg->getGeneral()->sim_granularity,
 		cfg->getGeneral()->angular_sim_granularity,
