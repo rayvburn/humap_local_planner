@@ -139,6 +139,7 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
+	const PeopleContainerConstPtr people,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -147,6 +148,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	// assign, will likely be useful for planning
 	vel_ = velocity;
 	obstacles_ = obstacles;
+	people_ = people;
 
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
 	Vector robot_vel_glob;
@@ -231,6 +233,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
+	const PeopleContainerConstPtr people,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -238,6 +241,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 
 	vel_ = velocity;
 	obstacles_ = obstacles;
+	people_ = people;
 
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
 	Vector robot_vel_glob;
