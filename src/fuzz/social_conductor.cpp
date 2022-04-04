@@ -43,18 +43,8 @@ bool SocialConductor::computeBehaviourForce(
 	// convert into global coordinates
 	behaviour_force_.rotate(pose_agent.getYaw());
 
-	/**
-	 * NOTE: apply trick from superpose (DEPRECATED)?
-	 * force `none` behaviour when `max len` is very small
-	if ( max_len < 1e-03 ) {
-		behaviour_active_str_.clear();
-	}
-	*/
-
-	// normalize -> may easily overflow
-	if (behaviour_force_.calculateLength() > 1.0) {
-		behaviour_force_.normalize();
-	}
+	// normalize vector as we only want to compute a proper direction of human action force
+	behaviour_force_.normalize();
 
 	// multiply times behaviour force factor
 	behaviour_force_ *= cfg_->force_factor;
