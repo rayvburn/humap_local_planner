@@ -159,10 +159,11 @@ DynamicObject World::createObstacleDynamic(
 	computeObjectRelativeLocation(robot_yaw, obstacle.dist_v, beta_rel_location, beta_angle_rel, d_alpha_beta_angle);
 
 	obstacle.vel = obstacle_vel;
-	obstacle.dir_beta = obstacle_vel.calculateDirection();
+	// normalize angles (default value of the second argument to Angle ctor)
+	obstacle.dir_beta = geometry::Angle(obstacle_vel.calculateDirection().getRadian());
 	obstacle.rel_loc = beta_rel_location;
-	obstacle.rel_loc_angle = beta_angle_rel;
-	obstacle.dist_angle = d_alpha_beta_angle;
+	obstacle.rel_loc_angle = geometry::Angle(beta_angle_rel.getRadian());
+	obstacle.dist_angle = geometry::Angle(d_alpha_beta_angle.getRadian());
 
 	return obstacle;
 }
