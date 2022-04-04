@@ -11,13 +11,9 @@
 namespace hubero_local_planner {
 namespace fuzz {
 
-// ------------------------------------------------------------------- //
-
 void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg) {
 	cfg_ = cfg;
 }
-
-// ------------------------------------------------------------------- //
 
 bool SocialConductor::computeBehaviourForce(
 	const Pose& pose_agent,
@@ -35,8 +31,9 @@ bool SocialConductor::computeBehaviourForce(
 	const size_t size_ref = dist_v.size();
 	// calculate combined output - superposed outputs
 	for (size_t i = 0; i < size_ref; i++) {
-		// create temporary vector pointing to direction determined by FIS output
+		// create a temporary unit vector pointing to direction determined by FIS output
 		Vector v_temp(Angle(fis_outputs_v.at(i).value));
+		// scale force vector with membership and distance factors
 		double membership_factor = fis_outputs_v.at(i).membership;
 		double dist_based_factor = computeBehaviourStrength(dist_v.at(i));
 		behaviour_force_ += v_temp * membership_factor * dist_based_factor;
@@ -65,20 +62,14 @@ bool SocialConductor::computeBehaviourForce(
 	return true;
 }
 
-// ------------------------------------------------------------------- //
-
 void SocialConductor::reset() {
 	behaviour_force_ = Vector(0.0, 0.0, 0.0);
 	behaviour_active_str_.clear();
 }
 
-// ------------------------------------------------------------------- //
-
 Vector SocialConductor::getSocialVector() const {
 	return (behaviour_force_);
 }
-
-// ------------------------------------------------------------------- //
 
 std::string SocialConductor::getBehaviourActive() const {
 
@@ -91,8 +82,6 @@ std::string SocialConductor::getBehaviourActive() const {
 
 }
 
-// ------------------------------------------------------------------- //
-
 void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
 
 	if ( behaviour_active_str_.empty() ) {
@@ -103,8 +92,6 @@ void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
 	}
 
 }
-
-// ------------------------------------------------------------------- //
 
 double SocialConductor::computeBehaviourStrength(const double& dist_to_agent) {
 	// check if obstacle is too far away
