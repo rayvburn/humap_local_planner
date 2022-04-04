@@ -176,7 +176,7 @@ protected:
 
 	/// @brief Subscriber of aggregated data with people present in the environment
 	ros::Subscriber people_sub_;
-	std::shared_ptr<std::vector<Person>> people_;
+	PeopleContainerPtr people_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;

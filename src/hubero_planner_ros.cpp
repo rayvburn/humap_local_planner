@@ -78,7 +78,8 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		obstacles_ = std::make_shared<ObstContainer>();
 		obstacles_->reserve(500);
 
-		people_ = std::make_shared<std::vector<Person>>();
+		people_ = std::make_shared<PeopleContainer>();
+		people_->reserve(50);
 
 		// create robot footprint/contour model
 		RobotFootprintModelPtr robot_model;
