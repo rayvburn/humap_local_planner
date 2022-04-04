@@ -589,14 +589,16 @@ void SocialTrajectoryGenerator::computeForces(
 		diag_force_social_ = social_conductor_.getSocialVector();
 		diag_behaviour_active_ = social_conductor_.getBehaviourActive();
 
-		diag_closest_points_.clear();
+		diag_closest_points_static_.clear();
 		for (const auto& dist_static: meaningful_interaction_static) {
-			diag_closest_points_.push_back(dist_static.object);
-			diag_closest_points_.push_back(dist_static.robot);
+			diag_closest_points_static_.push_back(dist_static.object);
+			diag_closest_points_static_.push_back(dist_static.robot);
 		}
+
+		diag_closest_points_dynamic_.clear();
 		for (const auto& dist_dynamic: meaningful_interaction_dynamic) {
-			diag_closest_points_.push_back(dist_dynamic.object);
-			diag_closest_points_.push_back(dist_dynamic.robot);
+			diag_closest_points_dynamic_.push_back(dist_dynamic.object);
+			diag_closest_points_dynamic_.push_back(dist_dynamic.robot);
 		}
 	}
 }

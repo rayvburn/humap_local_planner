@@ -13,7 +13,8 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 	: marker_stack_height_(marker_stack_height) {
 	marker_force_.init(frame);
 	marker_behaviour_.init(frame);
-	marker_closest_pts_.init(frame);
+	marker_closest_pts_static_.init(frame);
+	marker_closest_pts_dynamic_.init(frame);
 	marker_path_.header.frame_id = frame;
 	marker_force_grid_.init(frame);
 	marker_footprint_.init(frame);
@@ -28,7 +29,8 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 
 	// colors
 	marker_behaviour_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
-	marker_closest_pts_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
+	marker_closest_pts_static_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
+	marker_closest_pts_dynamic_.setColor(1.0f, 0.3f, 0.0f, 0.7f);
 	marker_force_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 	marker_footprint_.setColor(1.0f, 1.0f, 1.0f, 0.65f);
 
@@ -117,14 +119,18 @@ bool Visualization::publishBehaviourActive(const Vector& pos, const std::string&
 	return true;
 }
 
-bool Visualization::publishClosestPoints(const std::vector<Pose>& pts) {
+bool Visualization::publishClosestPoints(const std::vector<Pose>& pts_static, const std::vector<Pose>& pts_dynamic) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
 
-	marker_closest_pts_.setNamespace("closest_points");
-	auto marker = marker_closest_pts_.create(pts);
-	pub_marker_.publish(marker);
+	marker_closest_pts_static_.setNamespace("closest_static_points");
+	auto marker_static = marker_closest_pts_static_.create(pts_static);
+	pub_marker_.publish(marker_static);
+
+	marker_closest_pts_dynamic_.setNamespace("closest_dynamic_points");
+	auto marker_dynamic = marker_closest_pts_dynamic_.create(pts_dynamic);
+	pub_marker_.publish(marker_dynamic);
 	return true;
 }
 
