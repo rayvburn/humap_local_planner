@@ -171,6 +171,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->sim_time = cfg.sim_time;
 	general_->forward_point_distance = cfg.forward_point_distance;
 	general_->twist_rotation_compensation = cfg.twist_rotation_compensation;
+	general_->person_model_radius = cfg.person_model_radius;
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
 	general_->publish_cost_grid_pcl = cfg.publish_cost_grid_pcl;
