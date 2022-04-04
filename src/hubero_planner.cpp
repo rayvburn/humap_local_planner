@@ -382,32 +382,48 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
 	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
 
 	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles_) {
-		// TODO: consider actor personal space even when he is standing!
-
 		BaseRobotFootprintModel::ClosestPoints pts = robot_model_->calculateClosestPoints(pose, obstacle.get());
 
 		Pose robot_closest_to_obstacle_pose(pts.robot);
 		Pose obstacle_closest_to_robot_pose(pts.obstacle);
 
-		// FIXME
-		auto distance_v_eig =
-				Eigen::Vector2d(
-					obstacle_closest_to_robot_pose.getX(),
-					obstacle_closest_to_robot_pose.getY())
-				- Eigen::Vector2d(
-					pose.x(),
-					pose.y()
+		Vector model_vel = Vector(
+			(obstacle->getCentroidVelocity())[0],
+			(obstacle->getCentroidVelocity())[1],
+			0.0
 		);
-		Vector distance_v(distance_v_eig[0], distance_v_eig[1], 0.0);
-		double distance = obstacle->getMinimumDistance(Eigen::Vector2d(pose.x(), pose.y()));
-		Vector model_vel = Vector((obstacle->getCentroidVelocity())[0], (obstacle->getCentroidVelocity())[1], 0.0);
 
 		bool force_dynamic_object_interpretation =
 				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
+
 		world_model_.addObstacle(
 			robot_closest_to_obstacle_pose,
 			obstacle_closest_to_robot_pose,
 			model_vel,
+			force_dynamic_object_interpretation
+		);
+	}
+
+	// represent human with an obstacle
+	for (const Person& person: *people_) {
+		ObstaclePtr person_model_ptr = std::make_shared<CircularObstacle>(
+			person.getPose().getX(),
+			person.getPose().getY(),
+			cfg_->getGeneral()->person_model_radius
+		);
+
+		auto pts = robot_model_->calculateClosestPoints(pose, person_model_ptr.get());
+
+		Pose robot_closest_to_obstacle_pose(pts.robot);
+		Pose obstacle_closest_to_robot_pose(pts.obstacle);
+
+		bool force_dynamic_object_interpretation =
+				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
+
+		world_model_.addObstacle(
+			robot_closest_to_obstacle_pose,
+			obstacle_closest_to_robot_pose,
+			person.getVelocity(),
 			force_dynamic_object_interpretation
 		);
 	}
