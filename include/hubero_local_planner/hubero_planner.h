@@ -34,6 +34,7 @@
 #include <base_local_planner/map_grid.h>
 
 #include <hubero_local_planner/obstacles.h>
+#include <hubero_local_planner/person.h>
 #include <hubero_local_planner/robot_footprint_model.h>
 #include <hubero_local_planner/utils/teb_utils.h>
 
@@ -143,6 +144,7 @@ public:
 	base_local_planner::Trajectory findBestTrajectory(
 		const Vector& velocity,
 		const ObstContainerConstPtr obstacles,
+		const PeopleContainerConstPtr people,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
 
@@ -157,6 +159,7 @@ public:
 	base_local_planner::Trajectory findTrajectory(
 		const Vector& velocity,
 		const ObstContainerConstPtr obstacles,
+		const PeopleContainerConstPtr people,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
 
@@ -311,6 +314,8 @@ private:
 	Pose goal_local_;
 	/// @brief The most recent environment (obstacles) model
 	ObstContainerConstPtr obstacles_;
+	/// @brief The most recent information on people in the environment
+	PeopleContainerConstPtr people_;
 	/// @brief Robot footprint model
 	RobotFootprintModelPtr robot_model_;
 	/// @brief World model

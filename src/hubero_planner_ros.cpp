@@ -243,9 +243,9 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 		// update costs for trajectory scoring
 		planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
 		// sample trajectories and choose the one with the lowest cost
-		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, drive_cmds);
+		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, drive_cmds);
 	} else {
-		trajectory = planner_->findTrajectory(robot_vel, obstacles_, drive_cmds);
+		trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, drive_cmds);
 	}
 
 	cmd_vel.linear.x = drive_cmds.pose.position.x;
