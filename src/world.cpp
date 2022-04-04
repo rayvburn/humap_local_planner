@@ -19,7 +19,14 @@ World::World(
 ) {
 	robot_.centroid = robot_pose_centroid;
 	robot_.vel = robot_vel;
-	robot_.heading_dir = robot_vel.calculateDirection();
+
+	// to determine heading direction, use raw orientation or rely on velocity vector (if it's significant)
+	auto robot_vel_xy = geometry::Vector(robot_vel.getX(), robot_vel.getY(), 0.0);
+	if (robot_vel_xy.calculateLength() <= 1e-04) {
+		robot_.heading_dir = geometry::Angle(robot_.centroid.getYaw());
+	} else {
+		robot_.heading_dir = robot_vel_xy.calculateDirection();
+	}
 
 	robot_.target = createTarget(robot_pose, target_pose);
 	robot_.goal = createTarget(robot_pose, goal_pose);
