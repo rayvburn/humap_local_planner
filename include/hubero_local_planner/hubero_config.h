@@ -71,21 +71,13 @@ namespace hubero_local_planner {
 
 	};
 
-	/// \brief Declaration of a BehaviourParams typedef'ed struct;
+	/// \brief Declaration of a FuzzyInferenceSystem Params typedef'ed struct;
 	/// default values are provided
-	struct BehaviourParams {
-		double			force_factor					= 1.0;
-		double			turn_left						= 500.0;
-		double			turn_left_accelerate_turn 		= 500.0;
-		double 			turn_left_accelerate_acc 		= 625.0;
-		double 			accelerate						= 500.0;
-		double 			turn_right_accelerate_turn 		= 500.0;
-		double			turn_right_accelerate_acc		= 625.0;
-		double			turn_right 						= 800.0;
-		double 			turn_right_decelerate_turn 		= 500.0;
-		double 			turn_right_decelerate_dec 		= 625.0;
-		double 			stop							= 500.0;
-		double			decelerate						= 500.0;
+	struct FisParams {
+		/// Factor to multiply resultant human action force with
+		double force_factor = 1.0;
+		/// Distance at which any created human action force fade completely
+		double human_action_range = 4.0;
 	};
 
 	/**
@@ -144,7 +136,7 @@ public:
 		general_ = std::make_shared<GeneralParams>();
 		inflator_ = std::make_shared<InflatorParams>();
 		sfm_ = std::make_shared<SfmParams>();
-		behaviour_ = std::make_shared<BehaviourParams>();
+		fis_ = std::make_shared<FisParams>();
 		traj_sampling_ = std::make_shared<TrajectorySamplingParams>();
 		costs_ = std::make_shared<CostParams>();
 	}
@@ -165,8 +157,8 @@ public:
 		return sfm_;
 	}
 
-	std::shared_ptr<const BehaviourParams> getBehaviour() const {
-		return behaviour_;
+	std::shared_ptr<const FisParams> getFis() const {
+		return fis_;
 	}
 
 	std::shared_ptr<const TrajectorySamplingParams> getTrajectorySampling() const {
@@ -184,7 +176,7 @@ protected:
 	std::shared_ptr<GeneralParams> general_;
 	std::shared_ptr<InflatorParams> inflator_;
 	std::shared_ptr<SfmParams> sfm_;
-	std::shared_ptr<BehaviourParams> behaviour_;
+	std::shared_ptr<FisParams> fis_;
 	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;
 	std::shared_ptr<CostParams> costs_;
 };

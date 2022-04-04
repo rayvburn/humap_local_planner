@@ -139,19 +139,9 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	//
 	nh.param("disable_interaction_forces", sfm_->disable_interaction_forces, sfm_->disable_interaction_forces);
 
-	// BehaviourParams
-	nh.param("force_factor", behaviour_->force_factor, behaviour_->force_factor);
-	nh.param("turn_left", behaviour_->turn_left, behaviour_->turn_left);
-	nh.param("turn_left_accelerate_turn", behaviour_->turn_left_accelerate_turn, behaviour_->turn_left_accelerate_turn);
-	nh.param("turn_left_accelerate_acc", behaviour_->turn_left_accelerate_acc, behaviour_->turn_left_accelerate_acc);
-	nh.param("accelerate", behaviour_->accelerate, behaviour_->accelerate);
-	nh.param("turn_right_accelerate_turn", behaviour_->turn_right_accelerate_turn, behaviour_->turn_right_accelerate_turn);
-	nh.param("turn_right_accelerate_acc", behaviour_->turn_right_accelerate_acc, behaviour_->turn_right_accelerate_acc);
-	nh.param("turn_right", behaviour_->turn_right, behaviour_->turn_right);
-	nh.param("turn_right_decelerate_turn", behaviour_->turn_right_decelerate_turn, behaviour_->turn_right_decelerate_turn);
-	nh.param("turn_right_decelerate_dec", behaviour_->turn_right_decelerate_dec, behaviour_->turn_right_decelerate_dec);
-	nh.param("stop", behaviour_->stop, behaviour_->stop);
-	nh.param("decelerate", behaviour_->decelerate, behaviour_->decelerate);
+	// Fuzzy Inference System parameters
+	nh.param("force_factor", fis_->force_factor, fis_->force_factor);
+	nh.param("human_action_range", fis_->human_action_range, fis_->human_action_range);
 }
 
 void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
@@ -190,18 +180,8 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	sfm_->opposite_force_method = cfg.oppsite_force_method;
 	sfm_->disable_interaction_forces = cfg.disable_interaction_forces;
 
-	behaviour_->force_factor = cfg.force_factor;
-	behaviour_->turn_left = cfg.turn_left;
-	behaviour_->turn_left_accelerate_turn = cfg.turn_left_accelerate_turn;
-	behaviour_->turn_left_accelerate_acc = cfg.turn_left_accelerate_acc;
-	behaviour_->accelerate = cfg.accelerate;
-	behaviour_->turn_right_accelerate_turn = cfg.turn_right_accelerate_turn;
-	behaviour_->turn_right_accelerate_acc = cfg.turn_right_accelerate_acc;
-	behaviour_->turn_right = cfg.turn_right;
-	behaviour_->turn_right_decelerate_turn = cfg.turn_right_decelerate_turn;
-	behaviour_->turn_right_decelerate_dec = cfg.turn_right_decelerate_dec;
-	behaviour_->stop = cfg.stop;
-	behaviour_->decelerate = cfg.decelerate;
+	fis_->force_factor = cfg.force_factor;
+	fis_->human_action_range = cfg.human_action_range;
 
 	limits_->acc_lim_theta = cfg.acc_lim_theta;
 	limits_->acc_lim_x = cfg.acc_lim_x;

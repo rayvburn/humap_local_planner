@@ -47,7 +47,7 @@ public:
 	 */
 	void setParameters(
 		std::shared_ptr<const hubero_local_planner::SfmParams> sfm_params_ptr,
-		std::shared_ptr<const hubero_local_planner::BehaviourParams> beh_params_ptr,
+		std::shared_ptr<const hubero_local_planner::FisParams> fis_params_ptr,
 		double sim_time,
 		double sim_granularity,
 		double angular_sim_granularity,

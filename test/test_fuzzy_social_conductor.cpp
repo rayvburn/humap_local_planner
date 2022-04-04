@@ -24,10 +24,10 @@ TEST(FuzzySocialConductor, behaviourStrength) {
 TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
     SocialConductor sc;
 
-    hubero_local_planner::BehaviourParams params {};
+    hubero_local_planner::FisParams params {};
     params.force_factor = 1.0;
-    std::shared_ptr<const hubero_local_planner::BehaviourParams> cfg =
-        std::make_shared<hubero_local_planner::BehaviourParams>(params);
+    std::shared_ptr<const hubero_local_planner::FisParams> cfg =
+        std::make_shared<hubero_local_planner::FisParams>(params);
     sc.initialize(cfg);
 
     Pose robot1(0.0, 0.0, IGN_PI_4);
@@ -49,10 +49,10 @@ TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
 TEST(FuzzySocialConductor, behaviourForceOrientationAdditivity) {
     SocialConductor sc;
 
-    hubero_local_planner::BehaviourParams params {};
+    hubero_local_planner::FisParams params {};
     params.force_factor = 1.0;
-    std::shared_ptr<const hubero_local_planner::BehaviourParams> cfg =
-        std::make_shared<hubero_local_planner::BehaviourParams>(params);
+    std::shared_ptr<const hubero_local_planner::FisParams> cfg =
+        std::make_shared<hubero_local_planner::FisParams>(params);
     sc.initialize(cfg);
 
     Pose robot1(0.0, 0.0, 0.0);

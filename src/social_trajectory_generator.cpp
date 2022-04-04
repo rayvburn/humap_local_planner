@@ -19,14 +19,14 @@ SocialTrajectoryGenerator::SocialTrajectoryGenerator():
 
 void SocialTrajectoryGenerator::setParameters(
 	std::shared_ptr<const hubero_local_planner::SfmParams> sfm_params_ptr,
-	std::shared_ptr<const hubero_local_planner::BehaviourParams> beh_params_ptr,
+	std::shared_ptr<const hubero_local_planner::FisParams> fis_params_ptr,
 	double sim_time,
 	double sim_granularity,
 	double angular_sim_granularity,
 	double sim_period
 ) {
 	sfm_.init(sfm_params_ptr);
-	social_conductor_.initialize(beh_params_ptr);
+	social_conductor_.initialize(fis_params_ptr);
 
 	sim_time_ = sim_time;
 	sim_granularity_ = sim_granularity;
