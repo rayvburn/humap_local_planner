@@ -160,4 +160,17 @@ protected:
 
 }; // class Person
 
+//! Abbrev. for shared pointers
+typedef std::shared_ptr<Person> PersonPtr;
+//! Abbrev. for shared const pointers
+typedef std::shared_ptr<const Person> PersonConstPtr;
+//! Abbrev. for containers storing multiple pointers to objects
+typedef std::vector<PersonPtr> PeoplePtrContainer;
+//! Abbrev. for containers storing multiple objects
+typedef std::vector<Person> PeopleContainer;
+
+// Container
+typedef std::shared_ptr<PeopleContainer> PeopleContainerPtr;
+typedef std::shared_ptr<const PeopleContainer> PeopleContainerConstPtr;
+
 } // namespace hubero_local_planner
