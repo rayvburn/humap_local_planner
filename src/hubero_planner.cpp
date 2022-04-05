@@ -26,7 +26,8 @@ HuberoPlanner::HuberoPlanner(
 	goal_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
 	goal_front_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
 	alignment_costs_(planner_util_->getCostmap()),
-	ttc_costs_(world_model_)
+	ttc_costs_(world_model_),
+	speedy_goal_costs_(goal_)
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
@@ -57,6 +58,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&goal_front_costs_);
 	critics.push_back(&ttc_costs_);
 	critics.push_back(&chc_costs_);
+	critics.push_back(&speedy_goal_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -383,6 +385,7 @@ void HuberoPlanner::updateCostParameters() {
 	alignment_costs_.setScale(path_distance_scale_adjusted);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	chc_costs_.setScale(cfg_->getCost()->chc_scale);
+	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -397,6 +400,7 @@ void HuberoPlanner::updateCostParameters() {
 	goal_front_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
 	alignment_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
+	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
