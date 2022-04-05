@@ -115,6 +115,8 @@ namespace hubero_local_planner {
 		double ttc_scale = 3.0;
 		/// The weight for the cost function that penalizes robot heading changes
 		double chc_scale = 1.0;
+		/// The weight for the cost function that penalizes high speeds near global goal
+		double speedy_goal_scale = 12.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians
@@ -127,6 +129,8 @@ namespace hubero_local_planner {
 		double ttc_rollout_time = 3.0;
 		/// The distance threshold for collision detection in TTC prediction
 		double ttc_collision_distance = 0.05;
+		/// The distance threshold of penalization of high speeds near global goal
+		double speedy_goal_distance = 0.85;
 	};
 
 class HuberoConfig {
