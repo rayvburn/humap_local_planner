@@ -24,6 +24,7 @@ HuberoPlanner::HuberoPlanner(
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
 	goal_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
+	goal_front_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
 	alignment_costs_(planner_util_->getCostmap()),
 	ttc_costs_(world_model_)
 {
@@ -40,6 +41,7 @@ HuberoPlanner::HuberoPlanner(
 	 */
 	path_costs_.setStopOnFailure(false);
 	goal_costs_.setStopOnFailure(false);
+	goal_front_costs_.setStopOnFailure(false);
 	alignment_costs_.setStopOnFailure(false);
 	// whether footprint cost is summed throughout each point or maximum cost is used, max by default
 	obstacle_costs_.setSumScores(false);
@@ -52,6 +54,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&path_costs_);
 	critics.push_back(&goal_costs_);
 	critics.push_back(&alignment_costs_);
+	critics.push_back(&goal_front_costs_);
 	critics.push_back(&ttc_costs_);
 	critics.push_back(&chc_costs_);
 
@@ -132,6 +135,22 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	goal_costs_.setTargetPoses(global_plan_);
 	// costs for robot being aligned with path (nose on path)
 	alignment_costs_.setTargetPoses(global_plan_);
+
+	/*
+	 * Based on DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
+	 * We want the robot nose to be drawn to its final position before robot turns towards goal orientation
+	 */
+	std::vector<geometry_msgs::PoseStamped> front_global_plan = global_plan_;
+	Angle angle_to_goal(Vector(goal_.getY() - pose_.getY(), goal_.getX() - pose_.getX(), 0.0));
+	angle_to_goal.normalize();
+
+	double front_plan_shift_x = cfg_->getGeneral()->forward_point_distance * cos(angle_to_goal.getRadian());
+	double front_plan_shift_y = cfg_->getGeneral()->forward_point_distance * sin(angle_to_goal.getRadian());
+	front_global_plan.back().pose.position.x = front_global_plan.back().pose.position.x + front_plan_shift_x;
+	front_global_plan.back().pose.position.y = front_global_plan.back().pose.position.y + front_plan_shift_y;
+
+	goal_front_costs_.setTargetPoses(front_global_plan);
+
 	// reset TTC datasets collected during previous iteration
 	ttc_costs_.reset();
 }
@@ -360,6 +379,7 @@ void HuberoPlanner::updateCostParameters() {
 	obstacle_costs_.setScale(occdist_scale_adjusted);
 	path_costs_.setScale(path_distance_scale_adjusted);
 	goal_costs_.setScale(goal_distance_scale_adjusted);
+	goal_front_costs_.setScale(goal_distance_scale_adjusted);
 	alignment_costs_.setScale(path_distance_scale_adjusted);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	chc_costs_.setScale(cfg_->getCost()->chc_scale);
@@ -374,6 +394,7 @@ void HuberoPlanner::updateCostParameters() {
 		cfg_->getCost()->max_scaling_factor,
 		cfg_->getCost()->scaling_speed
 	);
+	goal_front_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
 	alignment_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 }

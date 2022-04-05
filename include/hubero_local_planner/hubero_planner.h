@@ -341,6 +341,8 @@ private:
 	base_local_planner::MapGridCostFunction goal_costs_;
 	/// Cost function that prefers trajectories that keep the robot nose on nose path
 	base_local_planner::MapGridCostFunction alignment_costs_;
+	/// Cost function that prefers trajectories that make the nose go towards (local) nose goal
+	base_local_planner::MapGridCostFunction goal_front_costs_;
 	/// Cost function that penalizes trajectories that can cause collision in a longer horizon
 	TTCCostFunction ttc_costs_;
 	/// Cost function that penalizes robot heading changes
