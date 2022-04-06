@@ -23,8 +23,8 @@ bool SocialConductor::computeBehaviourForce(
 	// clear out behaviour force and active behavior names
 	reset();
 
+	// forces can be determined only if both FIS output and distance vector are defined (related to a single person)
 	if (dist_v.size() != fis_outputs_v.size()) {
-		std::cout << "[SocialConductor] vectors of non equal sizes passed to apply()" << std::endl;
 		return false;
 	}
 

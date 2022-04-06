@@ -256,7 +256,9 @@ bool Processor::process(
 		output_v_.push_back(output);
 
 	}
-	return true;
+
+	// loop may skip if highest membership term pointer is null, check vector contents
+	return !output_v_.empty();
 }
 
 // ------------------------------------------------------------------- //
