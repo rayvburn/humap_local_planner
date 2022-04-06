@@ -224,6 +224,8 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		result_traj_.thetav_
 	);
 
+	// logTrajectoriesDetails();
+
 	collectTrajectoryMotionData();
 
 	// no legal trajectory, command zero
@@ -502,6 +504,39 @@ void HuberoPlanner::collectTrajectoryMotionData() {
 	motion_data_.force_interaction = generator_.getForceInteraction();
 	motion_data_.force_internal = generator_.getForceInternal();
 	motion_data_.force_social = generator_.getForceSocial();
+}
+
+void HuberoPlanner::logTrajectoriesDetails() {
+	int traj_num = 0;
+	for (const auto& traj: traj_explored_) {
+		double traj_x, traj_y, traj_th = 0.0;
+		traj.getEndpoint(traj_x, traj_y, traj_th);
+		ROS_DEBUG_NAMED(
+			"HuberoPlanner",
+			"Explored trajectory %3d / %3lu: cost %2.5f, vel {x %2.3f, y %2.3f, th %2.3f}, "
+			"points %u, end {x %2.2f, y %2.2f, th %2.2f}",
+			++traj_num,
+			traj_explored_.size(),
+			traj.cost_,
+			traj.xv_, traj.yv_, traj.thetav_,
+			traj.getPointsSize(),
+			traj_x, traj_y, traj_th
+		);
+		// also print trajectory points
+		for (unsigned int pt_num = 0; pt_num < traj.getPointsSize(); pt_num++) {
+			double x, y, th = 0.0;
+			traj.getPoint(pt_num, x, y, th);
+			ROS_DEBUG_NAMED(
+				"HuberoPlanner",
+				"\tpoint %3d / %3u: x %4.7f, y %4.7f, th %4.7f",
+				pt_num + 1,
+				traj.getPointsSize(),
+				x,
+				y,
+				th
+			);
+		}
+	}
 }
 
 }; // namespace hubero_local_planner

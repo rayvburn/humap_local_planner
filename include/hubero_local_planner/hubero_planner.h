@@ -290,6 +290,11 @@ private:
 	 */
 	void collectTrajectoryMotionData();
 
+	/**
+	 * @brief Prints details of @ref traj_explored_
+	 */
+	void logTrajectoriesDetails();
+
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
 	/// Stores all trajectories explored in last @ref findBestTrajectory execution
