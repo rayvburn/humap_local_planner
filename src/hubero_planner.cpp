@@ -406,8 +406,14 @@ void HuberoPlanner::updateCostParameters() {
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
-	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
+	ROS_INFO_NAMED(
+		"HuberoPlanner",
+		"Creating environment model with %2lu obstacles extracted from world and %2lu people",
+		obstacles_->size(),
+		people_->size()
+	);
 
+	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
 	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles_) {
 		BaseRobotFootprintModel::ClosestPoints pts = robot_model_->calculateClosestPoints(pose, obstacle.get());
 

@@ -376,11 +376,8 @@ bool HuberoPlannerROS::updateObstacleContainerWithCostmapConverter() {
 		return false;
 	}
 
-	ROS_INFO("[HuberoPlannerROS] obstacleContainerUpdate - obstacles %ld", obstacles->obstacles.size());
-
 	// clear currently existing obstacles
 	obstacles_->clear();
-
 
 	for (std::size_t i=0; i<obstacles->obstacles.size(); ++i) {
 		const costmap_converter::ObstacleMsg* obstacle = &obstacles->obstacles.at(i);
