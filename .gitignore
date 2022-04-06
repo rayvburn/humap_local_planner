@@ -15,6 +15,7 @@ src/trajectory_generator.cpp
 
 build/
 debug/
+git-patch/
 
 matlab/*.asv
 matlab/ignore/
