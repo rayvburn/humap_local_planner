@@ -23,7 +23,7 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 	marker_path_.header.frame_id = frame;
 
 	// const parameters
-	marker_behaviour_.setParameters(0.5f);
+	marker_behaviour_.setParameters(0.25f);
 	marker_footprint_.setHeight(1.2f);
 	marker_point_.setSize(0.25f);
 
