@@ -513,6 +513,24 @@ void HuberoPlanner::collectTrajectoryMotionData() {
 }
 
 void HuberoPlanner::logTrajectoriesDetails() {
+	// evaluate components contribution in total cost
+	ROS_DEBUG_NAMED(
+		"HuberoPlanner",
+		"Best trajectory cost details: "
+		"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
+		"TTC %2.2f, CHC %2.2f, speedy_goal %2.2f",
+		obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(result_traj_),
+		oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(result_traj_),
+		path_costs_.getScale() * path_costs_.scoreTrajectory(result_traj_),
+		goal_costs_.getScale() * goal_costs_.scoreTrajectory(result_traj_),
+		goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(result_traj_),
+		alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(result_traj_),
+		ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(result_traj_),
+		chc_costs_.getScale() * chc_costs_.scoreTrajectory(result_traj_),
+		speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(result_traj_)
+	);
+
+	// investigate costs and velocities of all explored trajectories
 	int traj_num = 0;
 	for (const auto& traj: traj_explored_) {
 		double traj_x, traj_y, traj_th = 0.0;
