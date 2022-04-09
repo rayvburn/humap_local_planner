@@ -45,6 +45,11 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	double controller_frequency = 10.0;
 	if (nh.param(controller_frequency_param, controller_frequency, controller_frequency)) {
 		general_->sim_period = 1.0 / controller_frequency;
+		ROS_INFO(
+			"Sim period set to %2.3f. Computed based on `controller_frequency` which is %2.3f",
+			general_->sim_period,
+			controller_frequency
+		);
 	}
 
 	// Limits
