@@ -255,12 +255,12 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// visualization
 	auto vis_data = planner_->getMotionData();
 
-	vis_.publishForceInternal(robot_pose.getPosition(), vis_data.force_internal);
-	vis_.publishForceInteraction(robot_pose.getPosition(), vis_data.force_interaction);
-	vis_.publishForceSocial(robot_pose.getPosition(), vis_data.force_social);
-	vis_.publishForceCombined(robot_pose.getPosition(), vis_data.force_combined);
-	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active);
-	vis_.publishClosestPoints(vis_data.closest_points_static, vis_data.closest_points_dynamic);
+	vis_.publishForceInternal(robot_pose.getPosition(), vis_data.force_internal_);
+	vis_.publishForceInteraction(robot_pose.getPosition(), vis_data.force_interaction_);
+	vis_.publishForceSocial(robot_pose.getPosition(), vis_data.force_social_);
+	vis_.publishForceCombined(robot_pose.getPosition(), vis_data.force_combined_);
+	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active_);
+	vis_.publishClosestPoints(vis_data.closest_points_static_, vis_data.closest_points_dynamic_);
 	vis_.publishPath(robot_pose);
 	// TODO: handle this on visualization and planner sides
 	// vis_.publishGrid(robot_pose, *planner_);

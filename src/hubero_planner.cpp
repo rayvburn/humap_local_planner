@@ -500,16 +500,16 @@ Pose HuberoPlanner::getGoalFromPlan() const {
 }
 
 void HuberoPlanner::collectTrajectoryMotionData() {
-	motion_data_.behaviour_active = generator_.getActiveFuzzyBehaviour();
-	motion_data_.closest_points_static = generator_.getRobotStaticObstacleDistances();
-	motion_data_.closest_points_dynamic = generator_.getRobotDynamicObstacleDistances();
-	motion_data_.force_combined =
+	motion_data_.behaviour_active_ = generator_.getActiveFuzzyBehaviour();
+	motion_data_.closest_points_static_ = generator_.getRobotStaticObstacleDistances();
+	motion_data_.closest_points_dynamic_ = generator_.getRobotDynamicObstacleDistances();
+	motion_data_.force_combined_ =
 		generator_.getForceInternal()
 		+ generator_.getForceInteraction()
 		+ generator_.getForceSocial();
-	motion_data_.force_interaction = generator_.getForceInteraction();
-	motion_data_.force_internal = generator_.getForceInternal();
-	motion_data_.force_social = generator_.getForceSocial();
+	motion_data_.force_interaction_ = generator_.getForceInteraction();
+	motion_data_.force_internal_ = generator_.getForceInternal();
+	motion_data_.force_social_ = generator_.getForceSocial();
 }
 
 void HuberoPlanner::logTrajectoriesDetails() {

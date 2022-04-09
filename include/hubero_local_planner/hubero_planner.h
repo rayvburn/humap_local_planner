@@ -52,13 +52,13 @@ class HuberoPlanner {
 public:
 	// both environmental and internal drivers
 	struct MotionDriverData {
-		Vector force_combined;
-		Vector force_internal;
-		Vector force_interaction;
-		Vector force_social;
-		std::vector<Pose> closest_points_static;
-		std::vector<Pose> closest_points_dynamic;
-		std::string behaviour_active;
+		Vector force_combined_;
+		Vector force_internal_;
+		Vector force_interaction_;
+		Vector force_social_;
+		std::vector<Pose> closest_points_static_;
+		std::vector<Pose> closest_points_dynamic_;
+		std::string behaviour_active_;
 
 		MotionDriverData() {}
 		MotionDriverData(
@@ -69,13 +69,13 @@ public:
 			const std::vector<Pose>& closest_points_static,
 			const std::vector<Pose>& closest_points_dynamic,
 			const std::string& behaviour_active):
-			force_combined(force_combined),
-			force_internal(force_internal),
-			force_interaction(force_interaction),
-			force_social(force_social),
-			closest_points_static(closest_points_static),
-			closest_points_dynamic(closest_points_dynamic),
-			behaviour_active(behaviour_active)
+			force_combined_(force_combined),
+			force_internal_(force_internal),
+			force_interaction_(force_interaction),
+			force_social_(force_social),
+			closest_points_static_(closest_points_static),
+			closest_points_dynamic_(closest_points_dynamic),
+			behaviour_active_(behaviour_active)
 			{}
 	};
 
