@@ -31,3 +31,35 @@ rosrun rqt_reconfigure rqt_reconfigure
 ```
 
 and switch to `Trajectory` tab.
+
+### Trajectory generation parameters
+If one has changed simulation time, planner frequency or so, he must also adjust basic force factors as time delta changes will affect force strengths.
+
+### Tuning guide
+
+#### `force_internal_amplifier`
+A good practice is to debug all explored trajectories in `HuberoPlanner::findBestTrajectory`. For a custom application, user should uncomment/investigate explored trajectories with respective velocity limits. Once translational velocity starts repeating among consecutive `force_internal_amplifiers`, one can trim `max` value to the highest that impacts overall velocity. Note that it is highly related to `internal_force_factor` itself. It's wise to tune `internal_force_factor` without planning first - adjust this parameter to satisfying robot speeds.
+
+## Usage
+
+### Visual Studio Code
+
+If one encounters ROS headers not being recognized by VSCode despite proper paths in `cpp_properties.json`, try to source workspace and then run VSCode from terminal:
+
+```bash
+cd <PATH_TO_YOUR_PROJECT>
+source ../../devel/setup.bash
+code .
+```
+
+No addons required then.
+
+## Troubleshooting
+
+### `Off Map`
+
+Once you are getting `Off Map` warning messages try to reduce `forward_point_distance` parameter (`Dynamic Reconfigure` -> `General` tab) or increase local costmap size. Warnings look like this:
+
+```console
+[ WARN] [1648585717.627180821, 106.518000000]: Off Map 2.008240, 0.714039;
+```
