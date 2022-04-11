@@ -152,13 +152,13 @@ public:
      */
     void predict(const geometry::Vector& robot_vel, const double& sim_period);
 
-	inline Robot getRobotData() const {
+	inline const Robot& getRobotData() const {
 		return robot_;
 	}
-	inline std::vector<StaticObject> getStaticObjectsData() const {
+	inline const std::vector<StaticObject>& getStaticObjectsData() const {
 		return obstacle_static_;
 	}
-	inline std::vector<DynamicObject> getDynamicObjectsData() const {
+	inline const std::vector<DynamicObject>& getDynamicObjectsData() const {
 		return obstacle_dynamic_;
 	}
 
