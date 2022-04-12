@@ -171,9 +171,11 @@ void SocialTrajectoryGenerator::initialise(
 					amp_set.force_interaction_social_amplifier = amp_social;
 					sample_amplifier_params_v_.push_back(amp_set);
 
-					ROS_DEBUG_NAMED(
+					ROS_INFO_COND_NAMED(
+						log_generation_samples_,
 						"SocTrajGen",
-						"Sample - internal %2.5f, static %2.5f, dynamic %2.5f, social %2.5f",
+						"Sample %3lu - internal %2.5f, static %2.5f, dynamic %2.5f, social %2.5f",
+						sample_amplifier_params_v_.size(),
 						amp_set.force_internal_amplifier,
 						amp_set.force_interaction_static_amplifier,
 						amp_set.force_interaction_dynamic_amplifier,
@@ -184,7 +186,8 @@ void SocialTrajectoryGenerator::initialise(
 		}
 	}
 
-	ROS_DEBUG_NAMED(
+	ROS_INFO_COND_NAMED(
+		log_generation_samples_,
 		"SocTrajGen",
 		"Initialized %lu parameter samples (|p_i0| %lu, |p_ij| %lu, |p_is| %lu, |p_ik| %lu)",
 		sample_amplifier_params_v_.size(),
@@ -234,7 +237,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 	const SampleAmplifierSet& sample_amplifiers,
 	base_local_planner::Trajectory& traj
 ) {
-	ROS_DEBUG_NAMED(
+	ROS_INFO_COND_NAMED(
+		log_generation_details_,
 		"SocTrajGen",
 		"Trajectory generation with: {p_i0: %3.5f, p_ij: %3.5f, p_is: %3.5f, p_ik: %3.5f}",
 		sample_amplifiers.force_internal_amplifier,
@@ -263,8 +267,6 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 	World world_model_plan = world_model;
 
 	for (int i = 0; i < num_steps; ++i) {
-		ROS_DEBUG_NAMED("SocTrajGen", "Starting trajectory generation step %3d / %3d", i, num_steps);
-
 		geometry::Vector force_internal;
 		geometry::Vector force_interaction_dynamic;
 		geometry::Vector force_interaction_static;
@@ -305,7 +307,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		double sampled_speed_linear = std::hypot(twist_cmd.getX(), twist_cmd.getY());
 		double sampled_speed_angular = twist_cmd.getZ();
 		if (!areVelocityLimitsFulfilled(sampled_speed_linear, sampled_speed_angular, 1e-4)) {
-			ROS_ERROR_NAMED(
+			ROS_ERROR_COND_NAMED(
+				log_generation_fails_,
 				"SocTrajGen",
 				"Cannot generate trajectory %3u / %3lu due to violated velocity limits ("
 				"lin: %3.2f, limits [%3.2f; %3.2f], "
@@ -344,18 +347,23 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		// apply predictions to dynamic objects in the world
 		world_model_plan.predict(twist_cmd_glob, dt);
 
-		ROS_DEBUG_NAMED(
+		ROS_INFO_COND_NAMED(
+			log_generation_details_,
 			"SocTrajGen",
-			"Trajectory %3u / %3lu step %3d / %3d  "
-			"forces: |f_i0| %3.3f, |f_ij| %3.3f, |f_is| %3.3f, |f_ik| %3.3f; twist: x %3.3f, y %3.3f, th %3.3f",
+			"Trajectory %3u / %3lu step %3d / %3d: "
+			"|f_i0| %3.1f <)%2.1f, |f_ij| %3.1f <)%2.1f, |f_is| %3.1f <)%2.1f, |f_ik| %3.1f <)%2.1f; twist: x %3.3f, y %3.3f, th %3.3f",
 			next_sample_index_ + 1,
 			sample_amplifier_params_v_.size(),
 			i + 1,
 			num_steps,
 			force_internal.calculateLength(),
+			force_internal.calculateDirection().getDegree(),
 			force_interaction_dynamic.calculateLength(),
+			force_interaction_dynamic.calculateDirection().getDegree(),
 			force_human_action.calculateLength(),
+			force_human_action.calculateDirection().getDegree(),
 			force_interaction_static.calculateLength(),
+			force_interaction_static.calculateDirection().getDegree(),
 			twist_cmd.getX(),
 			twist_cmd.getY(),
 			twist_cmd.getZ()
