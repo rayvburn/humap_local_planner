@@ -233,6 +233,13 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->ttc_rollout_time = cfg.ttc_rollout_time;
 	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
 	costs_->speedy_goal_distance = cfg.speedy_goal_distance;
+
+	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;
+	diagnostics_->log_trajectory_generation_details = cfg.log_trajectory_generation_details;
+	diagnostics_->log_trajectory_generation_fails = cfg.log_trajectory_generation_fails;
+	diagnostics_->log_explored_trajectories = cfg.log_explored_trajectories;
+	diagnostics_->log_pts_of_explored_trajectories = cfg.log_pts_of_explored_trajectories;
+	diagnostics_->log_trajectory_cost_details = cfg.log_trajectory_cost_details;
 }
 
 } /* namespace hubero_local_planner */
