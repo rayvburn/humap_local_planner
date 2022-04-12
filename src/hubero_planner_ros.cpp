@@ -13,6 +13,7 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 
 #include <memory>
+#include <regex>
 
 #include <hubero_local_planner/utils/debug.h>
 // debugging macros
@@ -102,26 +103,31 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		vis_.initialize(private_nh);
 		vis_.reconfigure(cfg_->getSfm()->max_force);
 
+		// load costmap converter params
+		std::string costmap_converter_plugin("");
+		private_nh.param("costmap_converter_plugin", costmap_converter_plugin, costmap_converter_plugin);
+		double costmap_converter_rate = 2.0;
+		private_nh.param("costmap_converter_rate", costmap_converter_rate, costmap_converter_rate);
+		bool costmap_converter_spin_thread = true;
+		private_nh.param("costmap_converter_spin_thread", costmap_converter_spin_thread, costmap_converter_spin_thread);
+
 		// costmap converter - TEB-based section
 		try {
-			// TODO: make it a param
-			std::string costmap_converter_plugin_name = "costmap_converter::CostmapToLinesDBSRANSAC";
-
-			costmap_converter_ = costmap_converter_loader_.createInstance(costmap_converter_plugin_name);
+			costmap_converter_ = costmap_converter_loader_.createInstance(costmap_converter_plugin);
 			// converter_name is the plugin name without a namespace
-			std::string converter_name = costmap_converter_loader_.getName(costmap_converter_plugin_name);
+			std::string converter_name = costmap_converter_loader_.getName(costmap_converter_plugin);
+			converter_name = std::regex_replace(converter_name, std::regex("::"), "/");
 			costmap_converter_->setOdomTopic(cfg_->odom_topic);
 			costmap_converter_->initialize(ros::NodeHandle(private_nh, "costmap_converter/" + converter_name));
 			costmap_converter_->setCostmap2D(costmap);
-			costmap_converter_->startWorker(
-				ros::Rate(2.0), // cfg_.obstacles.costmap_converter_rate
-				costmap,
-				true // cfg_.obstacles.costmap_converter_spin_thread
+			costmap_converter_->startWorker(costmap_converter_rate, costmap, costmap_converter_spin_thread);
+			ROS_INFO(
+				"Costmap conversion plugin %s loaded. Will run at %1.1f Hz",
+				converter_name.c_str(),
+				costmap_converter_rate
 			);
-
-			ROS_INFO_STREAM("Costmap conversion plugin " << costmap_converter_plugin_name << " loaded.");
 		} catch(pluginlib::PluginlibException& ex) {
-			ROS_WARN("The specified costmap converter plugin cannot be loaded. All occupied costmap cells are treaten as point obstacles. Error message: %s", ex.what());
+			ROS_WARN("The specified costmap converter plugin cannot be loaded. Obstacles will not be recognized. Error message: %s", ex.what());
 			costmap_converter_.reset();
 		}
 
