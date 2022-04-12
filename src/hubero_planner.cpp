@@ -215,19 +215,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	traj_explored_.clear();
 	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &traj_explored_);
 
-	ROS_DEBUG_NAMED(
-		"HuberoPlanner",
-		"Explored %lu trajectories. Best trajectory consists of %u points and has cost of %2.2f. "
-		"Commands base with x: %2.3f, y: %2.3f, th: %2.3f",
-		traj_explored_.size(),
-		result_traj_.getPointsSize(),
-		result_traj_.cost_,
-		result_traj_.xv_,
-		result_traj_.yv_,
-		result_traj_.thetav_
-	);
-
-	// logTrajectoriesDetails();
+	logTrajectoriesDetails();
 
 	collectTrajectoryMotionData();
 
@@ -516,44 +504,82 @@ void HuberoPlanner::collectTrajectoryMotionData() {
 }
 
 void HuberoPlanner::logTrajectoriesDetails() {
-	// evaluate components contribution in total cost
-	ROS_DEBUG_NAMED(
-		"HuberoPlanner",
-		"Best trajectory cost details: "
-		"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-		"TTC %2.2f, CHC %2.2f, speedy_goal %2.2f",
-		obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(result_traj_),
-		oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(result_traj_),
-		path_costs_.getScale() * path_costs_.scoreTrajectory(result_traj_),
-		goal_costs_.getScale() * goal_costs_.scoreTrajectory(result_traj_),
-		goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(result_traj_),
-		alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(result_traj_),
-		ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(result_traj_),
-		chc_costs_.getScale() * chc_costs_.scoreTrajectory(result_traj_),
-		speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(result_traj_)
-	);
+	if (cfg_->getDiagnostics()->log_explored_trajectories) {
+		if (result_traj_.cost_ < 0) {
+			ROS_ERROR_NAMED(
+				"HuberoPlanner",
+				"Explored %lu trajectories, but couldn't find a valid one (cost %2.2f)",
+				traj_explored_.size(),
+				result_traj_.cost_
+			);
+		} else {
+			ROS_INFO_NAMED(
+				"HuberoPlanner",
+				"Explored %lu trajectories. Best trajectory consists of %u points and has cost of %2.2f. "
+				"Commands base with x: %2.3f, y: %2.3f, th: %2.3f",
+				traj_explored_.size(),
+				result_traj_.getPointsSize(),
+				result_traj_.cost_,
+				result_traj_.xv_,
+				result_traj_.yv_,
+				result_traj_.thetav_
+			);
+		}
+	}
+
+	if (cfg_->getDiagnostics()->log_trajectory_cost_details) {
+		// evaluate components contribution in total cost
+		ROS_INFO_NAMED(
+			"HuberoPlanner",
+			"Best trajectory cost details: "
+			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
+			"TTC %2.2f, CHC %2.2f, speedy_goal %2.2f",
+			obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(result_traj_),
+			oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(result_traj_),
+			path_costs_.getScale() * path_costs_.scoreTrajectory(result_traj_),
+			goal_costs_.getScale() * goal_costs_.scoreTrajectory(result_traj_),
+			goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(result_traj_),
+			alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(result_traj_),
+			ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(result_traj_),
+			chc_costs_.getScale() * chc_costs_.scoreTrajectory(result_traj_),
+			speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(result_traj_)
+		);
+	}
+
+	if (!cfg_->getDiagnostics()->log_explored_trajectories && !cfg_->getDiagnostics()->log_pts_of_explored_trajectories) {
+		return;
+	}
 
 	// investigate costs and velocities of all explored trajectories
 	int traj_num = 0;
 	for (const auto& traj: traj_explored_) {
 		double traj_x, traj_y, traj_th = 0.0;
 		traj.getEndpoint(traj_x, traj_y, traj_th);
-		ROS_DEBUG_NAMED(
-			"HuberoPlanner",
-			"Explored trajectory %3d / %3lu: cost %2.5f, vel {x %2.3f, y %2.3f, th %2.3f}, "
-			"points %u, end {x %2.2f, y %2.2f, th %2.2f}",
-			++traj_num,
-			traj_explored_.size(),
-			traj.cost_,
-			traj.xv_, traj.yv_, traj.thetav_,
-			traj.getPointsSize(),
-			traj_x, traj_y, traj_th
-		);
+		if (cfg_->getDiagnostics()->log_explored_trajectories) {
+			// print basic trajectory info
+			ROS_INFO_NAMED(
+				"HuberoPlanner",
+				"Explored trajectory %3d / %3lu: cost %2.5f, vel {x %2.3f, y %2.3f, th %2.3f}, "
+				"points %u, end {x %2.2f, y %2.2f, th %2.2f}",
+				++traj_num,
+				traj_explored_.size(),
+				traj.cost_,
+				traj.xv_, traj.yv_, traj.thetav_,
+				traj.getPointsSize(),
+				traj_x, traj_y, traj_th
+			);
+		}
+
+		// skip if points of explored trajectories are not needed to be printed
+		if (!cfg_->getDiagnostics()->log_pts_of_explored_trajectories) {
+			continue;
+		}
+
 		// also print trajectory points
 		for (unsigned int pt_num = 0; pt_num < traj.getPointsSize(); pt_num++) {
 			double x, y, th = 0.0;
 			traj.getPoint(pt_num, x, y, th);
-			ROS_DEBUG_NAMED(
+			ROS_INFO_NAMED(
 				"HuberoPlanner",
 				"\tpoint %3d / %3u: x %4.7f, y %4.7f, th %4.7f",
 				pt_num + 1,
