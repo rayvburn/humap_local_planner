@@ -133,6 +133,21 @@ namespace hubero_local_planner {
 		double speedy_goal_distance = 0.85;
 	};
 
+	struct DiagnosticsParams {
+		/// Whether to print info on samples used for trajectory generation
+		bool log_trajectory_generation_samples = false;
+		/// Whether to print info on motion drivers (forces) of a specific trajectory
+		bool log_trajectory_generation_details = false;
+		/// Whether to print info on unsuccessful attempt to trajectory generation
+		bool log_trajectory_generation_fails = false;
+		/// Whether to print info on explored trajectories
+		bool log_explored_trajectories = false;
+		/// Whether to print info on points of explored trajectories
+		bool log_pts_of_explored_trajectories = false;
+		/// Whether to print info on cost of the best trajectory
+		bool log_trajectory_cost_details = false;
+	};
+
 class HuberoConfig {
 public:
 	HuberoConfig() {
@@ -143,6 +158,7 @@ public:
 		fis_ = std::make_shared<FisParams>();
 		traj_sampling_ = std::make_shared<TrajectorySamplingParams>();
 		costs_ = std::make_shared<CostParams>();
+		diagnostics_ = std::make_shared<DiagnosticsParams>();
 	}
 
 	std::shared_ptr<const base_local_planner::LocalPlannerLimits> getLimits() const {
@@ -173,6 +189,10 @@ public:
 		return costs_;
 	}
 
+	std::shared_ptr<const DiagnosticsParams> getDiagnostics() const {
+		return diagnostics_;
+	}
+
 	virtual ~HuberoConfig() = default;
 
 protected:
@@ -183,6 +203,7 @@ protected:
 	std::shared_ptr<FisParams> fis_;
 	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;
 	std::shared_ptr<CostParams> costs_;
+	std::shared_ptr<DiagnosticsParams> diagnostics_;
 };
 
 typedef std::shared_ptr<const HuberoConfig> HuberoConfigConstPtr;
