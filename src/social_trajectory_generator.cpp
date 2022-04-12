@@ -14,7 +14,10 @@ SocialTrajectoryGenerator::SocialTrajectoryGenerator():
 	params_set_(false),
 	limits_planner_ptr_(nullptr),
 	vels_min_(Eigen::Vector3f::Zero()),
-	vels_max_(Eigen::Vector3f::Zero()) {
+	vels_max_(Eigen::Vector3f::Zero()),
+	log_generation_samples_(false),
+	log_generation_details_(false),
+	log_generation_fails_(false) {
 }
 
 void SocialTrajectoryGenerator::setParameters(
@@ -23,7 +26,10 @@ void SocialTrajectoryGenerator::setParameters(
 	double sim_time,
 	double sim_granularity,
 	double angular_sim_granularity,
-	double sim_period
+	double sim_period,
+	bool log_generation_samples,
+	bool log_generation_details,
+	bool log_generation_fails
 ) {
 	sfm_.init(sfm_params_ptr);
 	social_conductor_.initialize(fis_params_ptr);
@@ -32,6 +38,9 @@ void SocialTrajectoryGenerator::setParameters(
 	sim_granularity_ = sim_granularity;
 	angular_sim_granularity_ = angular_sim_granularity;
 	sim_period_ = sim_period;
+	log_generation_samples_ = log_generation_samples;
+	log_generation_details_ = log_generation_details;
+	log_generation_fails_ = log_generation_fails;
 
 	params_set_ = true;
 }

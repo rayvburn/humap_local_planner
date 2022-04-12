@@ -51,7 +51,10 @@ public:
 		double sim_time,
 		double sim_granularity,
 		double angular_sim_granularity,
-		double sim_period
+		double sim_period,
+		bool log_generation_samples,
+		bool log_generation_details,
+		bool log_generation_fails
 	);
 
 	inline bool isConfigured() const {
@@ -273,6 +276,11 @@ protected:
 	/// How far in the future the local plan will be generated
 	double sim_time_;
 	double sim_period_;
+
+	/// Flags that enable logging
+	bool log_generation_samples_;
+	bool log_generation_details_;
+	bool log_generation_fails_;
 
 	/// True if number of points in the trajectory only depends on simulation granularity and not depends on distance
 	bool discretize_by_time_;

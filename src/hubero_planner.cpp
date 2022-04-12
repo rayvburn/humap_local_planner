@@ -83,7 +83,10 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 		cfg->getGeneral()->sim_time,
 		cfg->getGeneral()->sim_granularity,
 		cfg->getGeneral()->angular_sim_granularity,
-		cfg->getGeneral()->sim_period
+		cfg->getGeneral()->sim_period,
+		cfg->getDiagnostics()->log_trajectory_generation_samples,
+		cfg->getDiagnostics()->log_trajectory_generation_details,
+		cfg->getDiagnostics()->log_trajectory_generation_fails
 	);
 
 	updateCostParameters();
