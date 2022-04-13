@@ -41,6 +41,8 @@ struct StaticObject {
 struct DynamicObject : StaticObject {
 	/// \brief Velocity vector of the object
 	geometry::Vector vel;
+	/// \brief Translational speed of the object (i.e. length of the 2D velocity vector)
+	double speed;
 	/// \brief Direction of movement of the dynamic obstacles
 	geometry::Angle dir_beta;
 	///
@@ -61,6 +63,8 @@ struct Robot {
 	geometry::Pose centroid;
 	/// @brief Velocity of the robot
 	geometry::Vector vel;
+	/// \brief Translational speed of the robot (i.e. length of the 2D velocity vector)
+	double speed;
 	/// @brief Stores target pose and pose of the robot's footprint that is closest to the target
 	Target target;
 	/// @brief Stores global goal pose and pose of the robot's footprint that is closest to the target

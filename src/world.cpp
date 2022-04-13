@@ -22,7 +22,8 @@ World::World(
 
 	// to determine heading direction, use raw orientation or rely on velocity vector (if it's significant)
 	auto robot_vel_xy = geometry::Vector(robot_vel.getX(), robot_vel.getY(), 0.0);
-	if (robot_vel_xy.calculateLength() <= 1e-04) {
+	robot_.speed = robot_vel_xy.calculateLength();
+	if (robot_.speed <= 1e-04) {
 		robot_.heading_dir = geometry::Angle(robot_.centroid.getYaw());
 	} else {
 		robot_.heading_dir = robot_vel_xy.calculateDirection();
@@ -159,6 +160,9 @@ DynamicObject World::createObstacleDynamic(
 	computeObjectRelativeLocation(robot_yaw, obstacle.dist_v, beta_rel_location, beta_angle_rel, d_alpha_beta_angle);
 
 	obstacle.vel = obstacle_vel;
+	auto obstacle_vel_xy = geometry::Vector(obstacle_vel.getX(), obstacle_vel.getY(), 0.0);
+	obstacle.speed = obstacle_vel_xy.calculateLength();
+
 	// normalize angles (default value of the second argument to Angle ctor)
 	obstacle.dir_beta = geometry::Angle(obstacle_vel.calculateDirection().getRadian());
 	obstacle.rel_loc = beta_rel_location;
