@@ -39,11 +39,16 @@ public:
 
 	/**
 	 * Executes fuzzy calculations based on data given by arguments
+	 *
+	 * Prepares FIS output vector based on all entries given by arguments. Event if a membership could not be computed
+	 * for a specific pair \alpha-\beta, this pair is considered in output vector - marked as output with 0 membership,
+	 * term name "none".
+	 *
 	 * @param dir_alpha determines \alpha 's direction of motion
 	 * @param dir_beta_v determines \beta -s's direction of motion
 	 * @param rel_loc_v stores angle that defines relative location of \beta in terms of \alpha 's motion direction
 	 * @param dist_angle_v direction of the vector that connects \alpha 's position with \beta 's position
-	 * @return true if processed successfully
+	 * @return true if successfully computed at least 1 membership
 	 */
 	bool process(
 		const double& dir_alpha,

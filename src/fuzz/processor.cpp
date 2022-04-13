@@ -232,7 +232,12 @@ bool Processor::process(
 
 		// check whether proper term was found, if not - `nullptr` will be detected
 		if (term_highest_ptr == nullptr) {
-			// no output generated
+			// no actual output generated, but add a dummy entry into the output vector
+			FisOutput output {};
+			output.value = 0.0;
+			output.membership = 0.0;
+			output.term_name = std::string("none");
+			output_v_.push_back(output);
 			continue;
 		}
 
