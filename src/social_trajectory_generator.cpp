@@ -571,6 +571,8 @@ void SocialTrajectoryGenerator::computeForces(
 		std::vector<double> dist_angle_dynamic;
 		// set of lengths of vectors connecting \beta -s and \alpha -s
 		std::vector<double> dist_dynamic;
+		// set of speeds of \beta -s
+		std::vector<double> speed_dynamic;
 		// \f$\alpha\f$'s direction of motion expressed in world coordinate system
 		double dir_alpha = world_model.getRobotData().heading_dir.getRadian();
 
@@ -579,6 +581,7 @@ void SocialTrajectoryGenerator::computeForces(
 			rel_loc_dynamic.push_back(object.rel_loc_angle.getRadian());
 			dist_angle_dynamic.push_back(object.dist_angle.getRadian());
 			dist_dynamic.push_back(object.dist);
+			speed_dynamic.push_back(object.speed);
 		}
 
 		// execute fuzzy operations block
@@ -587,7 +590,9 @@ void SocialTrajectoryGenerator::computeForces(
 		// create a force vector according to the activated `social behaviour`
 		social_conductor_.computeBehaviourForce(
 			world_model.getRobotData().centroid,
+			world_model.getRobotData().speed,
 			fuzzy_processor_.getOutput(),
+			speed_dynamic,
 			dist_dynamic
 		);
 

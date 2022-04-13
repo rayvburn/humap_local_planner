@@ -27,6 +27,9 @@ using namespace geometry;
  */
 class SocialConductor {
 public:
+	/// Maximum human walk speed (based on SFM-related experiments) multiplied by 2 (relative robot-human speed)
+	static constexpr double RELATIVE_SPEED_MAX = 2.0 * 1.54;
+
 	/// \brief Default constructor
 	SocialConductor() = default;
 
@@ -44,7 +47,9 @@ public:
 	 */
 	bool computeBehaviourForce(
 		const Pose& pose_agent,
+		const double& speed_agent,
 		const std::vector<Processor::FisOutput>& fis_outputs_v,
+		const std::vector<double>& speeds_v,
 		const std::vector<double>& dist_v
 	);
 
@@ -78,8 +83,12 @@ private:
 	/// and given behaviour name (method argument)
 	void updateActiveBehaviour(const std::string& beh_name);
 
-	/// \brief Defines strength of the behaviour, based on distance to agent
-	double computeBehaviourStrength(const double& dist_to_agent);
+	/// \brief Defines strength of the behaviour, based on distance to agent and relative speed between agent and human
+	double computeBehaviourStrength(
+		const double& dist_to_agent,
+		const double& speed_agent,
+		const double& speed_obstacle
+	);
 };
 
 } /* namespace fuzz */
