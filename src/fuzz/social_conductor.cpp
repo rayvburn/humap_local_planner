@@ -52,8 +52,11 @@ bool SocialConductor::computeBehaviourForce(
 	// convert into global coordinates
 	behaviour_force_.rotate(pose_agent.getYaw());
 
-	// normalize vector as we only want to compute a proper direction of human action force
-	behaviour_force_.normalize();
+	// normalize vector if required to not exceed unit length - we only want to compute a proper direction
+	// of the human action force
+	if (behaviour_force_.calculateLength() > 1.0) {
+		behaviour_force_.normalize();
+	}
 
 	// multiply times behaviour force factor
 	behaviour_force_ *= cfg_->force_factor;
