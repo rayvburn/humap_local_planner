@@ -109,7 +109,7 @@ bool SocialForceModel::computeSocialForce(
 	// investigate STATIC objects of the environment
 	for (const StaticObject& object: objects_static) {
 		f_alpha_beta = computeInteractionForce(robot, object, dt);
-		force_interaction_ += f_alpha_beta;
+		force_interaction_static_ += f_alpha_beta;
 		if (f_alpha_beta.calculateLength() >= 1e-06) {
 			meaningful_static.push_back(Distance {.robot = object.robot, .object = object.object});
 		}
@@ -118,7 +118,7 @@ bool SocialForceModel::computeSocialForce(
 	// investigate DYNAMIC objects of the environment
 	for (const DynamicObject& object: objects_dynamic) {
 		f_alpha_beta = computeInteractionForce(robot, object);
-		force_interaction_ += f_alpha_beta;
+		force_interaction_dynamic_ += f_alpha_beta;
 		if (f_alpha_beta.calculateLength() >= 1e-06) {
 			meaningful_dynamic.push_back(Distance {.robot = object.robot, .object = object.object});
 		}
@@ -130,13 +130,9 @@ bool SocialForceModel::computeSocialForce(
 	// -----------------------------------------------------------------------------------------
 	// multiply force vector components by parameter values
 	factorInForceCoefficients();
-	debug_print_basic("\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.getX(), force_internal_.getY(), force_internal_.getZ());
-	debug_print_basic("\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.getX(), force_interaction_.getY(), force_interaction_.getZ());
 
 	// extend or truncate force vectors if needed
 	applyNonlinearOperations(world.getDistanceClosestStaticObject(), world.getDistanceClosestDynamicObject());
-	debug_print_basic("\t\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.getX(), force_internal_.getY(), force_internal_.getZ());
-	debug_print_basic("\t\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.getX(), force_interaction_.getY(), force_interaction_.getZ());
 
 	return true;
 }
@@ -638,9 +634,9 @@ double SocialForceModel::computeRelativeSpeed(const Vector& actor_vel, const Vec
 
 void SocialForceModel::factorInForceCoefficients() {
 
-	force_internal_ 	*= cfg_->internal_force_factor; //factor_force_internal_;
-	force_interaction_ 	*= cfg_->interaction_force_factor; //factor_force_interaction_;
-//	force_social_ 		*= factor_force_social_;
+	force_internal_ *= cfg_->internal_force_factor;
+	force_interaction_static_ *= cfg_->interaction_force_factor;
+	force_interaction_dynamic_ *= cfg_->interaction_force_factor;
 	computeCombinedForce();
 
 }
@@ -748,8 +744,8 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 		// create an extension vector
 		Vector extension = extension_len * force_combined_.normalized();
 
-		// add the resulting vector to `force_interaction_`
-		force_interaction_ += extension;
+		// add the resulting vector to `force_interaction_dynamic_`
+		force_interaction_dynamic_ += extension;
 
 		// sum up
 		computeCombinedForce();
@@ -778,9 +774,9 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 
 void SocialForceModel::multiplyForces(const double &coefficient) {
 
-	force_internal_ 	*= coefficient;
-	force_interaction_ 	*= coefficient;
-//	force_social_ 		*= coefficient;
+	force_internal_ *= coefficient;
+	force_interaction_dynamic_ *= coefficient;
+	force_interaction_static_ *= coefficient;
 	computeCombinedForce();
 
 }
@@ -789,13 +785,13 @@ void SocialForceModel::multiplyForces(const double &coefficient) {
 
 void SocialForceModel::reset() {
 	force_internal_ = Vector();
-	force_interaction_ = Vector();
-//	force_social_ = Vector();
+	force_interaction_static_ = Vector();
+	force_interaction_dynamic_ = Vector();
 	force_combined_ = Vector();
 }
 
 void SocialForceModel::computeCombinedForce() {
-	force_combined_ = force_internal_ + force_interaction_;
+	force_combined_ = force_internal_ + force_interaction_dynamic_ + force_interaction_static_;
 }
 
 // ------------------------------------------------------------------- //

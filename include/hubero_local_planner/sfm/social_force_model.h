@@ -157,9 +157,14 @@ public:
 		return (force_internal_);
 	}
 	/// \brief Returns interaction force vector
-	inline Vector getForceInteraction() const {
-		return (force_interaction_);
+	inline Vector getForceInteractionStatic() const {
+		return (force_interaction_static_);
 	}
+
+	inline Vector getForceInteractionDynamic() const {
+		return (force_interaction_dynamic_);
+	}
+
 	/// \brief Returns combined force vector (internal
 	/// and interaction components summed up)
 	inline Vector getForceCombined() const {
@@ -304,9 +309,14 @@ protected:
 	Vector force_internal_;
 	///
 	/// \brief Interaction force vector created from
-	/// a set of single interactions from static and dynamic
+	/// a set of single interactions from dynamic
 	/// obstacles (a.k.a sum of f_alpha_beta's)
-	Vector force_interaction_;
+	Vector force_interaction_dynamic_;
+	/// \brief Interaction force vector created from
+	/// a set of single interactions from static and dynamic
+	/// obstacles
+	Vector force_interaction_static_;
+
 	///
 	/// \brief Result of summation of internal
 	/// and interaction force vectors.

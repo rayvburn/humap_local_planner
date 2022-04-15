@@ -601,13 +601,13 @@ void SocialTrajectoryGenerator::computeForces(
 	}
 
 	force_internal = sfm_.getForceInternal();
-	force_interaction_dynamic = 0.0;
-	force_interaction_static = sfm_.getForceInteraction();
+	force_interaction_dynamic = sfm_.getForceInteractionDynamic();
+	force_interaction_static = sfm_.getForceInteractionStatic();
 	force_human_action = social_conductor_.getSocialVector();
 
 	if (update_motion_data) {
 		diag_force_internal_ = sfm_.getForceInternal();
-		diag_force_interaction_ = sfm_.getForceInteraction();
+		diag_force_interaction_ = sfm_.getForceInteractionStatic() + sfm_.getForceInteractionDynamic();
 		diag_force_social_ = social_conductor_.getSocialVector();
 		diag_behaviour_active_ = social_conductor_.getBehaviourActive();
 
