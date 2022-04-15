@@ -641,7 +641,7 @@ void SocialForceModel::factorInForceCoefficients() {
 	force_internal_ 	*= cfg_->internal_force_factor; //factor_force_internal_;
 	force_interaction_ 	*= cfg_->interaction_force_factor; //factor_force_interaction_;
 //	force_social_ 		*= factor_force_social_;
-	force_combined_ 	 = force_internal_ + force_interaction_;// + force_social_;
+	computeCombinedForce();
 
 }
 
@@ -752,7 +752,7 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 		force_interaction_ += extension;
 
 		// sum up
-		force_combined_ = force_internal_ + force_interaction_; // + force_social_;
+		computeCombinedForce();
 		sf_values_.update(force_combined_);
 
 		// make sure the average is a non-zero vector
@@ -781,8 +781,7 @@ void SocialForceModel::multiplyForces(const double &coefficient) {
 	force_internal_ 	*= coefficient;
 	force_interaction_ 	*= coefficient;
 //	force_social_ 		*= coefficient;
-//	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
-	force_combined_ 	 = force_internal_ + force_interaction_;
+	computeCombinedForce();
 
 }
 
@@ -793,6 +792,10 @@ void SocialForceModel::reset() {
 	force_interaction_ = Vector();
 //	force_social_ = Vector();
 	force_combined_ = Vector();
+}
+
+void SocialForceModel::computeCombinedForce() {
+	force_combined_ = force_internal_ + force_interaction_;
 }
 
 // ------------------------------------------------------------------- //
