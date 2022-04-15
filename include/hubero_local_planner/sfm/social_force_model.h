@@ -285,6 +285,9 @@ protected:
 	/// \brief Resets class' internal state - forces
 	void reset();
 
+	/// Sums up all force components that produce combined force
+	void computeCombinedForce();
+
 	// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 	/// \brief ShiftRegister is used for smoothing social force
