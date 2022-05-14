@@ -124,13 +124,18 @@ bool Visualization::publishClosestPoints(const std::vector<Pose>& pts_static, co
 		return false;
 	}
 
-	marker_closest_pts_static_.setNamespace("closest_static_points");
-	auto marker_static = marker_closest_pts_static_.create(pts_static);
-	pub_marker_.publish(marker_static);
+	// do not publish if there is no points inside the marker, also avoid rviz complains
+	if (!pts_static.empty()) {
+		marker_closest_pts_static_.setNamespace("closest_static_points");
+		auto marker_static = marker_closest_pts_static_.create(pts_static);
+		pub_marker_.publish(marker_static);
+	}
 
-	marker_closest_pts_dynamic_.setNamespace("closest_dynamic_points");
-	auto marker_dynamic = marker_closest_pts_dynamic_.create(pts_dynamic);
-	pub_marker_.publish(marker_dynamic);
+	if (!pts_dynamic.empty()) {
+		marker_closest_pts_dynamic_.setNamespace("closest_dynamic_points");
+		auto marker_dynamic = marker_closest_pts_dynamic_.create(pts_dynamic);
+		pub_marker_.publish(marker_dynamic);
+	}
 	return true;
 }
 
