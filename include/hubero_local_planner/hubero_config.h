@@ -39,18 +39,6 @@ namespace hubero_local_planner {
 		bool publish_cost_grid_pcl = true;
 	};
 
-	/// \brief Declaration of an ActorParams typedef'ed struct;
-	/// default values are provided
-	struct InflatorParams {
-
-		unsigned short int 	bounding_type 					= 2;
-		double				circle_radius					= 0.5;
-		std::vector<double> box_size						{0.45, 0.45, 1.00};
-		std::vector<double> ellipse							{1.00, 0.80, 0.35, 0.00};
-		double				inflation_radius			= 0.45; // the `worst` case from the default values
-
-	};
-
 	/// \brief Declaration of an SfmParams typedef'ed struct;
 	/// default values are provided
 	struct SfmParams {
@@ -153,7 +141,6 @@ public:
 	HuberoConfig() {
 		limits_ = std::make_shared<PlannerLimitsParams>();
 		general_ = std::make_shared<GeneralParams>();
-		inflator_ = std::make_shared<InflatorParams>();
 		sfm_ = std::make_shared<SfmParams>();
 		fis_ = std::make_shared<FisParams>();
 		traj_sampling_ = std::make_shared<TrajectorySamplingParams>();
@@ -167,10 +154,6 @@ public:
 
 	std::shared_ptr<const GeneralParams> getGeneral() const {
 		return general_;
-	}
-
-	std::shared_ptr<const InflatorParams> getInflator() const {
-		return inflator_;
 	}
 
 	std::shared_ptr<const SfmParams> getSfm() const {
@@ -198,7 +181,6 @@ public:
 protected:
 	std::shared_ptr<PlannerLimitsParams> limits_;
 	std::shared_ptr<GeneralParams> general_;
-	std::shared_ptr<InflatorParams> inflator_;
 	std::shared_ptr<SfmParams> sfm_;
 	std::shared_ptr<FisParams> fis_;
 	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;

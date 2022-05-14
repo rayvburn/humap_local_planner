@@ -15,25 +15,6 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("odom_topic", odom_topic, odom_topic);
 	nh.param("map_frame", map_frame, map_frame);
 
-//	// GeneralParams
-//	// subsection to delete?
-//	nh.param("init_pose", general_->init_pose, general_->init_pose);
-//	nh.param("init_target", general_->init_target, general_->init_target);
-//	//
-//	int general_init_stance = general_->init_stance;
-//	nh.param("init_stance", general_init_stance, general_init_stance);
-//	general_->init_stance = static_cast<unsigned short int>(general_init_stance);
-//
-//	nh.param("global_frame_name", general_->global_frame_name, general_->global_frame_name);
-//	nh.param("animation_factor", general_->animation_factor, general_->animation_factor);
-//	nh.param("animation_speed_rotation", general_->animation_speed_rotation, general_->animation_speed_rotation);
-//	nh.param("target_tolerance", general_->target_tolerance, general_->target_tolerance);
-//	nh.param("target_reach_max_time", general_->target_reach_max_time, general_->target_reach_max_time);
-//	nh.param("target_reachable_check_period", general_->target_reachable_check_period, general_->target_reachable_check_period);
-//	nh.param("limit_actors_workspace", general_->limit_actors_workspace, general_->limit_actors_workspace);
-//	nh.param("world_bound_x", general_->world_bound_x, general_->world_bound_x);
-//	nh.param("world_bound_y", general_->world_bound_y, general_->world_bound_y);
-
 	// GeneralParams
 	nh.param("sim_time", general_->sim_time, general_->sim_time);
 	nh.param("sim_granularity", general_->sim_granularity, general_->sim_granularity);
@@ -108,17 +89,6 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	printf("\t - trans_stopped_vel: %5.5f \r\n", limits_->trans_stopped_vel);
 	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->theta_stopped_vel);
 
-	// InflatorParams
-	// unsigned short int - needed reference so static_cast will not do
-	int inflator_bounding_type = inflator_->bounding_type;
-	nh.param("bounding_type", inflator_bounding_type, inflator_bounding_type);
-	inflator_->bounding_type = static_cast<unsigned short int>(inflator_bounding_type);
-	//
-	nh.param("circle_radius", inflator_->circle_radius, inflator_->circle_radius);
-	nh.param("box_size", inflator_->box_size, inflator_->box_size);
-	nh.param("ellipse", inflator_->ellipse, inflator_->ellipse);
-	nh.param("inflation_radius", inflator_->inflation_radius, inflator_->inflation_radius);
-
 	// SfmParams
 	nh.param("fov", sfm_->fov, sfm_->fov);
 	nh.param("mass", sfm_->mass, sfm_->mass);
@@ -141,14 +111,6 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	std::lock_guard<std::mutex> lock(config_mutex_);
 	ROS_INFO("[HuberoConfigROS] reconfigure()");
-
-	/*
-	inflator_->bounding_type 				= 2;
-	inflator_->circle_radius				= 0.5;
-	inflator_->box_size						{0.45, 0.45, 1.00};
-	inflator_->ellipse						{1.00, 0.80, 0.35, 0.00};
-	inflator_->inflation_radius				= 0.45; // the `worst` case from the default values
-	*/
 
 	general_->angular_sim_granularity = cfg.angular_sim_granularity;
 	general_->sim_granularity = cfg.sim_granularity;
