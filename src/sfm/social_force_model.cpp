@@ -359,14 +359,14 @@ Vector SocialForceModel::computeInteractionForce(
 			fov_factor
 	);
 	debug_print_verbose("\t NORMAL: %2.3f  %2.3f, PERP: %2.3f  %2.3f \r\n",
-			cfg_->interaction_force_factor * n_alpha_scaled.getX(),
-			cfg_->interaction_force_factor * n_alpha_scaled.getY(),
-			cfg_->interaction_force_factor * p_alpha_scaled.getX(),
-			cfg_->interaction_force_factor * p_alpha_scaled.getY()
+			cfg_->dynamic_interaction_force_factor * n_alpha_scaled.getX(),
+			cfg_->dynamic_interaction_force_factor * n_alpha_scaled.getY(),
+			cfg_->dynamic_interaction_force_factor * p_alpha_scaled.getX(),
+			cfg_->dynamic_interaction_force_factor * p_alpha_scaled.getY()
 	);
 	debug_print_verbose("\t total: %2.3f  %2.3f \r\n",
-			cfg_->interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getX(),
-			cfg_->interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getY()
+			cfg_->dynamic_interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getX(),
+			cfg_->dynamic_interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getY()
 	);
 	debug_print_verbose("----\r\n");
 	// -----------------------------------------------------
@@ -454,8 +454,8 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 			w_alpha_i
 	);
 	debug_print_verbose("\t f_alpha_i (multiplied): %2.3f %2.3f \r\n",
-			cfg_->interaction_force_factor * f_alpha_i.getX(),
-			cfg_->interaction_force_factor * f_alpha_i.getY()
+			cfg_->static_interaction_force_factor * f_alpha_i.getX(),
+			cfg_->static_interaction_force_factor * f_alpha_i.getY()
 	);
 	debug_print_verbose("---- \r\n");
 
@@ -699,8 +699,8 @@ double SocialForceModel::computeRelativeSpeed(const Vector& actor_vel, const Vec
 void SocialForceModel::factorInForceCoefficients() {
 
 	force_internal_ *= cfg_->internal_force_factor;
-	force_interaction_static_ *= cfg_->interaction_force_factor;
-	force_interaction_dynamic_ *= cfg_->interaction_force_factor;
+	force_interaction_static_ *= cfg_->static_interaction_force_factor;
+	force_interaction_dynamic_ *= cfg_->dynamic_interaction_force_factor;
 	computeCombinedForce();
 
 }

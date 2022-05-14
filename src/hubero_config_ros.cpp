@@ -57,7 +57,8 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("fov", sfm_->fov, sfm_->fov);
 	nh.param("mass", sfm_->mass, sfm_->mass);
 	nh.param("internal_force_factor", sfm_->internal_force_factor, sfm_->internal_force_factor);
-	nh.param("interaction_force_factor", sfm_->interaction_force_factor, sfm_->interaction_force_factor);
+	nh.param("static_interaction_force_factor", sfm_->static_interaction_force_factor, sfm_->static_interaction_force_factor);
+	nh.param("dynamic_interaction_force_factor", sfm_->dynamic_interaction_force_factor, sfm_->dynamic_interaction_force_factor);
 	nh.param("min_force", sfm_->min_force, sfm_->min_force);
 	nh.param("max_force", sfm_->max_force, sfm_->max_force);
 	nh.param("heterogenous_population", sfm_->heterogenous_population, sfm_->heterogenous_population);
@@ -88,7 +89,8 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	sfm_->fov = cfg.fov;
 	sfm_->mass = cfg.mass;
 	sfm_->internal_force_factor = cfg.internal_force_factor;
-	sfm_->interaction_force_factor = cfg.interaction_force_factor;
+	sfm_->static_interaction_force_factor = cfg.static_interaction_force_factor;
+	sfm_->dynamic_interaction_force_factor = cfg.dynamic_interaction_force_factor;
 	sfm_->min_force = cfg.min_force;
 	sfm_->max_force = cfg.max_force;
 	sfm_->heterogenous_population = cfg.heterogenous_population;

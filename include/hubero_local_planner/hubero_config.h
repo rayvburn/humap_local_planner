@@ -45,7 +45,8 @@ namespace hubero_local_planner {
 		double fov = 2.00;
 		double mass = 80.0;
 		double internal_force_factor = 100.0;
-		double interaction_force_factor = 1200.0;
+		double static_interaction_force_factor = 100.0;
+		double dynamic_interaction_force_factor = 100.0;
 		double min_force = 300.0;
 		double max_force = 2000.0;
 		/// Setting true causes SFM params to be defined in non-deterministic way (std deviation around mean value)
