@@ -49,10 +49,9 @@ void SocialTrajectoryGenerator::initialise(
 	const World& world_model,
 	const geometry::Vector& robot_local_vel,
 	const TrajectorySamplingParams& limits_amplifiers,
-	std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+	std::shared_ptr<const PlannerLimitsParams> limits_lp_ptr,
 	const std::vector<SampleAmplifierSet>& additional_samples,
 	const double& robot_mass,
-	const double& twist_rotation_compensation,
 	bool discretize_by_time
 ) {
 	initialise(
@@ -61,7 +60,6 @@ void SocialTrajectoryGenerator::initialise(
 		limits_amplifiers,
 		limits_lp_ptr,
 		robot_mass,
-		twist_rotation_compensation,
 		discretize_by_time
 	);
 	// add static samples if any
@@ -72,9 +70,8 @@ void SocialTrajectoryGenerator::initialise(
 	const World& world_model,
 	const geometry::Vector& robot_local_vel,
 	const TrajectorySamplingParams& limits_amplifiers,
-	std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+	std::shared_ptr<const PlannerLimitsParams> limits_lp_ptr,
 	const double& robot_mass,
-	const double& twist_rotation_compensation,
 	bool discretize_by_time
 ) {
 	// save copies for later use
@@ -85,7 +82,6 @@ void SocialTrajectoryGenerator::initialise(
 	discretize_by_time_ = discretize_by_time;
 
 	robot_mass_ = robot_mass;
-	twist_rotation_compensation_ = twist_rotation_compensation;
 
 	// setup search
 	next_sample_index_ = 0;
@@ -201,9 +197,8 @@ void SocialTrajectoryGenerator::initialise(
 void SocialTrajectoryGenerator::initialise(
 	const World& world_model,
 	const geometry::Vector& robot_local_vel,
-	std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+	std::shared_ptr<const PlannerLimitsParams> limits_lp_ptr,
 	const double& robot_mass,
-	const double& twist_rotation_compensation,
 	bool discretize_by_time
 ) {
 	// save copies for later use
@@ -213,7 +208,6 @@ void SocialTrajectoryGenerator::initialise(
 	discretize_by_time_ = discretize_by_time;
 
 	robot_mass_ = robot_mass;
-	twist_rotation_compensation_ = twist_rotation_compensation;
 }
 
 bool SocialTrajectoryGenerator::nextTrajectory(Trajectory& traj) {
@@ -298,7 +292,7 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			limits_planner_ptr_->min_vel_x,
 			limits_planner_ptr_->max_vel_x,
 			limits_planner_ptr_->max_vel_theta,
-			twist_rotation_compensation_,
+			limits_planner_ptr_->twist_rotation_compensation,
 			twist_cmd
 		);
 
@@ -430,7 +424,7 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 		limits_planner_ptr_->min_vel_x,
 		limits_planner_ptr_->max_vel_x,
 		limits_planner_ptr_->max_vel_theta,
-		twist_rotation_compensation_,
+		limits_planner_ptr_->twist_rotation_compensation,
 		twist_cmd
 	);
 

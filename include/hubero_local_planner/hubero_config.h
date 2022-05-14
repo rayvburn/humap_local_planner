@@ -8,6 +8,16 @@
 #include <base_local_planner/local_planner_limits.h>
 
 namespace hubero_local_planner {
+	struct PlannerLimitsParams: base_local_planner::LocalPlannerLimits {
+		/**
+		 * Parameter related to conversion of global force vector to twist vector
+		 *
+		 * Defines how much robot tries to follow force direction compared to pure transformation of force into local
+		 * velocity
+		 */
+		double twist_rotation_compensation = 0.25;
+	};
+
 	struct GeneralParams {
 		/// Whether to use planning (True) or proactive approach (False) for trajectory generation
 		bool planning_approach = true;
@@ -21,8 +31,6 @@ namespace hubero_local_planner {
 		double sim_period									= 0.2;
 		/// The distance from the center point of the robot to place a local goal
 		double forward_point_distance						= 0.5;
-		/// How much robot tries to follow force direction compared to pure transformation of force into local velocity
-		double twist_rotation_compensation					= 0.25;
 		/// The radius of the circular representation of person-obstacle used by the sparse environment model
 		double person_model_radius = 0.4;
 		/// Whether to publish PCL with explored trajectories
@@ -151,7 +159,7 @@ namespace hubero_local_planner {
 class HuberoConfig {
 public:
 	HuberoConfig() {
-		limits_ = std::make_shared<base_local_planner::LocalPlannerLimits>();
+		limits_ = std::make_shared<PlannerLimitsParams>();
 		general_ = std::make_shared<GeneralParams>();
 		inflator_ = std::make_shared<InflatorParams>();
 		sfm_ = std::make_shared<SfmParams>();
@@ -161,7 +169,7 @@ public:
 		diagnostics_ = std::make_shared<DiagnosticsParams>();
 	}
 
-	std::shared_ptr<const base_local_planner::LocalPlannerLimits> getLimits() const {
+	std::shared_ptr<const PlannerLimitsParams> getLimits() const {
 		return limits_;
 	}
 
@@ -196,7 +204,7 @@ public:
 	virtual ~HuberoConfig() = default;
 
 protected:
-	std::shared_ptr<base_local_planner::LocalPlannerLimits> limits_;
+	std::shared_ptr<PlannerLimitsParams> limits_;
 	std::shared_ptr<GeneralParams> general_;
 	std::shared_ptr<InflatorParams> inflator_;
 	std::shared_ptr<SfmParams> sfm_;

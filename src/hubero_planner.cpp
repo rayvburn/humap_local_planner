@@ -205,7 +205,6 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		tsp,
 		cfg_->getLimits(),
 		cfg_->getSfm()->mass,
-		cfg_->getGeneral()->twist_rotation_compensation,
 		true
 	);
 
@@ -269,8 +268,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 		world_model_,
 		velocity,
 		cfg_->getLimits(),
-		cfg_->getSfm()->mass,
-		cfg_->getGeneral()->twist_rotation_compensation
+		cfg_->getSfm()->mass
 	);
 
 	// trajectory that stores velocity commands, contains only seed vels

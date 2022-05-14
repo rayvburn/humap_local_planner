@@ -1,6 +1,5 @@
 #pragma once
 
-#include <base_local_planner/local_planner_limits.h>
 #include <base_local_planner/trajectory_sample_generator.h>
 
 #include <hubero_local_planner/world.h>
@@ -70,7 +69,6 @@ public:
 	 * @param limits_lp_ptr current velocity limits (local planner's)
 	 * @param additional_samples additional velocity samples to generate individual trajectories from.
 	 * @param robot_mass mass of the robot (required for SFM calculations)
-	 * @param twist_rotation_compensation parameter related to conversion of global force vector to twist vector
 	 * @param discretize_by_time if true, the trajectory is split in chunks of the same duration, else, of same length
 	 *
 	 * @note Based on base_local_planner::SimpleTrajectoryGenerator::initialise
@@ -80,10 +78,9 @@ public:
 		const World& world_model,
 		const geometry::Vector& robot_local_vel,
 		const TrajectorySamplingParams& limits_amplifiers,
-		std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+		std::shared_ptr<const PlannerLimitsParams> limits_lp_ptr,
 		const std::vector<SampleAmplifierSet>& additional_samples,
 		const double& robot_mass,
-		const double& twist_rotation_compensation,
 		bool discretize_by_time = false
 	);
 
@@ -93,7 +90,6 @@ public:
 	 * @param limits_amplifiers limits of amplifiers used to generate trajectories
 	 * @param limits_lp_ptr current velocity limits (local planner's)
 	 * @param robot_mass mass of the robot (required for SFM calculations)
-	 * @param twist_rotation_compensation parameter related to conversion of global force vector to twist vector
 	 * @param discretize_by_time if true, the trajectory is split in chunks of the same duration, else, of same length
 	 *
 	 * @note Based on base_local_planner::SimpleTrajectoryGenerator::initialise
@@ -103,9 +99,8 @@ public:
 		const World& world_model,
 		const geometry::Vector& robot_local_vel,
 		const TrajectorySamplingParams& limits_amplifiers,
-		std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+		std::shared_ptr<const PlannerLimitsParams> limits_lp_ptr,
 		const double& robot_mass,
-		const double& twist_rotation_compensation,
 		bool discretize_by_time = false
 	);
 
@@ -116,9 +111,8 @@ public:
 	void initialise(
 		const World& world_model,
 		const geometry::Vector& robot_local_vel,
-		std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_lp_ptr,
+		std::shared_ptr<const PlannerLimitsParams> limits_lp_ptr,
 		const double& robot_mass,
-		const double& twist_rotation_compensation,
 		bool discretize_by_time = false
 	);
 
@@ -261,7 +255,7 @@ protected:
 	TrajectorySamplingParams limits_amplifiers_;
 
 	/// Velocity limits of the local planner
-	std::shared_ptr<const base_local_planner::LocalPlannerLimits> limits_planner_ptr_;
+	std::shared_ptr<const PlannerLimitsParams> limits_planner_ptr_;
 	Eigen::Vector3f vels_min_;
 	Eigen::Vector3f vels_max_;
 
@@ -286,7 +280,6 @@ protected:
 	bool discretize_by_time_;
 
 	double robot_mass_;
-	double twist_rotation_compensation_;
 
 	/**
 	 * @defgroup socialtrajectory Helper classes that are used to compute velocity samples of the trajectory

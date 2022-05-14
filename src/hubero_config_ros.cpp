@@ -165,7 +165,6 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->sim_granularity = cfg.sim_granularity;
 	general_->sim_time = cfg.sim_time;
 	general_->forward_point_distance = cfg.forward_point_distance;
-	general_->twist_rotation_compensation = cfg.twist_rotation_compensation;
 	general_->person_model_radius = cfg.person_model_radius;
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
@@ -206,6 +205,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	limits_->trans_stopped_vel = cfg.trans_stopped_vel;
 	limits_->xy_goal_tolerance = cfg.xy_goal_tolerance;
 	limits_->yaw_goal_tolerance = cfg.yaw_goal_tolerance;
+	limits_->twist_rotation_compensation = cfg.twist_rotation_compensation;
 
 	traj_sampling_->force_internal_amplifier_min = cfg.force_internal_amplifier_min;
 	traj_sampling_->force_internal_amplifier_max = cfg.force_internal_amplifier_max;
