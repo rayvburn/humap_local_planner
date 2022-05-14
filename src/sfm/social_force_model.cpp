@@ -293,20 +293,7 @@ Vector SocialForceModel::computeInteractionForce(
 
 	/* FOV factor is used to make interaction of objects
 	 * that are behind the actor weaker */
-	double fov_factor = 1.00;
-
-	/* check whether beta is within the field of view
-	 * to determine proper factor for force in case
-	 * beta is behind alpha */
-	if (isOutOfFOV(object.rel_loc_angle)) {
-		// exp function used: e^(-0.5*x)
-		fov_factor = std::exp(-0.5 * object.dist);
-		debug_print_verbose(
-				"dynamic obstacle out of FOV, distance: %2.3f, FOV factor: %2.3f \r\n",
-				object.dist,
-				fov_factor
-		);
-	}
+	double fov_factor = computeFactorFOV(object.rel_loc_angle);
 
 	double v_rel = computeRelativeSpeed(robot.vel, object.vel);
 	if (std::abs(v_rel) < 1e-06) {
@@ -341,21 +328,16 @@ Vector SocialForceModel::computeInteractionForce(
 	// actor's perpendicular (based on velocity vector)
 	Vector p_alpha = computePerpendicularToNormal(n_alpha, object.rel_loc);
 
-	// original
-//	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
-//	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
-	// modded
 	double th_ab_angle = theta_alpha_beta.getRadian();
-	double exp_normal = ( (-Bn_ * th_ab_angle * th_ab_angle) / (2.0 * v_rel) ) - 0.5 * Cn_ * object.dist;
-	double exp_perpendicular = ( (-0.1 * Bp_ * std::abs(th_ab_angle) ) / v_rel ) - 0.5 * Cp_ * object.dist;
+	double exp_normal = ((-Bn_ * th_ab_angle * th_ab_angle) / v_rel) - Cn_ * object.dist;
+	double exp_perpendicular = ((-Bp_ * std::abs(th_ab_angle)) / v_rel) - Cp_ * object.dist;
 
-	// `fov_factor`: weaken the interaction force when beta is behind alpha
-	// original
-//	Vector n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
-//	Vector p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
-	// modded
-	Vector n_alpha_scaled = n_alpha * (-4.0) * An_ * std::exp(exp_normal) * fov_factor;
-	Vector p_alpha_scaled = p_alpha * (+2.0) * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+	Vector n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal);
+	Vector p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular);
+
+	// `fov_factor`: weakens the interaction force when beta is behind alpha
+	n_alpha_scaled *= fov_factor;
+	p_alpha_scaled *= fov_factor;
 
 	// -----------------------------------------------------
 	// debugging large vector length ----------------
@@ -383,14 +365,6 @@ Vector SocialForceModel::computeInteractionForce(
 	);
 	debug_print_verbose("----\r\n");
 	// -----------------------------------------------------
-
-	// factor - applicable only for dynamic objects
-	// interaction strength exponentially decreases as distance between objects becomes bigger;
-	// it is also artificially strengthened when distance is small
-	double factor = 4.0 * std::exp(-2.0 * object.dist);
-	n_alpha_scaled *= factor;
-	p_alpha_scaled *= factor;
-
 	// save interaction force vector
 	f_alpha_beta = n_alpha_scaled + p_alpha_scaled;
 
@@ -449,11 +423,7 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 	geometry::Angle angle_relative(object.dist_v.calculateDirection().getRadian() - robot.heading_dir.getRadian());
 	double fov_factor = computeFactorFOV(angle_relative);
 
-	// setting the `strength` (numerator) too high produces noticeable accelerations around objects
-	double factor = 90.0 / (std::exp(0.5 * d_alpha_i_len));
-
-	// count in the distance factor and the FOV factor
-	f_alpha_i *= factor * fov_factor;
+	f_alpha_i *= fov_factor;
 
 	debug_print_verbose("----static obstacle interaction \r\n");
 	debug_print_verbose("\t d_alpha_i: %2.3f %2.3f, len: %2.3f \r\n",
