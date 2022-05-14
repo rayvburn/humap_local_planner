@@ -85,6 +85,9 @@ struct Distance {
  */
 class World {
 public:
+	/**
+	 * @brief Angle value that absolute value is used to consider relative location as `front`
+	 */
 	static constexpr double RELATIVE_LOCATION_FRONT_THRESHOLD = IGN_DTOR(9);
 
 	/**
