@@ -552,7 +552,7 @@ void SocialTrajectoryGenerator::computeForces(
 	std::vector<DynamicObject> objects_dynamic = world_model.getDynamicObjectsData();
 
 	// evaluate whether more complex forces are supposed to be calculated
-	if (!sfm_.areInteractionForcesDisabled()) {
+	if (!sfm_.areInteractionForcesDisabled() && !social_conductor_.areFuzzyBehavioursDisabled()) {
 		// All multi-element data are vectors of the same length whose corresponding elements are related
 		// to the same \beta object (i.e. i-th index of each vector variable is related to the same \beta
 		// object). Note: \beta objects can be considered as obstacles

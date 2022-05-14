@@ -36,6 +36,9 @@ public:
 	/// \brief Updates internal state according to a given structure's content
 	void initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg);
 
+	/// \brief Evaluates force factor (from given `cfg`) to check if FIS calculations make sense
+	bool areFuzzyBehavioursDisabled() const;
+
 	/**
 	 * Calculates behaviour force using additivity rule; normalizes vector if norm of sum exceeds unit vector length
 	 * @param pose_agent: pose of the agent that computations are performed for; needed to convert behavior vector

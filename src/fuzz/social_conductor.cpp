@@ -15,6 +15,13 @@ void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::Fis
 	cfg_ = cfg;
 }
 
+bool SocialConductor::areFuzzyBehavioursDisabled() const {
+	if (cfg_ == nullptr) {
+		return true;
+	}
+	return cfg_->force_factor <= 0.0;
+}
+
 bool SocialConductor::computeBehaviourForce(
 	const Pose& pose_agent,
 	const double& speed_agent,
