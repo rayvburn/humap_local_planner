@@ -23,7 +23,7 @@ World::World(
 	// to determine heading direction, use raw orientation or rely on velocity vector (if it's significant)
 	auto robot_vel_xy = geometry::Vector(robot_vel.getX(), robot_vel.getY(), 0.0);
 	robot_.speed = robot_vel_xy.calculateLength();
-	if (robot_.speed <= 1e-04) {
+	if (robot_.speed <= World::SPEED_THRESHOLD_STATIONARY_ROBOT) {
 		robot_.heading_dir = geometry::Angle(robot_.centroid.getYaw());
 	} else {
 		robot_.heading_dir = robot_vel_xy.calculateDirection();
@@ -46,7 +46,7 @@ void World::addObstacle(
 		const geometry::Vector& obstacle_vel,
 		bool force_dynamic_type
 ) {
-	if (force_dynamic_type || obstacle_vel.calculateLength() > 1e-06) {
+	if (force_dynamic_type || obstacle_vel.calculateLength() > World::SPEED_THRESHOLD_STATIONARY_OBJECT) {
 		obstacle_dynamic_.push_back(
 			createObstacleDynamic(
 				robot_pose_closest,

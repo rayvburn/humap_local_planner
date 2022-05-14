@@ -91,6 +91,19 @@ public:
 	static constexpr double RELATIVE_LOCATION_FRONT_THRESHOLD = IGN_DTOR(9);
 
 	/**
+	 * @brief Maximum speed of the robot that is considered as stationary
+	 * Heading of the stationary robot is computed based on its orientation, whereas for the moving robot - direction
+	 * of the velocity is used
+	 */
+	static constexpr double SPEED_THRESHOLD_STATIONARY_ROBOT = 0.01;
+
+	/**
+	 * @brief Maximum speed of the object that is considered as stationary
+	 * Value experimentally found based on outputs from perception modules
+	 */
+	static constexpr double SPEED_THRESHOLD_STATIONARY_OBJECT = 0.035;
+
+	/**
 	 * @brief Dummy constructor
 	 */
 	World() = default;
