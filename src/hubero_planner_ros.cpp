@@ -351,6 +351,11 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 
 	// transform position (if required) and overall message into concise class definition
 	for (const auto& person: msg->people) {
+		// first, check reliability of the tracked person, accept only accurate ones
+		if (person.reliability < 1e-02) {
+			continue;
+		}
+
 		// in raw `person` we fully rely on position - create a HuBeRo-friendly `Person` object
 		// that has a properly parsed orientation data (possibly in tags)
 		Person hp(person);
