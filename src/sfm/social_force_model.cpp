@@ -390,9 +390,18 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).calculateLength()) /
 			    2*w_alpha_i) * 0.5 * (d_alpha_i.normalized() + (d_alpha_i - y_alpha_i).normalized());
 
+	/*
+	 * Check whether beta is within the field of view to determine a proper factor for force in case
+	 * "beta" is behind "alpha"
+	 */
+	geometry::Angle angle_relative(object.dist_v.calculateDirection().getRadian() - robot.heading_dir.getRadian());
+	double fov_factor = computeFactorFOV(angle_relative);
+
 	// setting the `strength` (numerator) too high produces noticeable accelerations around objects
-	double factor = 90.0/(std::exp(0.5 * d_alpha_i_len));
-	f_alpha_i *= factor;
+	double factor = 90.0 / (std::exp(0.5 * d_alpha_i_len));
+
+	// count in the distance factor and the FOV factor
+	f_alpha_i *= factor * fov_factor;
 
 	debug_print_verbose("----static obstacle interaction \r\n");
 	debug_print_verbose("\t d_alpha_i: %2.3f %2.3f, len: %2.3f \r\n",
