@@ -395,15 +395,57 @@ void HuberoPlanner::updateCostParameters() {
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
+	/*
+	 * People are detected independently from obstacles so they must be erased from obstacles.
+	 * Obstacle is treated as a person when most of its points are located within the given radius.
+	 */
+	static constexpr double PERSON_POLYGON_CONTAINMENT_RATE = 0.667;
+
+	ObstContainer obstacles;
+	for (const ObstaclePtr obstacle: *obstacles_) {
+		// create a temporary polygon to find distances between person center and its boundary points
+		geometry_msgs::Polygon polygon;
+		obstacle->toPolygonMsg(polygon);
+
+		// vector of containment rates (within people radiuses) of the obstacle
+		std::vector<double> containment_rates;
+
+		for (const Person& person: *people_) {
+			// number of polygon points that are located within a radius of person model
+			int polygon_pts_within_radius = 0;
+
+			for (const auto& pt: polygon.points) {
+				double dist = std::hypot(pt.x - person.getPose().getX(), pt.y - person.getPose().getY());
+				if (dist <= cfg_->getGeneral()->person_model_radius) {
+					polygon_pts_within_radius++;
+				}
+			}
+
+			// if a majority of polygon pts is located within radius - abort this obstacle, otherwise add to container
+			double containment_rate = static_cast<double>(polygon_pts_within_radius) / polygon.points.size();
+			containment_rates.push_back(containment_rate);
+		}
+
+		if (
+			!containment_rates.empty()
+			&&
+			*std::max_element(containment_rates.cbegin(), containment_rates.cend()) >= PERSON_POLYGON_CONTAINMENT_RATE
+		) {
+			continue;
+		}
+		obstacles.push_back(obstacle);
+	}
+
 	ROS_INFO_NAMED(
 		"HuberoPlanner",
 		"Creating environment model with %2lu obstacles extracted from world and %2lu people",
-		obstacles_->size(),
+		obstacles.size(),
 		people_->size()
 	);
 
+	// fill sparse world model with obstacles
 	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
-	for (const hubero_local_planner::ObstaclePtr obstacle: *obstacles_) {
+	for (const ObstaclePtr obstacle: obstacles) {
 		BaseRobotFootprintModel::ClosestPoints pts = robot_model_->calculateClosestPoints(pose, obstacle.get());
 
 		Pose robot_closest_to_obstacle_pose(pts.robot);
