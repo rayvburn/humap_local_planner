@@ -30,7 +30,7 @@ namespace hubero_local_planner {
 		/// How often planning executes
 		double sim_period									= 0.2;
 		/// The distance from the center point of the robot to place a local goal
-		double forward_point_distance						= 0.5;
+		double local_goal_distance = 1.0;
 		/// The radius of the circular representation of person-obstacle used by the sparse environment model
 		double person_model_radius = 0.4;
 		/// Whether to publish PCL with explored trajectories
@@ -117,6 +117,8 @@ namespace hubero_local_planner {
 		double ttc_rollout_time = 3.0;
 		/// The distance threshold for collision detection in TTC prediction
 		double ttc_collision_distance = 0.05;
+		/// The distance from the center point of the robot to place an additional scoring point, in meters
+		double forward_point_distance = 0.325;
 		/// The distance threshold of penalization of high speeds near global goal
 		double speedy_goal_distance = 0.85;
 	};

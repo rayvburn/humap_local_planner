@@ -79,7 +79,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->angular_sim_granularity = cfg.angular_sim_granularity;
 	general_->sim_granularity = cfg.sim_granularity;
 	general_->sim_time = cfg.sim_time;
-	general_->forward_point_distance = cfg.forward_point_distance;
+	general_->local_goal_distance = cfg.local_goal_distance;
 	general_->person_model_radius = cfg.person_model_radius;
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
@@ -143,6 +143,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->max_scaling_factor = cfg.max_scaling_factor;
 	costs_->ttc_rollout_time = cfg.ttc_rollout_time;
 	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
+	costs_->forward_point_distance = cfg.forward_point_distance;
 	costs_->speedy_goal_distance = cfg.speedy_goal_distance;
 
 	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;

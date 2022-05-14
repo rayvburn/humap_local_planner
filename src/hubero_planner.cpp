@@ -149,8 +149,8 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	Angle angle_to_goal(Vector(goal_.getY() - pose_.getY(), goal_.getX() - pose_.getX(), 0.0));
 	angle_to_goal.normalize();
 
-	double front_plan_shift_x = cfg_->getGeneral()->forward_point_distance * cos(angle_to_goal.getRadian());
-	double front_plan_shift_y = cfg_->getGeneral()->forward_point_distance * sin(angle_to_goal.getRadian());
+	double front_plan_shift_x = cfg_->getCost()->forward_point_distance * cos(angle_to_goal.getRadian());
+	double front_plan_shift_y = cfg_->getCost()->forward_point_distance * sin(angle_to_goal.getRadian());
 	front_global_plan.back().pose.position.x = front_global_plan.back().pose.position.x + front_plan_shift_x;
 	front_global_plan.back().pose.position.y = front_global_plan.back().pose.position.y + front_plan_shift_y;
 
@@ -388,8 +388,8 @@ void HuberoPlanner::updateCostParameters() {
 		cfg_->getCost()->max_scaling_factor,
 		cfg_->getCost()->scaling_speed
 	);
-	goal_front_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
-	alignment_costs_.setXShift(cfg_->getGeneral()->forward_point_distance);
+	goal_front_costs_.setXShift(cfg_->getCost()->forward_point_distance);
+	alignment_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
 }
@@ -504,7 +504,7 @@ bool HuberoPlanner::chooseLocalGoal() {
 		double dist_x = pose_plan.pose.position.x - pose_.getX();
 		double dist_y = pose_plan.pose.position.y - pose_.getY();
 		double dist_sq = dist_x * dist_x + dist_y * dist_y;
-		if (dist_sq > cfg_->getGeneral()->forward_point_distance) {
+		if (dist_sq > cfg_->getGeneral()->local_goal_distance) {
 			goal_local_ = Pose(pose_plan.pose);
 			return true;
 		}

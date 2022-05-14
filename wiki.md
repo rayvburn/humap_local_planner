@@ -58,7 +58,7 @@ No addons required then.
 
 ### `Off Map`
 
-Once you are getting `Off Map` warning messages try to reduce `forward_point_distance` parameter (`Dynamic Reconfigure` -> `General` tab) or increase local costmap size. Warnings look like this:
+Once you are getting `Off Map` warning messages try to reduce `forward_point_distance` parameter (`Dynamic Reconfigure` -> `Costs` tab) or increase local costmap size. Warnings look like this:
 
 ```console
 [ WARN] [1648585717.627180821, 106.518000000]: Off Map 2.008240, 0.714039;
