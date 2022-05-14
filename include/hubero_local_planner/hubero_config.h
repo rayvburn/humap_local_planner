@@ -22,13 +22,13 @@ namespace hubero_local_planner {
 		/// Whether to use planning (True) or proactive approach (False) for trajectory generation
 		bool planning_approach = true;
 		/// The amount of time to roll trajectories out for in seconds
-		double sim_time										= 1.2;
+		double sim_time = 1.2;
 		/// The granularity with which to check for collisions along each trajectory in meters
-		double sim_granularity								= 0.025;
+		double sim_granularity = 0.025;
 		/// The granularity with which to check for collisions for rotations in radians
-		double angular_sim_granularity						= 0.1;
+		double angular_sim_granularity = 0.1;
 		/// How often planning executes
-		double sim_period									= 0.2;
+		double sim_period = 0.2;
 		/// The distance from the center point of the robot to place a local goal
 		double local_goal_distance = 1.0;
 		/// The radius of the circular representation of person-obstacle used by the sparse environment model
@@ -42,21 +42,19 @@ namespace hubero_local_planner {
 	/// \brief Declaration of an SfmParams typedef'ed struct;
 	/// default values are provided
 	struct SfmParams {
-
-		double 				fov					= 2.00;
-		double 				mass				= 80.0;
-		double 				internal_force_factor 		= 100.0;
-		double 				interaction_force_factor 	= 1200.0;
-		double 				min_force 					= 300.0;
-		double 				max_force 					= 2000.0;
-		bool 				heterogenous_population 	= false;
+		double fov = 2.00;
+		double mass = 80.0;
+		double internal_force_factor = 100.0;
+		double interaction_force_factor = 1200.0;
+		double min_force = 300.0;
+		double max_force = 2000.0;
+		bool heterogenous_population = false;
 		/// \brief Determines method of calculating force for static obstacles,
 		/// see \ref sfm::StaticObjectInteraction
-		unsigned short int 	static_obj_interaction 		= 0;
+		unsigned short int static_obj_interaction = 0;
 		/// \brief Defines whether interaction forces should be calculated;
 		/// setting to False will force robot to take the shortest possible path.
-		bool 				disable_interaction_forces	= false;
-
+		bool disable_interaction_forces	= false;
 	};
 
 	/// \brief Declaration of a FuzzyInferenceSystem Params typedef'ed struct;
