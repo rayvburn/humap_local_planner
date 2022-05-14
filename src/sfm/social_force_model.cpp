@@ -622,6 +622,22 @@ inline bool SocialForceModel::isOutOfFOV(const Angle& angle_relative) {
 
 // ------------------------------------------------------------------- //
 
+double SocialForceModel::computeFactorFOV(const Angle& angle_relative) {
+	double ang = angle_relative.getRadian();
+
+	// outside FOV - linear decrease, minimum of 0.0
+	if (ang < -cfg_->fov) {
+		return (IGN_PI + ang) / (IGN_PI - cfg_->fov);
+	} else if (ang > cfg_->fov) {
+		return (IGN_PI - ang) / (IGN_PI - cfg_->fov);
+	} else {
+		// within FOV - perfectly OK
+		return 1.0;
+	}
+}
+
+// ------------------------------------------------------------------- //
+
 double SocialForceModel::computeRelativeSpeed(const Vector& actor_vel, const Vector& object_vel) {
 	Vector actor_vel_no_angular = actor_vel;
 	actor_vel_no_angular.setZ(0.0);

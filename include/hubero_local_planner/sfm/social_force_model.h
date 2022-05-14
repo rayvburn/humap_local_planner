@@ -263,6 +263,9 @@ protected:
 	/// angle is within actor's field of view bounds
 	inline bool isOutOfFOV(const Angle& angle_relative);
 
+	/// Computes FOV factor applicable for interactions
+	inline double computeFactorFOV(const Angle& angle_relative);
+
 	/// \brief Helper function which calculates relative
 	/// speed based on 2 given velocity vectors
 	/// \details It assigns 0 to Z component of the vector (in case rotational velocity is stored there)
