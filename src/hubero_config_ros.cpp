@@ -62,7 +62,7 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("min_force", sfm_->min_force, sfm_->min_force);
 	nh.param("max_force", sfm_->max_force, sfm_->max_force);
 	nh.param("heterogenous_population", sfm_->heterogenous_population, sfm_->heterogenous_population);
-	//
+	nh.param("use_tuned_params", sfm_->use_tuned_params, sfm_->use_tuned_params);
 	int sfm_static_obj_interaction = sfm_->static_obj_interaction;
 	nh.param("static_obj_interaction", sfm_static_obj_interaction, sfm_static_obj_interaction);
 	sfm_->static_obj_interaction = static_cast<unsigned short int>(sfm_static_obj_interaction);
@@ -94,6 +94,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	sfm_->min_force = cfg.min_force;
 	sfm_->max_force = cfg.max_force;
 	sfm_->heterogenous_population = cfg.heterogenous_population;
+	sfm_->use_tuned_params = cfg.use_tuned_params;
 	sfm_->static_obj_interaction = cfg.static_object_interaction_type;
 	sfm_->disable_interaction_forces = cfg.disable_interaction_forces;
 

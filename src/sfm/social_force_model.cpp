@@ -209,20 +209,33 @@ void SocialForceModel::setParameters() {
 			Aw_,
 			Bw_
 		);
+	} else {
+		// homogenous (deterministic) mode selected
+		speed_desired_ = 1.29f;
+		relaxation_time_ = 0.54f;
+		An_ = 0.2615f;
+		Bn_ = 0.4026f;
+		Cn_ = 2.1614f;
+		Ap_ = 1.5375f;
+		Bp_ = 0.4938f;
+		Cp_ = 0.5710f;
+		Aw_ = 0.3280f;
+		Bw_ = 0.1871f;
+	}
+
+	if (!cfg_->use_tuned_params) {
 		return;
 	}
 
-	// homogenous (deterministic) mode selected
-	speed_desired_ = 1.29f;
-	relaxation_time_ = 0.54f;
-	An_ = 0.2615f;
-	Bn_ = 0.4026f;
-	Cn_ = 2.1614f;
-	Ap_ = 1.5375f;
-	Bp_ = 0.4938f;
-	Cp_ = 0.5710f;
-	Aw_ = 0.3280f;
-	Bw_ = 0.1871f;
+	// See article description for details
+	An_ *= -8.0;
+	Bn_ *= +5.0;
+	Cn_ *= +1.5;
+	// Ap_ does not require changes
+	Bp_ *= +2.0;
+	Cp_ *= +0.8;
+	Aw_ *= +123.139;
+	Bw_ *= +1.2;
 }
 
 // ------------------------------------------------------------------- //
