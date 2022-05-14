@@ -94,6 +94,7 @@ visualization_msgs::Marker LineList::create(const std::vector<Pose> &poses) {
 	marker.ns = namespace_;
 	marker.type = visualization_msgs::Marker::LINE_LIST;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	marker.pose.orientation.w = 1.0;
 
@@ -131,6 +132,7 @@ visualization_msgs::Marker LineList::create(const Vector &p1, const Vector &p2, 
 	marker.ns = namespace_;
 	marker.type = visualization_msgs::Marker::LINE_LIST;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 	marker.id = line_id;
 
 	marker.pose.orientation.w = 1.0;

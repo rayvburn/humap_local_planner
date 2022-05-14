@@ -34,6 +34,7 @@ visualization_msgs::Marker Arrow::create(const Vector& pos, const Vector& vector
 	marker.ns = namespace_;
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	// assign marker coordinates according to current point that is pointed by grid index
 	marker.pose.position.x = pos.getX();

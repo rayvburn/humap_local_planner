@@ -29,6 +29,8 @@ visualization_msgs::MarkerArray Footprint::create(
 		marker.header.frame_id = frame_;
 		marker.ns = namespace_;
 		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = ros::Duration(1.0);
+
 		// overwrite height if set to some reasonable value
 		if (height_ > 1e-06) {
 			marker.scale.z = height_;

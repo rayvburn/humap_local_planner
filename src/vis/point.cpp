@@ -30,6 +30,7 @@ visualization_msgs::Marker Point::create(const Vector& pos) const {
 	marker.ns = namespace_;
 	marker.type = visualization_msgs::Marker::POINTS;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	marker.pose.orientation.w = 1.0;
 

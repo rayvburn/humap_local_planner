@@ -156,6 +156,7 @@ bool Visualization::publishVelocity(
 	marker.ns = "velocity";
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	marker.scale.x = linear_x;
 	marker.scale.y = 0.05;
