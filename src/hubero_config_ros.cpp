@@ -121,9 +121,7 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 
 	// SfmParams
 	nh.param("fov", sfm_->fov, sfm_->fov);
-	nh.param("max_speed", sfm_->max_speed, sfm_->max_speed);
 	nh.param("mass", sfm_->mass, sfm_->mass);
-	nh.param("maneuverability", sfm_->maneuverability, sfm_->maneuverability);
 	nh.param("internal_force_factor", sfm_->internal_force_factor, sfm_->internal_force_factor);
 	nh.param("interaction_force_factor", sfm_->interaction_force_factor, sfm_->interaction_force_factor);
 	nh.param("min_force", sfm_->min_force, sfm_->min_force);
@@ -133,15 +131,6 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	int sfm_static_obj_interaction = sfm_->static_obj_interaction;
 	nh.param("static_obj_interaction", sfm_static_obj_interaction, sfm_static_obj_interaction);
 	sfm_->static_obj_interaction = static_cast<unsigned short int>(sfm_static_obj_interaction);
-	//
-	int sfm_box_inflation_type = sfm_->box_inflation_type;
-	nh.param("box_inflation_type", sfm_box_inflation_type, sfm_box_inflation_type);
-	sfm_->box_inflation_type = static_cast<unsigned short int>(sfm_box_inflation_type);
-	//
-	int sfm_opposite_force_method = sfm_->opposite_force_method;
-	nh.param("opposite_force", sfm_opposite_force_method, sfm_opposite_force_method);
-	sfm_->opposite_force_method = static_cast<unsigned short int>(sfm_opposite_force_method);
-	//
 	nh.param("disable_interaction_forces", sfm_->disable_interaction_forces, sfm_->disable_interaction_forces);
 
 	// Fuzzy Inference System parameters
@@ -171,17 +160,13 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->publish_cost_grid_pcl = cfg.publish_cost_grid_pcl;
 
 	sfm_->fov = cfg.fov;
-	sfm_->max_speed = cfg.max_speed;
 	sfm_->mass = cfg.mass;
-	sfm_->maneuverability = cfg.maneuverability;
 	sfm_->internal_force_factor = cfg.internal_force_factor;
 	sfm_->interaction_force_factor = cfg.interaction_force_factor;
 	sfm_->min_force = cfg.min_force;
 	sfm_->max_force = cfg.max_force;
 	// sfm_->heterogenous_population
 	sfm_->static_obj_interaction = cfg.static_object_interaction_type;
-	sfm_->box_inflation_type = cfg.inflation_type; // TODO: is this still useful?
-	sfm_->opposite_force_method = cfg.oppsite_force_method;
 	sfm_->disable_interaction_forces = cfg.disable_interaction_forces;
 
 	fis_->force_factor = cfg.force_factor;
