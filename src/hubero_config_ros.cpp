@@ -34,60 +34,24 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	}
 
 	// Limits
-	printf("Parameter section: `LIMITS` - default values \r\n");
-	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_vel_trans);
-	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_vel_trans);
-	printf("\t - max_vel_x: %5.5f \r\n", limits_->max_vel_x);
-	printf("\t - min_vel_x: %5.5f \r\n", limits_->min_vel_x);
-	printf("\t - max_vel_y: %5.5f \r\n", limits_->max_vel_y);
-	printf("\t - min_vel_y: %5.5f \r\n", limits_->min_vel_y);
-	printf("\t - max_rot_vel: %5.5f \r\n", limits_->max_vel_theta);
-	printf("\t - min_rot_vel: %5.5f \r\n", limits_->min_vel_theta);
-	printf("\t - acc_lim_x: %5.5f \r\n", limits_->acc_lim_x);
-	printf("\t - acc_lim_y: %5.5f \r\n", limits_->acc_lim_y);
-	printf("\t - acc_lim_theta: %5.5f \r\n", limits_->acc_lim_theta);
-	printf("\t - acc_limit_trans: %5.5f \r\n", limits_->acc_lim_trans);
-	printf("\t - prune_plan: %d \r\n", limits_->prune_plan);
-	printf("\t - xy_goal_tolerance: %5.5f \r\n", limits_->xy_goal_tolerance);
-	printf("\t - yaw_goal_tolerance: %5.5f \r\n", limits_->yaw_goal_tolerance);
-	printf("\t - trans_stopped_vel: %5.5f \r\n", limits_->trans_stopped_vel);
-	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->theta_stopped_vel);
-//	nh.param("max_trans_vel", limits_->max_trans_vel, limits_->max_trans_vel);
-//	nh.param("min_trans_vel", limits_->min_trans_vel, limits_->min_trans_vel);
-	nh.param("max_vel_x", limits_->max_vel_x, limits_->max_vel_x);
-	nh.param("min_vel_x", limits_->min_vel_x, limits_->min_vel_x);
-//	nh.param("max_vel_y", limits_->max_vel_y, limits_->max_vel_y);
-//	nh.param("min_vel_y", limits_->min_vel_y, limits_->min_vel_y);
-	nh.param("max_rot_vel", limits_->max_vel_theta, limits_->max_vel_theta);
-	nh.param("min_rot_vel", limits_->min_vel_theta, limits_->min_vel_theta);
-//	nh.param("acc_lim_x", limits_->acc_lim_x, limits_->acc_lim_x);
-//	nh.param("acc_lim_y", limits_->acc_lim_y, limits_->acc_lim_y);
-//	nh.param("acc_lim_theta", limits_->acc_lim_theta, limits_->acc_lim_theta);
-//	nh.param("acc_limit_trans", limits_->acc_limit_trans, limits_->acc_limit_trans);
-	nh.param("prune_plan", limits_->prune_plan, limits_->prune_plan);
-	nh.param("xy_goal_tolerance", limits_->xy_goal_tolerance, limits_->xy_goal_tolerance);
-	nh.param("yaw_goal_tolerance", limits_->yaw_goal_tolerance, limits_->yaw_goal_tolerance);
-	nh.param("trans_stopped_vel", limits_->trans_stopped_vel, limits_->trans_stopped_vel);
-	nh.param("rot_stopped_vel", limits_->theta_stopped_vel, limits_->theta_stopped_vel);
-
-	printf("Parameter section: `LIMITS` \r\n");
-	printf("\t - max_trans_vel: %5.5f \r\n", limits_->max_vel_trans);
-	printf("\t - min_trans_vel: %5.5f \r\n", limits_->min_vel_trans);
-	printf("\t - max_vel_x: %5.5f \r\n", limits_->max_vel_x);
-	printf("\t - min_vel_x: %5.5f \r\n", limits_->min_vel_x);
-	printf("\t - max_vel_y: %5.5f \r\n", limits_->max_vel_y);
-	printf("\t - min_vel_y: %5.5f \r\n", limits_->min_vel_y);
-	printf("\t - max_rot_vel: %5.5f \r\n", limits_->max_vel_theta);
-	printf("\t - min_rot_vel: %5.5f \r\n", limits_->min_vel_theta);
-	printf("\t - acc_lim_x: %5.5f \r\n", limits_->acc_lim_x);
-	printf("\t - acc_lim_y: %5.5f \r\n", limits_->acc_lim_y);
-	printf("\t - acc_lim_theta: %5.5f \r\n", limits_->acc_lim_theta);
-	printf("\t - acc_limit_trans: %5.5f \r\n", limits_->acc_lim_trans);
-	printf("\t - prune_plan: %d \r\n", limits_->prune_plan);
-	printf("\t - xy_goal_tolerance: %5.5f \r\n", limits_->xy_goal_tolerance);
-	printf("\t - yaw_goal_tolerance: %5.5f \r\n", limits_->yaw_goal_tolerance);
-	printf("\t - trans_stopped_vel: %5.5f \r\n", limits_->trans_stopped_vel);
-	printf("\t - rot_stopped_vel: %5.5f \r\n", limits_->theta_stopped_vel);
+	// default values based on PAL's TIAGo config
+	nh.param("max_vel_trans", limits_->max_vel_trans, 1.5);
+	nh.param("min_vel_trans", limits_->min_vel_trans, 0.1);
+	nh.param("max_vel_x", limits_->max_vel_x, 1.5);
+	nh.param("min_vel_x", limits_->min_vel_x, -0.1);
+	nh.param("max_vel_y", limits_->max_vel_y, 0.0);
+	nh.param("min_vel_y", limits_->min_vel_y, 0.0);
+	nh.param("max_vel_theta", limits_->max_vel_theta, 2.0);
+	nh.param("min_vel_theta", limits_->min_vel_theta, 0.4);
+	nh.param("acc_lim_x", limits_->acc_lim_x, 2.5);
+	nh.param("acc_lim_y", limits_->acc_lim_y, 0.0);
+	nh.param("acc_lim_theta", limits_->acc_lim_theta, 3.2);
+	nh.param("acc_lim_trans", limits_->acc_lim_trans, 2.5);
+	nh.param("prune_plan", limits_->prune_plan, true);
+	nh.param("xy_goal_tolerance", limits_->xy_goal_tolerance, 0.1);
+	nh.param("yaw_goal_tolerance", limits_->yaw_goal_tolerance, 0.2);
+	nh.param("trans_stopped_vel", limits_->trans_stopped_vel, 0.01);
+	nh.param("theta_stopped_vel", limits_->theta_stopped_vel, 0.01);
 
 	// SfmParams
 	nh.param("fov", sfm_->fov, sfm_->fov);
