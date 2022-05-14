@@ -135,9 +135,7 @@ public:
 	SocialForceModel();
 
 	/// \brief Function which sets internal parameters according to loaded parameters
-	inline void init(std::shared_ptr<const hubero_local_planner::SfmParams> cfg) {
-		cfg_ = cfg;
-	}
+	void init(std::shared_ptr<const hubero_local_planner::SfmParams> cfg);
 
 	/// \brief Returns true if interaction forces were disabled in the provided config struct
 	bool areInteractionForcesDisabled() const;

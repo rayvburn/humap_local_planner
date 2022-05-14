@@ -13,6 +13,7 @@
 #include <math.h>			// exp()
 #include <algorithm>    	// std::find
 #include <random>           // std::normal_distribution
+#include <stdexcept>
 
 // ----------------------------------------
 
@@ -57,7 +58,13 @@ namespace sfm {
 SocialForceModel::SocialForceModel():
 	param_description_(PARAMETER_DESCRIPTION_2014),
 	cfg_(nullptr)
-{
+{}
+
+void SocialForceModel::init(std::shared_ptr<const hubero_local_planner::SfmParams> cfg) {
+	cfg_ = cfg;
+	if (cfg_ == nullptr) {
+		throw std::runtime_error("Given nullptr to SFM instead of a valid configuration parameter struct");
+	}
 	setParameters();
 }
 
@@ -144,46 +151,78 @@ bool SocialForceModel::computeSocialForce(
 // PROTECTED SECTION*****************************************************
 //					*****************************************************
 void SocialForceModel::setParameters() {
+	/*
+	* `heterogenous_population` set to true will produce slightly different parameters in each system launch.
+	* This will cause robot to move in a slightly different way each time.
+	*/
+	if (cfg_->heterogenous_population) {
+		// random number generator
+		std::default_random_engine rand_gen;
 
-	/* Invoking this function to each actor will create a population in which there are
-	 * everyone moving in a slightly other way */
+		// desired speed (based on (Moussaid et al. (2009))
+		std::normal_distribution<float> dist_spd_desired(1.29f, 0.19f);
+		speed_desired_ = dist_spd_desired(rand_gen);
 
-	std::default_random_engine rand_gen;	// random number generator
+		// relaxation time (based on (Moussaid et al. (2009))
+		std::normal_distribution<float> dist_tau(0.54f, 0.05f);
+		relaxation_time_ = dist_tau(rand_gen);
 
-	// desired speed (based on (Moussaid et al. (2009))
-	std::normal_distribution<float> dist_spd_desired(1.29F, 0.19F);
-	speed_desired_ = dist_spd_desired(rand_gen);
+		// ----------------------------- Model C ------------------------------------------------------ //
+		// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
+		// Generate random value of mean a and standard deviation b
+		std::normal_distribution<float> dist_an(0.2615f, 0.0551f);
+		An_ = dist_an(rand_gen);
+		std::normal_distribution<float> dist_bn(0.4026f, 0.1238f);
+		Bn_ = dist_bn(rand_gen);
+		std::normal_distribution<float> dist_cn(2.1614f, 0.3728f);
+		Cn_ = dist_cn(rand_gen);
+		std::normal_distribution<float> dist_ap(1.5375f, 0.3084f);
+		Ap_ = dist_ap(rand_gen);
+		std::normal_distribution<float> dist_bp(0.4938f, 0.1041f);
+		Bp_ = dist_bp(rand_gen);
+		std::normal_distribution<float> dist_cp(0.5710f, 0.1409f);
+		Cp_ = dist_cp(rand_gen);
+		std::normal_distribution<float> dist_aw(0.3280f, 0.1481f);
+		Aw_ = dist_aw(rand_gen);
+		std::normal_distribution<float> dist_bw(0.1871f, 0.0563f);
+		Bw_ = dist_bw(rand_gen);
+		printf(
+			"SFM parameters computed in a non-deterministic way. Values are as follows:\r\n"
+			"\tspeed_desired %2.5f\r\n"
+			"\trelaxation_time %2.5f\r\n"
+			"\tAn %2.5f\r\n"
+			"\tBn %2.5f\r\n"
+			"\tCn %2.5f\r\n"
+			"\tAp %2.5f\r\n"
+			"\tBp %2.5f\r\n"
+			"\tCp %2.5f\r\n"
+			"\tAw %2.5f\r\n"
+			"\tBw %2.5f\r\n",
+			speed_desired_,
+			relaxation_time_,
+			An_,
+			Bn_,
+			Cn_,
+			Ap_,
+			Bp_,
+			Cp_,
+			Aw_,
+			Bw_
+		);
+		return;
+	}
 
-	// relaxation time (based on (Moussaid et al. (2009))
-	std::normal_distribution<float> dist_tau(0.54F, 0.05F);
-	relaxation_time_ = dist_tau(rand_gen);
-
-	// ----------------------------- Model C ------------------------------------------------------ //
-	// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
-	// Generate random value of mean a and standard deviation b
-	std::normal_distribution<float> dist_an(0.2615F, 0.0551F);		An_ = dist_an(rand_gen);
-	std::normal_distribution<float> dist_bn(0.4026F, 0.1238F);		Bn_ = dist_bn(rand_gen);
-	std::normal_distribution<float> dist_cn(2.1614F, 0.3728F);		Cn_ = dist_cn(rand_gen);
-	std::normal_distribution<float> dist_ap(1.5375F, 0.3084F);		Ap_ = dist_ap(rand_gen);
-	std::normal_distribution<float> dist_bp(0.4938F, 0.1041F);		Bp_ = dist_bp(rand_gen);
-	std::normal_distribution<float> dist_cp(0.5710F, 0.1409F);		Cp_ = dist_cp(rand_gen);
-	std::normal_distribution<float> dist_aw(0.3280F, 0.1481F);		Aw_ = dist_aw(rand_gen);
-	std::normal_distribution<float> dist_bw(0.1871F, 0.0563F);		Bw_ = dist_bw(rand_gen);
-
-#ifdef DEBUG_SFM_PARAMETERS
-	std::cout << "\t speed_desired: " << speed_desired_ << std::endl;
-	std::cout << "\t relaxation_time: " << relaxation_time_ << std::endl;
-	std::cout << "\t An: " << An_ << std::endl;
-	std::cout << "\t Bn: " << Bn_ << std::endl;
-	std::cout << "\t Cn: " << Cn_ << std::endl;
-	std::cout << "\t Ap: " << Ap_ << std::endl;
-	std::cout << "\t Bp: " << Bp_ << std::endl;
-	std::cout << "\t Cp: " << Cp_ << std::endl;
-	std::cout << "\t Aw: " << Aw_ << std::endl;
-	std::cout << "\t Bw: " << Bw_ << std::endl;
-	std::cout << std::endl;
-#endif
-
+	// homogenous (deterministic) mode selected
+	speed_desired_ = 1.29f;
+	relaxation_time_ = 0.54f;
+	An_ = 0.2615f;
+	Bn_ = 0.4026f;
+	Cn_ = 2.1614f;
+	Ap_ = 1.5375f;
+	Bp_ = 0.4938f;
+	Cp_ = 0.5710f;
+	Aw_ = 0.3280f;
+	Bw_ = 0.1871f;
 }
 
 // ------------------------------------------------------------------- //

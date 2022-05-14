@@ -91,7 +91,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	sfm_->interaction_force_factor = cfg.interaction_force_factor;
 	sfm_->min_force = cfg.min_force;
 	sfm_->max_force = cfg.max_force;
-	// sfm_->heterogenous_population
+	sfm_->heterogenous_population = cfg.heterogenous_population;
 	sfm_->static_obj_interaction = cfg.static_object_interaction_type;
 	sfm_->disable_interaction_forces = cfg.disable_interaction_forces;
 

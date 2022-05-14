@@ -48,6 +48,7 @@ namespace hubero_local_planner {
 		double interaction_force_factor = 1200.0;
 		double min_force = 300.0;
 		double max_force = 2000.0;
+		/// Setting true causes SFM params to be defined in non-deterministic way (std deviation around mean value)
 		bool heterogenous_population = false;
 		/// \brief Determines method of calculating force for static obstacles,
 		/// see \ref sfm::StaticObjectInteraction
