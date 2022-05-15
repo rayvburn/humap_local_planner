@@ -272,8 +272,13 @@ private:
 	 */
 	void updateCostParameters();
 
-	// fills up the world model with static and dynamic obstacles
-	void createEnvironmentModel(const Pose& pose_ref);
+	/**
+	 * @brief Fills up the world model with static and dynamic obstacles extracted from obstacle and people containers
+	 *
+	 * @param pose_ref pose of the robot in the world
+	 * @param world_model world model that be filled up with obstacles
+	 */
+	void createEnvironmentModel(const Pose& pose_ref, World& world_model);
 
 	/**
 	 * @brief Updates @ref goal_local_ with a pose that is located far enough from the robot or it is the global goal

@@ -179,7 +179,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	computeVelocityGlobal(vel_, pose_, robot_vel_glob);
 
 	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
-	createEnvironmentModel(pose_);
+	createEnvironmentModel(pose_, world_model_);
 
 	// prepare data for planning
 	// TSP: Trajectory Sampling Parameters
@@ -261,7 +261,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	computeVelocityGlobal(vel_, pose_, robot_vel_glob);
 
 	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
-	createEnvironmentModel(pose_);
+	createEnvironmentModel(pose_, world_model_);
 
 	// initialize generator with updated parameters
 	generator_.initialise(
@@ -394,7 +394,7 @@ void HuberoPlanner::updateCostParameters() {
 	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
 }
 
-void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
+void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_model) {
 	/*
 	 * People are detected independently from obstacles so they must be erased from obstacles.
 	 * Obstacle is treated as a person when most of its points are located within the given radius.
@@ -460,7 +460,7 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
 		bool force_dynamic_object_interpretation =
 				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
 
-		world_model_.addObstacle(
+		world_model.addObstacle(
 			robot_closest_to_obstacle_pose,
 			obstacle_closest_to_robot_pose,
 			model_vel,
@@ -484,7 +484,7 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref) {
 		bool force_dynamic_object_interpretation =
 				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
 
-		world_model_.addObstacle(
+		world_model.addObstacle(
 			robot_closest_to_obstacle_pose,
 			obstacle_closest_to_robot_pose,
 			person.getVelocity(),
