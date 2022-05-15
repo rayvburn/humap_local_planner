@@ -536,9 +536,10 @@ void HuberoPlanner::collectTrajectoryMotionData() {
 	motion_data_.closest_points_dynamic_ = generator_.getRobotDynamicObstacleDistances();
 	motion_data_.force_combined_ =
 		generator_.getForceInternal()
-		+ generator_.getForceInteraction()
+		+ generator_.getForceInteractionDynamic()
+		+ generator_.getForceInteractionStatic()
 		+ generator_.getForceSocial();
-	motion_data_.force_interaction_ = generator_.getForceInteraction();
+	motion_data_.force_interaction_ = generator_.getForceInteractionStatic() + generator_.getForceInteractionDynamic();
 	motion_data_.force_internal_ = generator_.getForceInternal();
 	motion_data_.force_social_ = generator_.getForceSocial();
 }

@@ -601,7 +601,8 @@ void SocialTrajectoryGenerator::computeForces(
 
 	if (update_motion_data) {
 		diag_force_internal_ = sfm_.getForceInternal();
-		diag_force_interaction_ = sfm_.getForceInteractionStatic() + sfm_.getForceInteractionDynamic();
+		diag_force_interaction_dynamic_ = sfm_.getForceInteractionDynamic();
+		diag_force_interaction_static_ = sfm_.getForceInteractionStatic();
 		diag_force_social_ = social_conductor_.getSocialVector();
 		diag_behaviour_active_ = social_conductor_.getBehaviourActive();
 

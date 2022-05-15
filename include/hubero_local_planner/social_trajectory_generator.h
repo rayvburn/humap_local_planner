@@ -167,8 +167,15 @@ public:
 	/**
 	 * @brief Retrieves interaction force vector computed during the last @ref computeForces with motion data update req.
 	 */
-	inline geometry::Vector getForceInteraction() const {
-		return diag_force_interaction_;
+	inline geometry::Vector getForceInteractionStatic() const {
+		return diag_force_interaction_static_;
+	}
+
+	/**
+	 * @brief Retrieves interaction force vector computed during the last @ref computeForces with motion data update req.
+	 */
+	inline geometry::Vector getForceInteractionDynamic() const {
+		return diag_force_interaction_dynamic_;
 	}
 
 	/**
@@ -295,7 +302,8 @@ protected:
 	 * @{
 	 */
 	geometry::Vector diag_force_internal_;
-	geometry::Vector diag_force_interaction_;
+	geometry::Vector diag_force_interaction_static_;
+	geometry::Vector diag_force_interaction_dynamic_;
 	geometry::Vector diag_force_social_;
 	std::vector<geometry::Pose> diag_closest_points_static_;
 	std::vector<geometry::Pose> diag_closest_points_dynamic_;
