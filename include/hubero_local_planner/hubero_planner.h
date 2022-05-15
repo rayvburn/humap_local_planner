@@ -215,6 +215,13 @@ public:
 	bool checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal);
 
 	/**
+	 * @brief Checks force vector that would affect robot placed in @ref pos
+	 *
+	 * Modifies underlying generator so cannot be marked as const
+	 */
+	Vector computeForceAtPosition(const Vector& pos);
+
+	/**
 	 * @brief Evaluates whether goal is considered as reached
 	 * @return
 	 */

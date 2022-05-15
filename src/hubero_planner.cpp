@@ -362,6 +362,34 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 	return true;
 }
 
+geometry::Vector HuberoPlanner::computeForceAtPosition(const Vector& pos) {
+	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
+	Vector robot_vel_glob;
+	computeVelocityGlobal(vel_, pose_, robot_vel_glob);
+
+	// simulated position with current orientation
+	Pose pose(pos, pose_.getOrientation());
+
+	auto world_model = World(pose, robot_vel_glob, goal_local_, goal_);
+	createEnvironmentModel(pose, world_model);
+
+	generator_.initialise(
+		world_model,
+		vel_,
+		cfg_->getLimits(),
+		cfg_->getSfm()->mass,
+		true // discretize by time
+	);
+
+	base_local_planner::Trajectory traj;
+	generator_.generateTrajectoryWithoutPlanning(traj);
+
+	return generator_.getForceInternal()
+		+ generator_.getForceInteractionStatic()
+		+ generator_.getForceInteractionDynamic()
+		+ generator_.getForceSocial();
+}
+
 void HuberoPlanner::updateCostParameters() {
 	// update cost scales (adjust them with costmap resolution)
 	double cm_resolution = planner_util_->getCostmap()->getResolution();
