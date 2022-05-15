@@ -268,8 +268,7 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active_);
 	vis_.publishClosestPoints(vis_data.closest_points_static_, vis_data.closest_points_dynamic_);
 	vis_.publishPath(robot_pose);
-	// TODO: handle this on visualization and planner sides
-	// vis_.publishGrid(robot_pose, *planner_);
+	vis_.publishGrid(robot_pose, *planner_);
 	vis_.publishRobotFootprint(robot_pose, planner_->getRobotFootprintModel());
 	vis_.publishGoal(robot_goal.getPosition());
 	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());

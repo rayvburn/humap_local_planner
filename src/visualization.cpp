@@ -260,9 +260,7 @@ bool Visualization::publishGrid(
 		pose.setPosition(marker_force_grid_.getNextGridElement());
 
 		// calculate social force for actor located in current pose hard-coded time delta
-		Vector force;
-
-		// TODO: compute force at `pose`
+		auto force = planner.computeForceAtPosition(pose.getPosition());
 
 		// pass a result to vector of grid forces
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.getPosition(), force));
