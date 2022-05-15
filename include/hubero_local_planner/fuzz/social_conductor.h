@@ -30,6 +30,9 @@ public:
 	/// Maximum human walk speed (based on SFM-related experiments) multiplied by 2 (relative robot-human speed)
 	static constexpr double RELATIVE_SPEED_MAX = 2.0 * 1.54;
 
+	/// Introduced to square maximum magnitude of 'human behaviour force' with other types of interactions
+	static constexpr double INTERACTION_STRENGTH_LEVELLING_FACTOR = 1.1865;
+
 	/// \brief Default constructor
 	SocialConductor() = default;
 

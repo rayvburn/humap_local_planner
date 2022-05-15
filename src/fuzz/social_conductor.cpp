@@ -51,7 +51,7 @@ bool SocialConductor::computeBehaviourForce(
 		// scale force vector with relevant factors
 		double membership_factor = fis_outputs_v.at(i).membership;
 		double geom_factor = computeBehaviourStrength(dist_v.at(i), speed_agent, speeds_v.at(i));
-		behaviour_force_ += v_temp * membership_factor * geom_factor;
+		behaviour_force_ += v_temp * membership_factor * geom_factor * INTERACTION_STRENGTH_LEVELLING_FACTOR;
 
 		updateActiveBehaviour(fis_outputs_v.at(i).term_name);
 	}
