@@ -276,7 +276,7 @@ public:
 		return ttc_costs_.getPredictionDynamicObjects();
 	}
 
-private:
+protected:
 	/**
 	 * @brief Updates cost functions with the contents of the @ref HuberoConfig
 	 * @note Should be called once dynamic reconfigure event occurred
