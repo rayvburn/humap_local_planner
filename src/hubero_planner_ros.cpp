@@ -100,6 +100,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		planner_->reconfigure(cfg_);
 
 		// visualization
+		vis_ = Visualization(costmap_ros_->getGlobalFrameID());
 		vis_.initialize(private_nh);
 		vis_.reconfigure(cfg_->getSfm()->max_force);
 
