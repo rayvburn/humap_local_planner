@@ -298,6 +298,10 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 
 	// update Hubero planner with social trajectory generator
 	planner_->reconfigure(cfg_);
+
+	// copy LocalPlannerLimits and propagate recent changes to LocalPlannerUtil
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+	planner_util_->reconfigureCB(limits, level);
 }
 
 // protected
