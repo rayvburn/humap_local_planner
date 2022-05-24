@@ -2,6 +2,8 @@
 #include <hubero_local_planner/utils/transformations.h>
 #include <hubero_local_planner/sfm/social_force_model.h>
 
+#include <base_local_planner/simple_trajectory_generator.h>
+
 #include <math.h>
 
 #include <hubero_local_planner/utils/debug.h>
@@ -181,42 +183,19 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
 	createEnvironmentModel(pose_, world_model_);
 
-	// prepare data for planning
-	// TSP: Trajectory Sampling Parameters
-	TrajectorySamplingParams tsp {};
-	tsp.force_internal_amplifier_min = cfg_->getTrajectorySampling()->force_internal_amplifier_min;
-	tsp.force_internal_amplifier_max = cfg_->getTrajectorySampling()->force_internal_amplifier_max;
-	tsp.force_interaction_static_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_min;
-	tsp.force_interaction_static_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_max;
-	tsp.force_interaction_dynamic_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_min;
-	tsp.force_interaction_dynamic_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_max;
-	tsp.force_interaction_social_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_min;
-	tsp.force_interaction_social_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_max;
+	// decide whether planning with robot moving robot or adjusting its orientation while stopped
+	geometry_msgs::PoseStamped pose_stamped;
+	// header is not essential here, pose must be expressed in planning frame
+	pose_stamped.pose = pose_.getAsMsgPose();
+	bool plan_moving_robot = !stop_rotate_controller_.isPositionReached(planner_util_.get(), pose_stamped);
 
-	tsp.force_internal_amplifier_granularity = cfg_->getTrajectorySampling()->force_internal_amplifier_granularity;
-	tsp.force_interaction_static_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_granularity;
-	tsp.force_interaction_dynamic_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_granularity;
-	tsp.force_interaction_social_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_granularity;
-
-	// initialize generator with updated parameters
-	generator_.initialise(
-		world_model_,
-		vel_,
-		tsp,
-		cfg_->getLimits(),
-		cfg_->getSfm()->mass,
-		true
-	);
-
-	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_` internally
-	result_traj_.cost_ = -7;
-	result_traj_.resetPoints();
-	traj_explored_.clear();
-	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &traj_explored_);
-
-	logTrajectoriesDetails();
-
-	collectTrajectoryMotionData();
+	// find trajectory and store results in `result_traj_`
+	bool traj_valid = false;
+	if (plan_moving_robot) {
+		traj_valid = planMovingRobot();
+	} else {
+		traj_valid = planOrientationAdjustment();
+	}
 
 	// no legal trajectory, command zero
 	if (!traj_valid || result_traj_.cost_ < 0) {
@@ -322,6 +301,10 @@ bool HuberoPlanner::computeCellCost(
 
 bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
 	printf("[HuberoPlanner::setPlan] length %lu \r\n", orig_global_plan.size());
+
+	// when we get a new plan, we also want to clear any latch we may have on goal tolerances
+	stop_rotate_controller_.resetLatching();
+
 	return planner_util_->setPlan(orig_global_plan);
 }
 
@@ -332,38 +315,9 @@ bool HuberoPlanner::checkGoalReached(
 ) {
 	printf("[HuberoPlanner::checkGoalReached] \r\n");
 
-	// this is slightly modified base_local_planner::isGoalReached() method
-	double dist_xy = sqrt(
-		pow(pose.pose.position.x - goal.pose.position.x, 2) +
-		pow(pose.pose.position.y - goal.pose.position.y, 2)
-	);
-	debug_print_basic("\t dist_xy = %2.4f, xy_goal_tolerance = %2.4f  /  cond: %d \r\n",
-			dist_xy,
-			cfg_->getLimits()->xy_goal_tolerance,
-			!(dist_xy > cfg_->getLimits()->xy_goal_tolerance)
-	);
-
-	if (dist_xy > cfg_->getLimits()->xy_goal_tolerance) {
-		goal_reached_ = false;
-		return false;
-	}
-
-	double dist_ang = angles::shortest_angular_distance(
-			tf2::getYaw(goal.pose.orientation), tf2::getYaw(pose.pose.orientation)
-	);
-	debug_print_basic("\t dist_ang = %2.4f, yaw_tolerance = %2.4f  /  cond: %d \r\n",
-			dist_ang,
-			cfg_->getLimits()->yaw_goal_tolerance,
-			!(std::abs(dist_ang) > cfg_->getLimits()->yaw_goal_tolerance)
-	);
-
-	if (std::abs(dist_ang) > cfg_->getLimits()->yaw_goal_tolerance) {
-		goal_reached_ = false;
-		return false;
-	}
-
-	goal_reached_ = true;
-	return true;
+	// stop_rotate_controller_ internally changes its state in `isGoalReached`
+	goal_reached_ = stop_rotate_controller_.isGoalReached(planner_util_.get(), velocity, pose);
+	return goal_reached_;
 }
 
 geometry::Vector HuberoPlanner::computeForceAtPosition(const Vector& pos) {
@@ -621,6 +575,170 @@ Pose HuberoPlanner::getGoalFromPlan() const {
 		global_plan_.size()
 	);
 	return goal_;
+}
+
+bool HuberoPlanner::planMovingRobot() {
+	// prepare data for planning
+	// TSP: Trajectory Sampling Parameters
+	TrajectorySamplingParams tsp {};
+	tsp.force_internal_amplifier_min = cfg_->getTrajectorySampling()->force_internal_amplifier_min;
+	tsp.force_internal_amplifier_max = cfg_->getTrajectorySampling()->force_internal_amplifier_max;
+	tsp.force_interaction_static_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_min;
+	tsp.force_interaction_static_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_max;
+	tsp.force_interaction_dynamic_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_min;
+	tsp.force_interaction_dynamic_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_max;
+	tsp.force_interaction_social_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_min;
+	tsp.force_interaction_social_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_max;
+
+	tsp.force_internal_amplifier_granularity = cfg_->getTrajectorySampling()->force_internal_amplifier_granularity;
+	tsp.force_interaction_static_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_granularity;
+	tsp.force_interaction_dynamic_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_granularity;
+	tsp.force_interaction_social_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_granularity;
+
+	// initialize generator with updated parameters
+	generator_.initialise(
+		world_model_,
+		vel_,
+		tsp,
+		cfg_->getLimits(),
+		cfg_->getSfm()->mass,
+		true // discretize by time
+	);
+
+	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_` internally
+	result_traj_.cost_ = -7;
+	result_traj_.resetPoints();
+	traj_explored_.clear();
+	bool traj_valid = scored_sampling_planner_.findBestTrajectory(result_traj_, &traj_explored_);
+
+	logTrajectoriesDetails();
+
+	collectTrajectoryMotionData();
+
+	return traj_valid;
+}
+
+bool HuberoPlanner::planOrientationAdjustment() {
+	// NOTE: LatchedStopRotateController assumes that all received poses are expressed in the same frame,
+	// headers of stamped types are not required then
+	geometry_msgs::PoseStamped velocity;
+	velocity.pose = vel_.getAsMsgPose();
+
+	geometry_msgs::PoseStamped pose;
+	pose.pose = pose_.getAsMsgPose();
+
+	// base_local_planner::LocalPlannerLimits::getAccLimits is not marked as `const`...
+	Eigen::Vector3f acc_limits;
+	acc_limits[0] = cfg_->getLimits()->acc_lim_x;
+	acc_limits[1] = cfg_->getLimits()->acc_lim_y;
+	acc_limits[2] = cfg_->getLimits()->acc_lim_theta;
+
+	// output
+	geometry_msgs::Twist cmd_vel;
+
+	bool traj_valid = stop_rotate_controller_.computeVelocityCommandsStopRotate(
+		cmd_vel,
+		acc_limits,
+		cfg_->getGeneral()->sim_period,
+		planner_util_.get(),
+		velocity,
+		pose,
+		std::bind(
+			&HuberoPlanner::checkInPlaceTrajectory,
+			this,
+			std::placeholders::_1,
+			std::placeholders::_2,
+			std::placeholders::_3
+		)
+	);
+
+	result_traj_.resetPoints();
+	result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
+	result_traj_.xv_ = cmd_vel.linear.x;
+	result_traj_.yv_ = cmd_vel.linear.y;
+	result_traj_.thetav_ = cmd_vel.angular.z;
+	// negative cost when trajectory is invalid
+	result_traj_.cost_ = traj_valid ? 0.0 : -1.0;
+	return traj_valid;
+}
+
+bool HuberoPlanner::checkInPlaceTrajectory(
+	const Eigen::Vector3f pos,
+	const Eigen::Vector3f vel,
+	const Eigen::Vector3f vel_samples
+) {
+	oscillation_costs_.resetOscillationFlags();
+
+	geometry_msgs::PoseStamped goal_pose = global_plan_.back();
+	Eigen::Vector3f goal(goal_pose.pose.position.x, goal_pose.pose.position.y, tf2::getYaw(goal_pose.pose.orientation));
+
+	// number of samples along each direction (x, y, theta), arbitrarily chosen
+	Eigen::Vector3f v_sample_num;
+	v_sample_num[0] = 1;
+	v_sample_num[1] = 1;
+	v_sample_num[2] = 10;
+
+	// struct must be copied to comply with existing interface
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+
+	// create new, simple trajectory generator
+	base_local_planner::SimpleTrajectoryGenerator traj_gen;
+	traj_gen.initialise(
+		pos,
+		vel,
+		goal,
+		&limits,
+		v_sample_num
+	);
+
+	std::vector<base_local_planner::TrajectorySampleGenerator*> traj_gen_list;
+	traj_gen_list.push_back(&traj_gen);
+
+	// use class member critics
+	std::vector<base_local_planner::TrajectoryCostFunction*> critics;
+	critics.push_back(&obstacle_costs_);
+	critics.push_back(&path_costs_);
+	critics.push_back(&goal_costs_);
+	critics.push_back(&alignment_costs_);
+	critics.push_back(&goal_front_costs_);
+	critics.push_back(&chc_costs_);
+	critics.push_back(&speedy_goal_costs_);
+	// TODO: for some reason TTC Cost Function causes deadlock (just before its first operation in `scoreTrajectory`)
+	// This needs to be checked with debugger thoroughly
+	// critics.push_back(&ttc_costs_);
+
+	base_local_planner::SimpleScoredSamplingPlanner traj_scorer(traj_gen_list, critics);
+
+	base_local_planner::Trajectory traj;
+	traj_gen.generateTrajectory(pos, vel, vel_samples, traj);
+	double cost = traj_scorer.scoreTrajectory(traj, -1);
+
+	//if the trajectory is a legal one... the check passes
+	if (cost >= 0) {
+		ROS_INFO_COND_NAMED(
+			cfg_->getDiagnostics()->log_explored_trajectories,
+			"HuberoPlanner",
+			"Selected trajectory for stop & rotate mode - x: %2.3f, y: %2.3f, th: %2.3f (cost %2.2f)",
+			vel_samples[0],
+			vel_samples[1],
+			vel_samples[2],
+			cost
+		);
+		return true;
+	}
+
+	ROS_ERROR_COND_NAMED(
+		cfg_->getDiagnostics()->log_explored_trajectories,
+		"HuberoPlanner",
+		"Invalid Trajectory for stop & rotate mode - x: %2.3f, y: %2.3f, th: %2.3f (cost: %2.2f)",
+		vel_samples[0],
+		vel_samples[1],
+		vel_samples[2],
+		cost
+	);
+
+	// otherwise the check fails
+	return false;
 }
 
 void HuberoPlanner::collectTrajectoryMotionData() {

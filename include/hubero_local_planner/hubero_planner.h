@@ -7,6 +7,7 @@
 #include <hubero_local_planner/hubero_config.h>
 #include <hubero_local_planner/world.h>
 #include <hubero_local_planner/social_trajectory_generator.h>
+#include <hubero_local_planner/latched_stop_rotate_controller.h>
 #include <hubero_local_planner/chc_cost_function.h>
 #include <hubero_local_planner/ttc_cost_function.h>
 #include <hubero_local_planner/speedy_goal_cost_function.h>
@@ -312,6 +313,27 @@ protected:
 	Pose getGoalFromPlan() const;
 
 	/**
+	 * @brief Performs planning specific when a robot moves with significant translational velocity
+	 */
+	bool planMovingRobot();
+
+	/**
+	 * @brief Performs so called stop & rotate action to adjust robot orientation to the goal orientation
+	 */
+	bool planOrientationAdjustment();
+
+	/**
+	 * @brief Helper method for LatchedStopRotateController to check if trajectory is valid
+	 *
+	 * Based on dwa_local_planner::DWAPlanner::checkTrajectory by Eitan Marder-Eppstein
+	 */
+	bool checkInPlaceTrajectory(
+		const Eigen::Vector3f pos,
+		const Eigen::Vector3f vel,
+		const Eigen::Vector3f vel_samples
+	);
+
+	/**
 	 * @brief Updates motion driving factors based on the newest data from trajectory generator
 	 */
 	void collectTrajectoryMotionData();
@@ -332,6 +354,12 @@ protected:
 	/// Global plan that gets pruned in @ref updatePlan call
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	bool goal_reached_;
+
+	/**
+	 * @brief Using `LatchedStopRotateController`, robot will simply rotate after position is reached
+	 * Underlying motion model does not take orientation into account.
+	 */
+	LatchedStopRotateController stop_rotate_controller_;
 
 	std::mutex configuration_mutex_;
 	/// @brief Parameters of the planner
