@@ -325,13 +325,17 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 	return planner_util_->setPlan(orig_global_plan);
 }
 
-bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal) {
+bool HuberoPlanner::checkGoalReached(
+	const geometry_msgs::PoseStamped& pose,
+	const geometry_msgs::PoseStamped& velocity,
+	const geometry_msgs::PoseStamped& goal
+) {
 	printf("[HuberoPlanner::checkGoalReached] \r\n");
 
 	// this is slightly modified base_local_planner::isGoalReached() method
 	double dist_xy = sqrt(
-		pow(pose.getOrigin().getX() - goal.getOrigin().getX(), 2) +
-		pow(pose.getOrigin().getY() - goal.getOrigin().getY(), 2)
+		pow(pose.pose.position.x - goal.pose.position.x, 2) +
+		pow(pose.pose.position.y - goal.pose.position.y, 2)
 	);
 	debug_print_basic("\t dist_xy = %2.4f, xy_goal_tolerance = %2.4f  /  cond: %d \r\n",
 			dist_xy,
@@ -345,7 +349,7 @@ bool HuberoPlanner::checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf
 	}
 
 	double dist_ang = angles::shortest_angular_distance(
-			tf::getYaw(goal.getRotation()), tf::getYaw(pose.getRotation())
+			tf2::getYaw(goal.pose.orientation), tf2::getYaw(pose.pose.orientation)
 	);
 	debug_print_basic("\t dist_ang = %2.4f, yaw_tolerance = %2.4f  /  cond: %d \r\n",
 			dist_ang,

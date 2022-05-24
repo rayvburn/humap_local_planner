@@ -174,17 +174,10 @@ bool HuberoPlannerROS::isGoalReached() {
 	planner_util_->getGoal(goal);
 	geometry_msgs::PoseStamped pose;
 	costmap_ros_->getRobotPose(pose);
+	geometry_msgs::PoseStamped velocity;
+	odom_helper_.getRobotVel(velocity);
 
-    // conversion from geometry_msgs/PoseStamped to tf::Stamped
-    tf::Stamped<tf::Pose> pose_tf = geometry::Pose(pose).getAsTfPose();
-    pose_tf.stamp_ = pose.header.stamp;
-    pose_tf.frame_id_ = pose.header.frame_id;
-
-    tf::Stamped<tf::Pose> goal_tf = geometry::Pose(goal).getAsTfPose();
-    goal_tf.stamp_ = goal.header.stamp;
-    goal_tf.frame_id_ = goal.header.frame_id;
-
-	bool reached = planner_->checkGoalReached(pose_tf, goal_tf);
+	bool reached = planner_->checkGoalReached(pose, velocity, goal);
 	if (reached) {
 		ROS_INFO("Goal reached!");
 	}

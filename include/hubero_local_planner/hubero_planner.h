@@ -212,7 +212,11 @@ public:
 	 * @param goal
 	 * @return
 	 */
-	bool checkGoalReached(const tf::Stamped<tf::Pose>& pose, const tf::Stamped<tf::Pose>& goal);
+	bool checkGoalReached(
+		const geometry_msgs::PoseStamped& pose,
+		const geometry_msgs::PoseStamped& velocity,
+		const geometry_msgs::PoseStamped& goal
+	);
 
 	/**
 	 * @brief Checks force vector that would affect robot placed in @ref pos
