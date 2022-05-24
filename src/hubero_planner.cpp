@@ -483,6 +483,15 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 		Pose robot_closest_to_obstacle_pose(pts.robot);
 		Pose obstacle_closest_to_robot_pose(pts.obstacle);
 
+		/*
+		 * Robot size was already accounted in ClosestPoints calculation, however
+		 * slight extension of obstacle size helps with avoidance of locks.
+		 * In fact, these locks are not related to local minimae, but with directing robot to locations from which
+		 * robot cannot produce collision-free trajectories.
+		 * Extending an obstacle also compensates poor costmap resolution in some cases.
+		 */
+		enlargeObstacle(robot_closest_to_obstacle_pose, obstacle_closest_to_robot_pose);
+
 		Vector model_vel = Vector(
 			(obstacle->getCentroidVelocity())[0],
 			(obstacle->getCentroidVelocity())[1],
@@ -523,6 +532,58 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 			force_dynamic_object_interpretation
 		);
 	}
+}
+
+bool HuberoPlanner::enlargeObstacle(
+	const Pose& robot_closest_to_obstacle_pose,
+	Pose& obstacle_closest_to_robot_pose
+) const {
+	// first, check if any action will be valid (error conditions)
+	if (cfg_->getGeneral()->obstacle_extension_multiplier <= 0.0
+		|| robot_model_->getInscribedRadius() <= 0.0
+	) {
+		return false;
+	}
+
+	Vector dist_init(obstacle_closest_to_robot_pose.getPosition() - robot_closest_to_obstacle_pose.getPosition());
+	// create unit vector with direction equal to `dist_init`
+	Angle dist_init_dir(dist_init);
+	Vector obstacle_extension_v(dist_init_dir);
+	// scale the vector length
+	obstacle_extension_v *= cfg_->getGeneral()->obstacle_extension_multiplier * robot_model_->getInscribedRadius();
+
+	// make sure that vector connecting robot and object does not change direction
+	auto obstacle_pose_hypothesis = Pose(
+		obstacle_closest_to_robot_pose.getPosition() - obstacle_extension_v,
+		obstacle_closest_to_robot_pose.getOrientation()
+	);
+	Vector dist_modded(obstacle_pose_hypothesis.getPosition() - robot_closest_to_obstacle_pose.getPosition());
+	Angle dist_modded_dir(dist_modded);
+	double dist_angle_diff = std::abs(dist_modded_dir.getRadian() - dist_init_dir.getRadian());
+
+	// check if vector is not inverted
+	if (dist_angle_diff <= IGN_DTOR(1.0)) {
+		obstacle_closest_to_robot_pose = obstacle_pose_hypothesis;
+		return true;
+	}
+
+	// try to keep the obstacle point close to the robot (1 cm) but do not allow it to be placed within robot footprint
+	obstacle_extension_v = Vector(dist_init_dir);
+	obstacle_pose_hypothesis = Pose(
+		robot_closest_to_obstacle_pose.getPosition() + 0.01 * obstacle_extension_v,
+		obstacle_closest_to_robot_pose.getOrientation()
+	);
+	dist_modded = Vector(
+		obstacle_closest_to_robot_pose.getPosition() - robot_closest_to_obstacle_pose.getPosition()
+	);
+	dist_modded_dir = Angle(dist_modded);
+	dist_angle_diff = std::abs(dist_modded_dir.getRadian() - dist_init_dir.getRadian());
+
+	if (dist_angle_diff <= IGN_DTOR(1.0)) {
+		obstacle_closest_to_robot_pose = obstacle_pose_hypothesis;
+		return true;
+	}
+	return false;
 }
 
 bool HuberoPlanner::chooseLocalGoal() {

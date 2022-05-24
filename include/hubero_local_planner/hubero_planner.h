@@ -292,6 +292,16 @@ private:
 	void createEnvironmentModel(const Pose& pose_ref, World& world_model);
 
 	/**
+	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
+	 *
+	 * The edge point is moved according to `obstacle_extension_multiplier` from parameters and robot inscribed radius
+	 */
+	bool enlargeObstacle(
+		const Pose& robot_closest_to_obstacle_pose,
+		Pose& obstacle_closest_to_robot_pose
+	) const;
+
+	/**
 	 * @brief Updates @ref goal_local_ with a pose that is located far enough from the robot or it is the global goal
 	 */
 	bool chooseLocalGoal();

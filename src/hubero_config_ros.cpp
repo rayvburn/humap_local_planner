@@ -82,6 +82,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->sim_time = cfg.sim_time;
 	general_->local_goal_distance = cfg.local_goal_distance;
 	general_->person_model_radius = cfg.person_model_radius;
+	general_->obstacle_extension_multiplier = cfg.obstacle_extension_multiplier;
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
 	general_->publish_cost_grid_pcl = cfg.publish_cost_grid_pcl;
