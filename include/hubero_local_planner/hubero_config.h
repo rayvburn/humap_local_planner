@@ -62,6 +62,36 @@ namespace hubero_local_planner {
 		/// \brief Defines whether interaction forces should be calculated;
 		/// setting to False will force robot to take the shortest possible path.
 		bool disable_interaction_forces	= false;
+
+		/**
+		 * @defgroup eqnparams Equation Params
+		 * Group contains equation parameter value pairs: mean and standard deviation
+		 * @{
+		 */
+		// mean values (CUSTOM TUNING_MULTIPLIER * reference value from article)
+		double speed_desired = 1.29;
+		double relaxation_time = 0.54;
+		double an = -8.0 * 0.2615;
+		double bn = +5.0 * 0.4026;
+		double cn = +1.5 * 2.1614;
+		double ap = +1.0 * 1.5375;
+		double bp = +2.0 * 0.4938;
+		double cp = +0.8 * 0.5710;
+		double aw = +123.139 * 0.3280;
+		double bw = +1.2 * 0.1871;
+
+		// standard deviation values
+		double speed_desired_stddev = 0.19;
+		double relaxation_time_stddev = 0.05;
+		double an_stddev = 0.0551;
+		double bn_stddev = 0.1238;
+		double cn_stddev = 0.3728;
+		double ap_stddev = 0.3084;
+		double bp_stddev = 0.1041;
+		double cp_stddev = 0.1409;
+		double aw_stddev = 0.1481;
+		double bw_stddev = 0.0563;
+		/// @} // end of eqnparams group
 	};
 
 	/// \brief Declaration of a FuzzyInferenceSystem Params typedef'ed struct;
@@ -82,21 +112,45 @@ namespace hubero_local_planner {
 	 * given dimension)
 	 */
 	struct TrajectorySamplingParams {
-		double force_internal_amplifier_min = 0.5;
-		double force_internal_amplifier_max = 1.5;
-		double force_internal_amplifier_granularity = 0.5;
+		double sfm_desired_speed_amplifier_min = 1.0;
+		double sfm_desired_speed_amplifier_max = 1.0;
+		double sfm_desired_speed_amplifier_granularity = 1.0;
 
-		double force_interaction_dynamic_amplifier_min = 0.5;
-		double force_interaction_dynamic_amplifier_max = 1.5;
-		double force_interaction_dynamic_amplifier_granularity = 0.5;
+		double sfm_an_amplifier_min = 1.0;
+		double sfm_an_amplifier_max = 1.0;
+		double sfm_an_amplifier_granularity = 1.0;
 
-		double force_interaction_social_amplifier_min = 0.5;
-		double force_interaction_social_amplifier_max = 1.5;
-		double force_interaction_social_amplifier_granularity = 0.5;
+		double sfm_bn_amplifier_min = 1.0;
+		double sfm_bn_amplifier_max = 1.0;
+		double sfm_bn_amplifier_granularity = 1.0;
 
-		double force_interaction_static_amplifier_min = 0.5;
-		double force_interaction_static_amplifier_max = 1.5;
-		double force_interaction_static_amplifier_granularity = 0.5;
+		double sfm_cn_amplifier_min = 1.0;
+		double sfm_cn_amplifier_max = 1.0;
+		double sfm_cn_amplifier_granularity = 1.0;
+
+		double sfm_ap_amplifier_min = 1.0;
+		double sfm_ap_amplifier_max = 1.0;
+		double sfm_ap_amplifier_granularity = 1.0;
+
+		double sfm_bp_amplifier_min = 1.0;
+		double sfm_bp_amplifier_max = 1.0;
+		double sfm_bp_amplifier_granularity = 1.0;
+
+		double sfm_cp_amplifier_min = 1.0;
+		double sfm_cp_amplifier_max = 1.0;
+		double sfm_cp_amplifier_granularity = 1.0;
+
+		double sfm_aw_amplifier_min = -1.25;
+		double sfm_aw_amplifier_max = 1.25;
+		double sfm_aw_amplifier_granularity = 0.25;
+
+		double sfm_bw_amplifier_min = 1.0;
+		double sfm_bw_amplifier_max = 1.0;
+		double sfm_bw_amplifier_granularity = 1.0;
+
+		double fis_as_amplifier_min = 1.0;
+		double fis_as_amplifier_max = 1.0;
+		double fis_as_amplifier_granularity = 1.0;
 	};
 
 	struct CostParams {

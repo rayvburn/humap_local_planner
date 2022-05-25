@@ -88,59 +88,128 @@ void SocialTrajectoryGenerator::initialise(
 	sample_amplifier_params_v_.clear();
 
 	// prepare all amplifier values to be evaluated later
-	auto force_internal_amps = computeAmplifierSamples(
-		limits_amplifiers_.force_internal_amplifier_min,
-		limits_amplifiers_.force_internal_amplifier_max,
-		limits_amplifiers_.force_internal_amplifier_granularity,
-		"internal force"
+	auto sfm_speed_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_desired_speed_amplifier_min,
+		limits_amplifiers_.sfm_desired_speed_amplifier_max,
+		limits_amplifiers_.sfm_desired_speed_amplifier_granularity,
+		"desired speed parameter of the SFM"
 	);
 
-	auto force_interaction_static_amps = computeAmplifierSamples(
-		limits_amplifiers_.force_interaction_static_amplifier_min,
-		limits_amplifiers_.force_interaction_static_amplifier_max,
-		limits_amplifiers_.force_interaction_static_amplifier_granularity,
-		"static forces"
+	auto sfm_an_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_an_amplifier_min,
+		limits_amplifiers_.sfm_an_amplifier_max,
+		limits_amplifiers_.sfm_an_amplifier_granularity,
+		"An parameter of the SFM (dyn. objects)"
 	);
 
-	auto force_interaction_dynamic_amps = computeAmplifierSamples(
-		limits_amplifiers_.force_interaction_dynamic_amplifier_min,
-		limits_amplifiers_.force_interaction_dynamic_amplifier_max,
-		limits_amplifiers_.force_interaction_dynamic_amplifier_granularity,
-		"dynamic forces"
+	auto sfm_bn_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_bn_amplifier_min,
+		limits_amplifiers_.sfm_bn_amplifier_max,
+		limits_amplifiers_.sfm_bn_amplifier_granularity,
+		"Bn parameter of the SFM (dyn. objects)"
 	);
 
-	auto force_interaction_social_amps = computeAmplifierSamples(
-		limits_amplifiers_.force_interaction_social_amplifier_min,
-		limits_amplifiers_.force_interaction_social_amplifier_max,
-		limits_amplifiers_.force_interaction_social_amplifier_granularity,
-		"social forces"
+	auto sfm_cn_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_cn_amplifier_min,
+		limits_amplifiers_.sfm_cn_amplifier_max,
+		limits_amplifiers_.sfm_cn_amplifier_granularity,
+		"Cn parameter of the SFM (dyn. objects)"
+	);
+
+	auto sfm_ap_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_ap_amplifier_min,
+		limits_amplifiers_.sfm_ap_amplifier_max,
+		limits_amplifiers_.sfm_ap_amplifier_granularity,
+		"Ap parameter of the SFM (dyn. objects)"
+	);
+
+	auto sfm_bp_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_bp_amplifier_min,
+		limits_amplifiers_.sfm_bp_amplifier_max,
+		limits_amplifiers_.sfm_bp_amplifier_granularity,
+		"Bp parameter of the SFM (dyn. objects)"
+	);
+
+	auto sfm_cp_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_cp_amplifier_min,
+		limits_amplifiers_.sfm_cp_amplifier_max,
+		limits_amplifiers_.sfm_cp_amplifier_granularity,
+		"Cp parameter of the SFM (dyn. objects)"
+	);
+
+	auto sfm_aw_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_aw_amplifier_min,
+		limits_amplifiers_.sfm_aw_amplifier_max,
+		limits_amplifiers_.sfm_aw_amplifier_granularity,
+		"Aw parameter of the SFM (stat. objects)"
+	);
+
+	auto sfm_bw_amps = computeAmplifierSamples(
+		limits_amplifiers_.sfm_bw_amplifier_min,
+		limits_amplifiers_.sfm_bw_amplifier_max,
+		limits_amplifiers_.sfm_bw_amplifier_granularity,
+		"Bw parameter of the SFM (stat. objects)"
+	);
+
+	auto fis_as_amps = computeAmplifierSamples(
+		limits_amplifiers_.fis_as_amplifier_min,
+		limits_amplifiers_.fis_as_amplifier_max,
+		limits_amplifiers_.fis_as_amplifier_granularity,
+		"As parameter of the FIS (people)"
 	);
 
 	// if using continuous acceleration, trim velocities so they surely not exceed limits
 	computeVelocityLimitsWithCA(world_model_, vels_min_, vels_max_);
 
 	// prepare vector of amplifiers to investigate
-	for (const auto& amp_internal: force_internal_amps) {
-		for (const auto& amp_static: force_interaction_static_amps) {
-			for (const auto& amp_dynamic: force_interaction_dynamic_amps) {
-				for (const auto& amp_social: force_interaction_social_amps) {
-					SampleAmplifierSet amp_set {};
-					amp_set.force_internal_amplifier = amp_internal;
-					amp_set.force_interaction_static_amplifier = amp_static;
-					amp_set.force_interaction_dynamic_amplifier = amp_dynamic;
-					amp_set.force_interaction_social_amplifier = amp_social;
-					sample_amplifier_params_v_.push_back(amp_set);
+	for (const auto& speed: sfm_speed_amps) {
+		for (const auto& an: sfm_an_amps) {
+			for (const auto& bn: sfm_bn_amps) {
+				for (const auto& cn: sfm_cn_amps) {
+					for (const auto& ap: sfm_ap_amps) {
+						for (const auto& bp: sfm_bp_amps) {
+							for (const auto& cp: sfm_cp_amps) {
+								for (const auto& aw: sfm_aw_amps) {
+									for (const auto& bw: sfm_bw_amps) {
+										for (const auto& as: fis_as_amps) {
+											SampleAmplifierSet amp_set {};
+											amp_set.sfm_speed_desired_amplifier = speed;
+											amp_set.sfm_an_amplifier = an;
+											amp_set.sfm_bn_amplifier = bn;
+											amp_set.sfm_cn_amplifier = cn;
+											amp_set.sfm_ap_amplifier = ap;
+											amp_set.sfm_bp_amplifier = bp;
+											amp_set.sfm_cp_amplifier = cp;
+											amp_set.sfm_aw_amplifier = aw;
+											amp_set.sfm_bw_amplifier = bw;
+											amp_set.fis_as_amplifier = as;
+											sample_amplifier_params_v_.push_back(amp_set);
 
-					ROS_INFO_COND_NAMED(
-						log_generation_samples_,
-						"SocTrajGen",
-						"Sample %3lu - internal %2.5f, static %2.5f, dynamic %2.5f, social %2.5f",
-						sample_amplifier_params_v_.size(),
-						amp_set.force_internal_amplifier,
-						amp_set.force_interaction_static_amplifier,
-						amp_set.force_interaction_dynamic_amplifier,
-						amp_set.force_interaction_social_amplifier
-					);
+											ROS_INFO_COND_NAMED(
+												log_generation_samples_,
+												"SocTrajGen",
+												"Sample %3lu - v_i0 %2.5f, An %2.5f, Bn %2.5f, Cn %2.5f, "
+												"Ap %2.5f, Bp %2.5f, Cp %2.5f, "
+												"Aw %2.5f, Bw %2.5f, "
+												"As %2.5f",
+												sample_amplifier_params_v_.size(),
+												amp_set.sfm_speed_desired_amplifier,
+												amp_set.sfm_an_amplifier,
+												amp_set.sfm_bn_amplifier,
+												amp_set.sfm_cn_amplifier,
+												amp_set.sfm_ap_amplifier,
+												amp_set.sfm_bp_amplifier,
+												amp_set.sfm_cp_amplifier,
+												amp_set.sfm_aw_amplifier,
+												amp_set.sfm_bw_amplifier,
+												amp_set.fis_as_amplifier
+											);
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -149,12 +218,19 @@ void SocialTrajectoryGenerator::initialise(
 	ROS_INFO_COND_NAMED(
 		log_generation_samples_,
 		"SocTrajGen",
-		"Initialized %lu parameter samples (|p_i0| %lu, |p_ij| %lu, |p_is| %lu, |p_ik| %lu)",
+		"Initialized %lu parameter samples "
+		"(|v_i0| %lu, |An| %lu, |Bn| %lu, |Cn| %lu, |Ap| %lu, |Bp| %lu, |Cp| %lu, |Aw| %lu, |Bw| %lu, |As| %lu)",
 		sample_amplifier_params_v_.size(),
-		force_internal_amps.size(),
-		force_interaction_static_amps.size(),
-		force_interaction_dynamic_amps.size(),
-		force_interaction_social_amps.size()
+		sfm_speed_amps.size(),
+		sfm_an_amps.size(),
+		sfm_bn_amps.size(),
+		sfm_cn_amps.size(),
+		sfm_ap_amps.size(),
+		sfm_bp_amps.size(),
+		sfm_cp_amps.size(),
+		sfm_aw_amps.size(),
+		sfm_bw_amps.size(),
+		fis_as_amps.size()
 	);
 }
 
@@ -198,11 +274,18 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 	ROS_INFO_COND_NAMED(
 		log_generation_details_,
 		"SocTrajGen",
-		"Trajectory generation with: {p_i0: %3.5f, p_ij: %3.5f, p_is: %3.5f, p_ik: %3.5f}",
-		sample_amplifiers.force_internal_amplifier,
-		sample_amplifiers.force_interaction_dynamic_amplifier,
-		sample_amplifiers.force_interaction_social_amplifier,
-		sample_amplifiers.force_interaction_static_amplifier
+		"Trajectory generation with: "
+		"{v_i0: %3.5f, An: %3.5f, Bn: %3.5f, Cn: %3.5f, Ap: %3.5f, Bp: %3.5f, Cp: %3.5f, Aw: %3.5f, Bw: %3.5f, As: %3.5f}",
+		sample_amplifiers.sfm_speed_desired_amplifier,
+		sample_amplifiers.sfm_an_amplifier,
+		sample_amplifiers.sfm_bn_amplifier,
+		sample_amplifiers.sfm_cn_amplifier,
+		sample_amplifiers.sfm_ap_amplifier,
+		sample_amplifiers.sfm_bp_amplifier,
+		sample_amplifiers.sfm_cp_amplifier,
+		sample_amplifiers.sfm_aw_amplifier,
+		sample_amplifiers.sfm_bw_amplifier,
+		sample_amplifiers.fis_as_amplifier
 	);
 
 	// speed i.e. velocity magnitude
@@ -232,18 +315,13 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		computeForces(
 			world_model_plan,
 			dt,
+			sample_amplifiers,
 			force_internal,
 			force_interaction_dynamic,
 			force_interaction_static,
 			force_human_action,
 			i == 0 // motion data updated only at first iteration
 		);
-
-		// multiply SFM and Fuzzy Inference outputs
-		force_internal *= sample_amplifiers.force_internal_amplifier;
-		force_interaction_dynamic *= sample_amplifiers.force_interaction_dynamic_amplifier;
-		force_interaction_static *= sample_amplifiers.force_interaction_static_amplifier;
-		force_human_action *= sample_amplifiers.force_interaction_social_amplifier;
 
 		// force vectors are already multiplied by proper factors
 		geometry::Vector twist_cmd;
@@ -383,6 +461,7 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 	computeForces(
 		world_model_,
 		dt,
+		SampleAmplifierSet(),
 		force_internal,
 		force_interaction_dynamic,
 		force_interaction_static,
@@ -503,6 +582,7 @@ int SocialTrajectoryGenerator::computeStepsNumber(const double& speed_linear, co
 void SocialTrajectoryGenerator::computeForces(
 	const World& world_model,
 	const double& dt,
+	const SampleAmplifierSet& sample_amplifiers,
 	geometry::Vector& force_internal,
 	geometry::Vector& force_interaction_dynamic,
 	geometry::Vector& force_interaction_static,
@@ -515,6 +595,33 @@ void SocialTrajectoryGenerator::computeForces(
 	std::vector<Distance> meaningful_interaction_static;
 	std::vector<Distance> meaningful_interaction_dynamic;
 
+	// backup SFM internal parameters, change them and restore after calculations
+	double sfm_param_an = sfm_.getParameterAn();
+	double sfm_param_bn = sfm_.getParameterBn();
+	double sfm_param_cn = sfm_.getParameterCn();
+	double sfm_param_ap = sfm_.getParameterAp();
+	double sfm_param_bp = sfm_.getParameterBp();
+	double sfm_param_cp = sfm_.getParameterCp();
+	double sfm_param_aw = sfm_.getParameterAw();
+	double sfm_param_bw = sfm_.getParameterBw();
+	double sfm_param_speed_desired = sfm_.getParameterDesiredSpeed();
+	sfm_.setEquationParameters(
+		sfm_param_an * sample_amplifiers.sfm_an_amplifier,
+		sfm_param_bn * sample_amplifiers.sfm_bn_amplifier,
+		sfm_param_cn * sample_amplifiers.sfm_cn_amplifier,
+		sfm_param_ap * sample_amplifiers.sfm_ap_amplifier,
+		sfm_param_bp * sample_amplifiers.sfm_bp_amplifier,
+		sfm_param_cp * sample_amplifiers.sfm_cp_amplifier,
+		sfm_param_aw * sample_amplifiers.sfm_aw_amplifier,
+		sfm_param_bw * sample_amplifiers.sfm_bw_amplifier,
+		sfm_param_speed_desired * sample_amplifiers.sfm_speed_desired_amplifier
+	);
+
+	// same with FIS
+	double fis_param_as = social_conductor_.getParameterAs();
+	social_conductor_.setEquationParameters(sample_amplifiers.fis_as_amplifier);
+
+	// begin calculations
 	sfm_.computeSocialForce(
 		world_model,
 		dt,
@@ -575,6 +682,20 @@ void SocialTrajectoryGenerator::computeForces(
 	force_interaction_dynamic = sfm_.getForceInteractionDynamic();
 	force_interaction_static = sfm_.getForceInteractionStatic();
 	force_human_action = social_conductor_.getSocialVector();
+
+	// restore initial values of params
+	sfm_.setEquationParameters(
+		sfm_param_an,
+		sfm_param_bn,
+		sfm_param_cn,
+		sfm_param_ap,
+		sfm_param_bp,
+		sfm_param_cp,
+		sfm_param_aw,
+		sfm_param_bw,
+		sfm_param_speed_desired
+	);
+	social_conductor_.setEquationParameters(fis_param_as);
 
 	if (update_motion_data) {
 		diag_force_internal_ = sfm_.getForceInternal();

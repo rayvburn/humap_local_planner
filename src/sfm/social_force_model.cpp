@@ -68,6 +68,57 @@ void SocialForceModel::init(std::shared_ptr<const hubero_local_planner::SfmParam
 	setParameters();
 }
 
+void SocialForceModel::setEquationParameters(
+	double an,
+	double bn,
+	double cn,
+	double ap,
+	double bp,
+	double cp,
+	double aw,
+	double bw
+) {
+	An_ = an;
+	Bn_ = bn;
+	Cn_ = cn;
+	Ap_ = ap;
+	Bp_ = bp;
+	Cp_ = cp;
+	Aw_ = aw;
+	Bw_ = bw;
+}
+
+void SocialForceModel::setEquationParameters(
+	double an,
+	double bn,
+	double cn,
+	double ap,
+	double bp,
+	double cp,
+	double aw,
+	double bw,
+	double speed_desired
+) {
+	setEquationParameters(an, bn, cn, ap, bp, cp, aw, bw);
+	speed_desired_ = speed_desired;
+}
+
+void SocialForceModel::setEquationParameters(
+	double an,
+	double bn,
+	double cn,
+	double ap,
+	double bp,
+	double cp,
+	double aw,
+	double bw,
+	double speed_desired,
+	double relaxation_time
+) {
+	setEquationParameters(an, bn, cn, ap, bp, cp, aw, bw, speed_desired);
+	relaxation_time_ = relaxation_time;
+}
+
 bool SocialForceModel::areInteractionForcesDisabled() const {
 	// enabled by default
 	if (cfg_ == nullptr) {
@@ -160,31 +211,31 @@ void SocialForceModel::setParameters() {
 		std::default_random_engine rand_gen;
 
 		// desired speed (based on (Moussaid et al. (2009))
-		std::normal_distribution<float> dist_spd_desired(1.29f, 0.19f);
+		std::normal_distribution<float> dist_spd_desired(cfg_->speed_desired, cfg_->speed_desired_stddev);
 		speed_desired_ = dist_spd_desired(rand_gen);
 
 		// relaxation time (based on (Moussaid et al. (2009))
-		std::normal_distribution<float> dist_tau(0.54f, 0.05f);
+		std::normal_distribution<float> dist_tau(cfg_->relaxation_time, cfg_->relaxation_time_stddev);
 		relaxation_time_ = dist_tau(rand_gen);
 
 		// ----------------------------- Model C ------------------------------------------------------ //
 		// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
 		// Generate random value of mean a and standard deviation b
-		std::normal_distribution<float> dist_an(0.2615f, 0.0551f);
+		std::normal_distribution<float> dist_an(cfg_->an, cfg_->an_stddev);
 		An_ = dist_an(rand_gen);
-		std::normal_distribution<float> dist_bn(0.4026f, 0.1238f);
+		std::normal_distribution<float> dist_bn(cfg_->bn, cfg_->bn_stddev);
 		Bn_ = dist_bn(rand_gen);
-		std::normal_distribution<float> dist_cn(2.1614f, 0.3728f);
+		std::normal_distribution<float> dist_cn(cfg_->cn, cfg_->cn_stddev);
 		Cn_ = dist_cn(rand_gen);
-		std::normal_distribution<float> dist_ap(1.5375f, 0.3084f);
+		std::normal_distribution<float> dist_ap(cfg_->ap, cfg_->ap_stddev);
 		Ap_ = dist_ap(rand_gen);
-		std::normal_distribution<float> dist_bp(0.4938f, 0.1041f);
+		std::normal_distribution<float> dist_bp(cfg_->bp, cfg_->bp_stddev);
 		Bp_ = dist_bp(rand_gen);
-		std::normal_distribution<float> dist_cp(0.5710f, 0.1409f);
+		std::normal_distribution<float> dist_cp(cfg_->cp, cfg_->cp_stddev);
 		Cp_ = dist_cp(rand_gen);
-		std::normal_distribution<float> dist_aw(0.3280f, 0.1481f);
+		std::normal_distribution<float> dist_aw(cfg_->aw, cfg_->aw_stddev);
 		Aw_ = dist_aw(rand_gen);
-		std::normal_distribution<float> dist_bw(0.1871f, 0.0563f);
+		std::normal_distribution<float> dist_bw(cfg_->bw, cfg_->bw_stddev);
 		Bw_ = dist_bw(rand_gen);
 		printf(
 			"SFM parameters computed in a non-deterministic way. Values are as follows:\r\n"
@@ -209,33 +260,20 @@ void SocialForceModel::setParameters() {
 			Aw_,
 			Bw_
 		);
-	} else {
-		// homogenous (deterministic) mode selected
-		speed_desired_ = 1.29f;
-		relaxation_time_ = 0.54f;
-		An_ = 0.2615f;
-		Bn_ = 0.4026f;
-		Cn_ = 2.1614f;
-		Ap_ = 1.5375f;
-		Bp_ = 0.4938f;
-		Cp_ = 0.5710f;
-		Aw_ = 0.3280f;
-		Bw_ = 0.1871f;
-	}
-
-	if (!cfg_->use_tuned_params) {
 		return;
 	}
 
-	// See article description for details
-	An_ *= -8.0;
-	Bn_ *= +5.0;
-	Cn_ *= +1.5;
-	// Ap_ does not require changes
-	Bp_ *= +2.0;
-	Cp_ *= +0.8;
-	Aw_ *= +123.139;
-	Bw_ *= +1.2;
+	// homogenous (deterministic) mode selected
+	speed_desired_ = cfg_->speed_desired;
+	relaxation_time_ = cfg_->relaxation_time;
+	An_ = cfg_->an;
+	Bn_ = cfg_->bn;
+	Cn_ = cfg_->cn;
+	Ap_ = cfg_->ap;
+	Bp_ = cfg_->bp;
+	Cp_ = cfg_->cp;
+	Aw_ = cfg_->aw;
+	Bw_ = cfg_->bw;
 }
 
 // ------------------------------------------------------------------- //

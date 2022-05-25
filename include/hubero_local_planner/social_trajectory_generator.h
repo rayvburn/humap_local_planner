@@ -26,10 +26,29 @@ class SocialTrajectoryGenerator: public base_local_planner::TrajectorySampleGene
 public:
 	/// Helper struct to pass a custom amplifier set to @ref initialise
 	struct SampleAmplifierSet {
-		double force_internal_amplifier;
-		double force_interaction_dynamic_amplifier;
-		double force_interaction_social_amplifier;
-		double force_interaction_static_amplifier;
+		double sfm_speed_desired_amplifier;
+		double sfm_an_amplifier;
+		double sfm_bn_amplifier;
+		double sfm_cn_amplifier;
+		double sfm_ap_amplifier;
+		double sfm_bp_amplifier;
+		double sfm_cp_amplifier;
+		double sfm_aw_amplifier;
+		double sfm_bw_amplifier;
+		double fis_as_amplifier;
+
+		/// Default ctor - unit amplifiers do not affect results
+		SampleAmplifierSet():
+			sfm_speed_desired_amplifier(1.0),
+			sfm_an_amplifier(1.0),
+			sfm_bn_amplifier(1.0),
+			sfm_cn_amplifier(1.0),
+			sfm_ap_amplifier(1.0),
+			sfm_bp_amplifier(1.0),
+			sfm_cp_amplifier(1.0),
+			sfm_aw_amplifier(1.0),
+			sfm_bw_amplifier(1.0),
+			fis_as_amplifier(1.0) {}
 	};
 
 	SocialTrajectoryGenerator();
@@ -249,6 +268,7 @@ protected:
 	void computeForces(
 		const World& world_model,
 		const double& dt,
+		const SampleAmplifierSet& sample_amplifiers,
 		geometry::Vector& force_internal,
 		geometry::Vector& force_interaction_dynamic,
 		geometry::Vector& force_interaction_static,

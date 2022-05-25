@@ -137,6 +137,45 @@ public:
 	/// \brief Function which sets internal parameters according to loaded parameters
 	void init(std::shared_ptr<const hubero_local_planner::SfmParams> cfg);
 
+	/// \brief Updates internal parameters
+	void setEquationParameters(
+		double an,
+		double bn,
+		double cn,
+		double ap,
+		double bp,
+		double cp,
+		double aw,
+		double bw
+	);
+
+	/// \brief Updates internal parameters
+	void setEquationParameters(
+		double an,
+		double bn,
+		double cn,
+		double ap,
+		double bp,
+		double cp,
+		double aw,
+		double bw,
+		double speed_desired
+	);
+
+	/// \brief Updates internal parameters
+	void setEquationParameters(
+		double an,
+		double bn,
+		double cn,
+		double ap,
+		double bp,
+		double cp,
+		double aw,
+		double bw,
+		double speed_desired,
+		double relaxation_time
+	);
+
 	/// \brief Returns true if interaction forces were disabled in the provided config struct
 	bool areInteractionForcesDisabled() const;
 
@@ -168,6 +207,51 @@ public:
 	inline Vector getForceCombined() const {
 		return (force_combined_);
 	}
+
+	/**
+	 * @defgroup eqnparams Equation parameter getters
+	 * @{
+	 */
+	double getParameterAn() const {
+		return An_;
+	};
+
+	double getParameterBn() const {
+		return Bn_;
+	};
+
+	double getParameterCn() const {
+		return Cn_;
+	};
+
+	double getParameterAp() const {
+		return Ap_;
+	};
+
+	double getParameterBp() const {
+		return Bp_;
+	};
+
+	double getParameterCp() const {
+		return Cp_;
+	};
+
+	double getParameterAw() const {
+		return Aw_;
+	};
+
+	double getParameterBw() const {
+		return Bw_;
+	};
+
+	double getParameterDesiredSpeed() const {
+		return speed_desired_;
+	};
+
+	double getParameterRelaxationTime() const {
+		return relaxation_time_;
+	};
+	/// @} // end of eqnparams
 
 	/// \brief Default destructor
 	virtual ~SocialForceModel() = default;
