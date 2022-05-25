@@ -91,66 +91,30 @@ void SocialTrajectoryGenerator::initialise(
 	auto force_internal_amps = computeAmplifierSamples(
 		limits_amplifiers_.force_internal_amplifier_min,
 		limits_amplifiers_.force_internal_amplifier_max,
-		limits_amplifiers_.force_internal_amplifier_granularity
+		limits_amplifiers_.force_internal_amplifier_granularity,
+		"internal force"
 	);
-	if (force_internal_amps.empty()) {
-		ROS_WARN_NAMED(
-			"SocTrajGen", "Discarding amplifier samples for internal force"
-			" (min %3.2f, max %3.2f, granularity %3.2f). Setting to 0",
-			limits_amplifiers_.force_internal_amplifier_min,
-			limits_amplifiers_.force_internal_amplifier_max,
-			limits_amplifiers_.force_internal_amplifier_granularity
-		);
-		force_internal_amps.push_back(0.0);
-	}
 
 	auto force_interaction_static_amps = computeAmplifierSamples(
 		limits_amplifiers_.force_interaction_static_amplifier_min,
 		limits_amplifiers_.force_interaction_static_amplifier_max,
-		limits_amplifiers_.force_interaction_static_amplifier_granularity
+		limits_amplifiers_.force_interaction_static_amplifier_granularity,
+		"static forces"
 	);
-	if (force_interaction_static_amps.empty()) {
-		ROS_WARN_NAMED(
-			"SocTrajGen", "Discarding amplifier samples for static forces"
-			" (min %3.2f, max %3.2f, granularity %3.2f). Setting to 0",
-			limits_amplifiers_.force_interaction_static_amplifier_min,
-			limits_amplifiers_.force_interaction_static_amplifier_max,
-			limits_amplifiers_.force_interaction_static_amplifier_granularity
-		);
-		force_interaction_static_amps.push_back(0.0);
-	}
 
 	auto force_interaction_dynamic_amps = computeAmplifierSamples(
 		limits_amplifiers_.force_interaction_dynamic_amplifier_min,
 		limits_amplifiers_.force_interaction_dynamic_amplifier_max,
-		limits_amplifiers_.force_interaction_dynamic_amplifier_granularity
+		limits_amplifiers_.force_interaction_dynamic_amplifier_granularity,
+		"dynamic forces"
 	);
-	if (force_interaction_dynamic_amps.empty()) {
-		ROS_WARN_NAMED(
-			"SocTrajGen", "Discarding amplifier samples for dynamic forces"
-			" (min %3.2f, max %3.2f, granularity %3.2f). Setting to 0",
-			limits_amplifiers_.force_interaction_dynamic_amplifier_min,
-			limits_amplifiers_.force_interaction_dynamic_amplifier_max,
-			limits_amplifiers_.force_interaction_dynamic_amplifier_granularity
-		);
-		force_interaction_dynamic_amps.push_back(0.0);
-	}
 
 	auto force_interaction_social_amps = computeAmplifierSamples(
 		limits_amplifiers_.force_interaction_social_amplifier_min,
 		limits_amplifiers_.force_interaction_social_amplifier_max,
-		limits_amplifiers_.force_interaction_social_amplifier_granularity
+		limits_amplifiers_.force_interaction_social_amplifier_granularity,
+		"social forces"
 	);
-	if (force_interaction_social_amps.empty()) {
-		ROS_WARN_NAMED(
-			"SocTrajGen", "Discarding amplifier samples for social forces"
-			" (min %3.2f, max %3.2f, granularity %3.2f). Setting to 0",
-			limits_amplifiers_.force_interaction_social_amplifier_min,
-			limits_amplifiers_.force_interaction_social_amplifier_max,
-			limits_amplifiers_.force_interaction_social_amplifier_granularity
-		);
-		force_interaction_social_amps.push_back(0.0);
-	}
 
 	// if using continuous acceleration, trim velocities so they surely not exceed limits
 	computeVelocityLimitsWithCA(world_model_, vels_min_, vels_max_);
@@ -371,7 +335,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 std::vector<double> SocialTrajectoryGenerator::computeAmplifierSamples(
 	double amplifier_min,
 	double amplifier_max,
-	double granularity
+	double granularity,
+	const std::string& log_identifier
 ) {
 	std::vector<double> samples;
 	int num_amps = ceil((amplifier_max - amplifier_min) / granularity);
@@ -385,6 +350,18 @@ std::vector<double> SocialTrajectoryGenerator::computeAmplifierSamples(
 			break;
 		}
 		samples.push_back(amp_value);
+	}
+
+	if (samples.empty()) {
+		ROS_WARN_NAMED(
+			"SocTrajGen", "Discarding amplifier samples for %s"
+			" (min %3.2f, max %3.2f, granularity %3.2f). Setting to 0.0",
+			log_identifier.c_str(),
+			amplifier_min,
+			amplifier_max,
+			granularity
+		);
+		samples.push_back(0.0);
 	}
 
 	return samples;

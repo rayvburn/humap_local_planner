@@ -206,7 +206,12 @@ public:
 		return diag_behaviour_active_;
 	}
 
-	static std::vector<double> computeAmplifierSamples(double amplifier_min, double amplifier_max, double granularity);
+	static std::vector<double> computeAmplifierSamples(
+		double amplifier_min,
+		double amplifier_max,
+		double granularity,
+		const std::string& log_identifier
+	);
 
 protected:
 	/**
