@@ -579,21 +579,8 @@ Pose HuberoPlanner::getGoalFromPlan() const {
 
 bool HuberoPlanner::planMovingRobot() {
 	// prepare data for planning
-	// TSP: Trajectory Sampling Parameters
-	TrajectorySamplingParams tsp {};
-	tsp.force_internal_amplifier_min = cfg_->getTrajectorySampling()->force_internal_amplifier_min;
-	tsp.force_internal_amplifier_max = cfg_->getTrajectorySampling()->force_internal_amplifier_max;
-	tsp.force_interaction_static_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_min;
-	tsp.force_interaction_static_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_max;
-	tsp.force_interaction_dynamic_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_min;
-	tsp.force_interaction_dynamic_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_max;
-	tsp.force_interaction_social_amplifier_min = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_min;
-	tsp.force_interaction_social_amplifier_max = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_max;
-
-	tsp.force_internal_amplifier_granularity = cfg_->getTrajectorySampling()->force_internal_amplifier_granularity;
-	tsp.force_interaction_static_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_static_amplifier_granularity;
-	tsp.force_interaction_dynamic_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_dynamic_amplifier_granularity;
-	tsp.force_interaction_social_amplifier_granularity = cfg_->getTrajectorySampling()->force_interaction_social_amplifier_granularity;
+	// TSP: Trajectory Sampling Parameters - create a copy
+	TrajectorySamplingParams tsp = *cfg_->getTrajectorySampling();
 
 	// initialize generator with updated parameters
 	generator_.initialise(
