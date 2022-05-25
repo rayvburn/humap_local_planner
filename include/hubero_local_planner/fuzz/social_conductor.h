@@ -39,6 +39,9 @@ public:
 	/// \brief Updates internal state according to a given structure's content
 	void initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg);
 
+	/// \brief Updates parameter(s)
+	void setEquationParameters(double as);
+
 	/// \brief Evaluates force factor (from given `cfg`) to check if FIS calculations make sense
 	bool areFuzzyBehavioursDisabled() const;
 
@@ -70,6 +73,11 @@ public:
 	/// \return
 	std::string getBehaviourActive() const;
 
+	/// \brief Retrieves As parameter
+	double getParameterAs() const {
+		return As_;
+	}
+
 	/// \brief Destructor
 	virtual ~SocialConductor() = default;
 
@@ -95,6 +103,9 @@ private:
 		const double& speed_agent,
 		const double& speed_obstacle
 	);
+
+	/// \brief Levelling factor
+	double As_;
 };
 
 } /* namespace fuzz */

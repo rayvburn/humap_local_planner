@@ -71,6 +71,8 @@ namespace hubero_local_planner {
 		double force_factor = 1.0;
 		/// Distance at which any created human action force fade completely
 		double human_action_range = 4.0;
+		/// Levelling factor that also directly affects amplitude of the resultant force
+		double as = 1.1865;
 	};
 
 	/**

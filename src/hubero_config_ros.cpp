@@ -101,6 +101,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 
 	fis_->force_factor = cfg.force_factor;
 	fis_->human_action_range = cfg.human_action_range;
+	fis_->as = cfg.as;
 
 	limits_->acc_lim_theta = cfg.acc_lim_theta;
 	limits_->acc_lim_x = cfg.acc_lim_x;
