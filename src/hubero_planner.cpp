@@ -492,14 +492,22 @@ bool HuberoPlanner::enlargeObstacle(
 	const Pose& robot_closest_to_obstacle_pose,
 	Pose& obstacle_closest_to_robot_pose
 ) const {
-	// first, check if any action will be valid (error conditions)
+	// first, check if any action will be valid (distance vector will really be extended)
 	if (cfg_->getGeneral()->obstacle_extension_multiplier <= 0.0
 		|| robot_model_->getInscribedRadius() <= 0.0
 	) {
 		return false;
 	}
 
+	// as threshold distance we use slightly extended TTC collision threshold
+	const double DISTANCE_COLLISION_IMMINENT = 1.01 * cfg_->getCost()->ttc_collision_distance;
+
 	Vector dist_init(obstacle_closest_to_robot_pose.getPosition() - robot_closest_to_obstacle_pose.getPosition());
+	// check if initial distance is smaller than collision distance; if true, artificial movement of the obstacle will not do any better
+	if (dist_init.calculateLength() <= DISTANCE_COLLISION_IMMINENT) {
+		return false;
+	}
+
 	// create unit vector with direction equal to `dist_init`
 	Angle dist_init_dir(dist_init);
 	Vector obstacle_extension_v(dist_init_dir);
@@ -521,10 +529,10 @@ bool HuberoPlanner::enlargeObstacle(
 		return true;
 	}
 
-	// try to keep the obstacle point close to the robot (1 cm) but do not allow it to be placed within robot footprint
+	// try to keep the obstacle point close to the robot (few cm) but do not allow it to be placed within footprint
 	obstacle_extension_v = Vector(dist_init_dir);
 	obstacle_pose_hypothesis = Pose(
-		robot_closest_to_obstacle_pose.getPosition() + 0.01 * obstacle_extension_v,
+		robot_closest_to_obstacle_pose.getPosition() + DISTANCE_COLLISION_IMMINENT * obstacle_extension_v,
 		obstacle_closest_to_robot_pose.getOrientation()
 	);
 	dist_modded = Vector(
