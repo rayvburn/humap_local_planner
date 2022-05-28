@@ -55,7 +55,7 @@ double CHCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 		robot_vel_prev = robot_vel;
 	}
 
-	return chc;
+	return chc / traj.getPointsSize();
 }
 
 } // namespace hubero_local_planner

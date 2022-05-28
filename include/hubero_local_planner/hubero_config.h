@@ -163,7 +163,7 @@ namespace hubero_local_planner {
 		/// The weight for the time to collision (TTC) cost function
 		double ttc_scale = 3.0;
 		/// The weight for the cost function that penalizes robot heading changes
-		double chc_scale = 1.0;
+		double chc_scale = 18.0;
 		/// The weight for the cost function that penalizes high speeds near global goal
 		double speedy_goal_scale = 12.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
