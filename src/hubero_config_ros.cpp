@@ -181,6 +181,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->ttc_scale = cfg.ttc_scale;
 	costs_->chc_scale = cfg.chc_scale;
 	costs_->speedy_goal_scale = cfg.speedy_goal_scale;
+	costs_->velocity_smoothness_scale = cfg.velocity_smoothness_scale;
 	costs_->oscillation_reset_dist = cfg.oscillation_reset_dist;
 	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
 	costs_->scaling_speed = cfg.scaling_speed;
