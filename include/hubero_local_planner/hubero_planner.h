@@ -11,6 +11,7 @@
 #include <hubero_local_planner/chc_cost_function.h>
 #include <hubero_local_planner/ttc_cost_function.h>
 #include <hubero_local_planner/speedy_goal_cost_function.h>
+#include <hubero_local_planner/velocity_smoothness_cost_function.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -409,6 +410,8 @@ protected:
 	CHCCostFunction chc_costs_;
 	/// Prevents overshoot when robot approaches goal position with a high speed
 	SpeedyGoalCostFunction speedy_goal_costs_;
+	/// Advantages trajectories that maintain velocities similar to the current one
+	VelocitySmoothnessCostFunction velocity_smoothness_costs_;
 	/// @}
 
 }; // class HuberoPlanner
