@@ -279,6 +279,18 @@ public:
 		return ttc_costs_.getPredictionDynamicObjects();
 	}
 
+	/**
+	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
+	 *
+	 * The edge point is moved according to `obstacle_extension_multiplier` from parameters and robot inscribed radius
+	 */
+	static bool enlargeObstacle(
+		const Pose& robot_closest_to_obstacle_pose,
+		Pose& obstacle_closest_to_robot_pose,
+		double extension_distance,
+		double distance_collision_imminent
+	);
+
 protected:
 	/**
 	 * @brief Updates cost functions with the contents of the @ref HuberoConfig
@@ -293,16 +305,6 @@ protected:
 	 * @param world_model world model that be filled up with obstacles
 	 */
 	void createEnvironmentModel(const Pose& pose_ref, World& world_model);
-
-	/**
-	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
-	 *
-	 * The edge point is moved according to `obstacle_extension_multiplier` from parameters and robot inscribed radius
-	 */
-	bool enlargeObstacle(
-		const Pose& robot_closest_to_obstacle_pose,
-		Pose& obstacle_closest_to_robot_pose
-	) const;
 
 	/**
 	 * @brief Updates @ref goal_local_ with a pose that is located far enough from the robot or it is the global goal
