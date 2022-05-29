@@ -203,6 +203,7 @@ add_library(hubero_local_planner
     src/chc_cost_function.cpp
     src/speedy_goal_cost_function.cpp
     src/velocity_smoothness_cost_function.cpp
+    src/contextualized_cost_function.cpp
     src/latched_stop_rotate_controller.cpp
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
