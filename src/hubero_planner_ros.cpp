@@ -302,7 +302,7 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 
 	// copy LocalPlannerLimits and propagate recent changes to LocalPlannerUtil
 	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
-	planner_util_->reconfigureCB(limits, level);
+	planner_util_->reconfigureCB(limits, false);
 }
 
 // protected
