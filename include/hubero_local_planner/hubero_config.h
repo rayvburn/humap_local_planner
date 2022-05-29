@@ -168,6 +168,8 @@ namespace hubero_local_planner {
 		double speedy_goal_scale = 12.0;
 		/// The weight for the cost function that penalizes velocity changes along trajectory
 		double velocity_smoothness_scale = 13.0;
+		/// The weight for the cost function that penalizes trajectories based on contexts embedded into costmap
+		double contextualized_costs_scale = 0.13;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians

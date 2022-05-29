@@ -30,7 +30,8 @@ HuberoPlanner::HuberoPlanner(
 	alignment_costs_(planner_util_->getCostmap()),
 	ttc_costs_(world_model_),
 	speedy_goal_costs_(goal_),
-	velocity_smoothness_costs_(vel_)
+	velocity_smoothness_costs_(vel_),
+	contextualized_costs_(planner_util_->getCostmap())
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
@@ -49,6 +50,7 @@ HuberoPlanner::HuberoPlanner(
 	alignment_costs_.setStopOnFailure(false);
 	// whether footprint cost is summed throughout each point or maximum cost is used, max by default
 	obstacle_costs_.setSumScores(false);
+	contextualized_costs_.setSumScores(false);
 	oscillation_costs_.resetOscillationFlags();
 
 	// set up all the cost functions that will be applied in order
@@ -63,6 +65,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&chc_costs_);
 	critics.push_back(&speedy_goal_costs_);
 	critics.push_back(&velocity_smoothness_costs_);
+	critics.push_back(&contextualized_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -366,6 +369,7 @@ void HuberoPlanner::updateCostParameters() {
 	chc_costs_.setScale(cfg_->getCost()->chc_scale);
 	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
 	velocity_smoothness_costs_.setScale(cfg_->getCost()->velocity_smoothness_scale);
+	contextualized_costs_.setScale(cfg_->getCost()->contextualized_costs_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -783,7 +787,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		"HuberoPlanner",
 		"Best trajectory cost details: "
 		"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-		"TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f",
+		"TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f",
 		obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(result_traj_),
 		oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(result_traj_),
 		path_costs_.getScale() * path_costs_.scoreTrajectory(result_traj_),
@@ -793,7 +797,8 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(result_traj_),
 		chc_costs_.getScale() * chc_costs_.scoreTrajectory(result_traj_),
 		speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(result_traj_),
-		velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(result_traj_)
+		velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(result_traj_),
+		contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(result_traj_)
 	);
 
 	if (!cfg_->getDiagnostics()->log_explored_trajectories && !cfg_->getDiagnostics()->log_pts_of_explored_trajectories) {
