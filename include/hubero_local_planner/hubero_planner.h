@@ -9,6 +9,7 @@
 #include <hubero_local_planner/social_trajectory_generator.h>
 #include <hubero_local_planner/latched_stop_rotate_controller.h>
 #include <hubero_local_planner/chc_cost_function.h>
+#include <hubero_local_planner/contextualized_cost_function.h>
 #include <hubero_local_planner/ttc_cost_function.h>
 #include <hubero_local_planner/speedy_goal_cost_function.h>
 #include <hubero_local_planner/velocity_smoothness_cost_function.h>
@@ -412,6 +413,8 @@ protected:
 	SpeedyGoalCostFunction speedy_goal_costs_;
 	/// Advantages trajectories that maintain velocities similar to the current one
 	VelocitySmoothnessCostFunction velocity_smoothness_costs_;
+	/// Takes into account various contexts included in layered costmap (includes obstacle inflation too)
+	ContextualizedCostFunction contextualized_costs_;
 	/// @}
 
 }; // class HuberoPlanner
