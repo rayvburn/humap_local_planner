@@ -116,6 +116,8 @@ public:
 
     teb_local_planner::PoseSE2 getAsTebPose() const;
 
+    Eigen::Vector3f getAsEigen2D() const;
+
 protected:
     ignition::math::Pose3d pose_;
 }; // class Pose
