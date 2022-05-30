@@ -202,6 +202,13 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		traj_valid = planOrientationAdjustment();
 	}
 
+	// debrief stateful scoring functions
+	oscillation_costs_.updateOscillationFlags(
+		pose_.getAsEigen2D(),
+		&result_traj_,
+		cfg_->getLimits()->min_vel_trans
+	);
+
 	// no legal trajectory, command zero
 	if (!traj_valid || result_traj_.cost_ < 0) {
 		drive_velocities.pose.position.x = 0;
