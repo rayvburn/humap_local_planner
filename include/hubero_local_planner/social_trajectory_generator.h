@@ -234,18 +234,6 @@ public:
 
 protected:
 	/**
-	 * @brief Computes velocity limits assuming continuous acceleration
-	 *
-	 * @note Based on contents of base_local_planner::SimpleTrajectoryGenerator::initialise
-	 * Copyright (c) 2008, Willow Garage, Inc., Author: TKruse
-	 */
-	void computeVelocityLimitsWithCA(
-		const World& world_model,
-		Eigen::Vector3f& min_vel,
-		Eigen::Vector3f& max_vel
-	);
-
-	/**
 	 * @details Makes sure that the robot would at least be moving with one of the required minimum velocities
 	 * for translation and rotation (if set)
 	 *

@@ -77,6 +77,44 @@ void computeVelocityGlobal(
 );
 
 /**
+ * @brief Performs conversion from velocity expressed in global c.s. to local c.s. velocity vector
+ *
+ * This version is appropriate for robots with holonomic constraints
+ *
+ * @param vel_global input
+ * @param pose input
+ * @param vel_local output, x, y and theta velocities
+ */
+void computeVelocityLocal(
+	const geometry::Vector& vel_global,
+	const geometry::Pose& pose,
+	geometry::Vector& vel_local
+);
+
+/**
+ * @brief Adjusts velocity command with acceleration limits
+ *
+ * Based on the current velocity @ref vel, acceleration limits and @ref sim_period, recomputes @ref cmd_vel.
+ * Continuous acceleration assumption is used here.
+ *
+ * @return True if @ref cmd_vel was modified to comply with acceleration limits
+ */
+bool adjustTwistWithAccLimits(
+	const geometry::Vector& vel,
+	const double& acc_lim_x,
+	const double& acc_lim_y,
+	const double& acc_lim_th,
+	const double& vel_min_x,
+	const double& vel_min_y,
+	const double& vel_min_th,
+	const double& vel_max_x,
+	const double& vel_max_y,
+	const double& vel_max_th,
+	const double& sim_period,
+	geometry::Vector& cmd_vel
+);
+
+/**
  * @brief Computes pure difference between all pose components
  *
  * `pose_ref` element is used as a reference (e.g. as new pose, whereas `pose_other` is the previous one).
