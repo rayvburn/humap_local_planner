@@ -169,5 +169,13 @@ teb_local_planner::PoseSE2 Pose::getAsTebPose() const {
     );
 }
 
+Eigen::Vector3f Pose::getAsEigen2D() const {
+    return Eigen::Vector3f(
+        getX(),
+        getY(),
+        getYaw()
+    );
+}
+
 }; // namespace geometry
 }; // namespace hubero_local_planner
