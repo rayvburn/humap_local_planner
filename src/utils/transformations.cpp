@@ -173,6 +173,77 @@ void computeVelocityGlobal(
 	);
 }
 
+void computeVelocityLocal(
+	const Vector& vel_global,
+	const Pose& pose,
+	Vector& vel_local
+) {
+	double yaw = pose.getYaw();
+	Eigen::Matrix3d rotation_yaw;
+	// create a rotation matrix for nonholonomic, https://www.cs.cmu.edu/~rasc/Download/AMRobots3.pdf (3.2)
+	// pseudoinverted matrix above
+	rotation_yaw <<
+		cos(yaw), sin(yaw), 0,
+		0, 0, 0,
+		0, 0, 1;
+	// compute local velocity vector
+	Eigen::Vector3d vel_local_eigen = rotation_yaw * vel_global.getAsEigen<Eigen::Vector3d>();
+	// prepare twist expressed in local coordinates
+	vel_local = Vector(vel_local_eigen);
+}
+
+bool adjustTwistWithAccLimits(
+	const geometry::Vector& vel,
+	const double& acc_lim_x,
+	const double& acc_lim_y,
+	const double& acc_lim_th,
+	const double& vel_min_x,
+	const double& vel_min_y,
+	const double& vel_min_th,
+	const double& vel_max_x,
+	const double& vel_max_y,
+	const double& vel_max_th,
+	const double& sim_period,
+	geometry::Vector& cmd_vel
+) {
+	double vel_min_x_acc = std::max(vel_min_x, vel.getX() - acc_lim_x * sim_period);
+	double vel_min_y_acc = std::max(vel_min_y, vel.getY() - acc_lim_y * sim_period);
+	double vel_min_th_acc = std::max(vel_min_th, vel.getZ() - acc_lim_th * sim_period);
+
+	double vel_max_x_acc = std::min(vel_max_x, vel.getX() + acc_lim_x * sim_period);
+	double vel_max_y_acc = std::min(vel_max_y, vel.getY() + acc_lim_y * sim_period);
+	double vel_max_th_acc = std::min(vel_max_th, vel.getZ() + acc_lim_th * sim_period);
+
+	// if any component is modified, change other ones proportionally
+	geometry::Vector cmd_vel_backup = cmd_vel;
+	cmd_vel.setX(std::min(std::max(vel_min_x_acc, cmd_vel_backup.getX()), vel_max_x_acc));
+	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel_backup.getY()), vel_max_y_acc));
+	cmd_vel.setZ(std::min(std::max(vel_min_th_acc, cmd_vel_backup.getZ()), vel_max_th_acc));
+
+	std::vector<double> vel_multipliers;
+	vel_multipliers.push_back(std::abs(cmd_vel.getX() / cmd_vel_backup.getX()));
+	vel_multipliers.push_back(std::abs(cmd_vel.getY() / cmd_vel_backup.getY()));
+	vel_multipliers.push_back(std::abs(cmd_vel.getZ() / cmd_vel_backup.getZ()));
+
+	double vel_multiplier = *std::min_element(vel_multipliers.cbegin(), vel_multipliers.cend());
+	// check if any component was modified
+	if (vel_multiplier >= 1.0) {
+		// no action required - acceleration within bounds
+		return false;
+	}
+
+	// proportionally modify intial cmd_vel to command that is achievable within `dt`
+	cmd_vel.setX(vel_multiplier * cmd_vel_backup.getX());
+	cmd_vel.setY(vel_multiplier * cmd_vel_backup.getY());
+	cmd_vel.setZ(vel_multiplier * cmd_vel_backup.getZ());
+
+	// makes sure that any not investigated 'sign changes' are included and acceleration limits are satisfied
+	cmd_vel.setX(std::min(std::max(vel_min_x_acc, cmd_vel.getX()), vel_max_x_acc));
+	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel.getY()), vel_max_y_acc));
+	cmd_vel.setZ(std::min(std::max(vel_min_th_acc, cmd_vel.getZ()), vel_max_th_acc));
+	return true;
+}
+
 geometry::Pose subtractPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other) {
 	return Pose(
 		pose_ref.getX() - pose_other.getX(),

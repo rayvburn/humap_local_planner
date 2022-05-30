@@ -158,9 +158,6 @@ void SocialTrajectoryGenerator::initialise(
 		"As parameter of the FIS (people)"
 	);
 
-	// if using continuous acceleration, trim velocities so they surely not exceed limits
-	computeVelocityLimitsWithCA(world_model_, vels_min_, vels_max_);
-
 	// prepare vector of amplifiers to investigate
 	for (const auto& speed: sfm_speed_amps) {
 		for (const auto& an: sfm_an_amps) {
@@ -338,6 +335,30 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			twist_cmd
 		);
 
+		// find current local velocity
+		Vector vel_local_plan;
+		computeVelocityLocal(
+			world_model_plan.getRobotData().vel,
+			world_model_plan.getRobotData().centroid,
+			vel_local_plan
+		);
+
+		// make sure acceleration limits are not violated with the computed twist command
+		adjustTwistWithAccLimits(
+			vel_local_plan,
+			limits_planner_ptr_->acc_lim_x,
+			limits_planner_ptr_->acc_lim_y,
+			limits_planner_ptr_->acc_lim_theta,
+			limits_planner_ptr_->min_vel_x,
+			limits_planner_ptr_->min_vel_y,
+			-limits_planner_ptr_->max_vel_theta,
+			limits_planner_ptr_->max_vel_x,
+			limits_planner_ptr_->max_vel_y,
+			limits_planner_ptr_->max_vel_theta,
+			dt,
+			twist_cmd
+		);
+
 		// evaluate effect if the computed forces would be applied -
 		// check if velocity limits will be violated after application of the computed velocity
 		double sampled_speed_linear = std::hypot(twist_cmd.getX(), twist_cmd.getY());
@@ -494,44 +515,6 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 	double sampled_speed_linear = std::hypot(twist_cmd.getX(), twist_cmd.getY());
 	double sampled_speed_angular = twist_cmd.getZ();
 	return areVelocityLimitsFulfilled(sampled_speed_linear, sampled_speed_angular, 1e-4);
-}
-
-void SocialTrajectoryGenerator::computeVelocityLimitsWithCA(
-	const World& world_model,
-	Eigen::Vector3f& min_vel,
-	Eigen::Vector3f& max_vel
-) {
-	Eigen::Vector3f acc_lim;
-	acc_lim[0] = limits_planner_ptr_->acc_lim_x;
-	acc_lim[1] = limits_planner_ptr_->acc_lim_y;
-	acc_lim[2] = limits_planner_ptr_->acc_lim_theta;
-
-	auto min_vel_x = limits_planner_ptr_->min_vel_x;
-	auto min_vel_y = limits_planner_ptr_->min_vel_y;
-	auto min_vel_th = limits_planner_ptr_->min_vel_theta;
-	auto max_vel_x = limits_planner_ptr_->max_vel_x;
-	auto max_vel_y = limits_planner_ptr_->max_vel_y;
-	auto max_vel_th = limits_planner_ptr_->max_vel_theta;
-
-	Eigen::Vector3f vel = Eigen::Vector3f::Zero();
-	vel[0] = vel_local_.getX();
-	vel[1] = vel_local_.getY();
-	vel[2] = vel_local_.getZ();
-
-	// there is no point in overshooting the goal, and it also may break the
-	// robot behavior, so we limit the velocities to those that do not overshoot in sim_time
-	double dist = world_model.getRobotData().goal.dist;
-	max_vel_x = std::max(std::min(max_vel_x, dist / sim_time_), min_vel_x);
-	max_vel_y = std::max(std::min(max_vel_y, dist / sim_time_), min_vel_y);
-
-	// if we use continous acceleration, we can sample the max velocity we can reach in sim_time_
-	max_vel[0] = std::min(max_vel_x, vel[0] + acc_lim[0] * sim_time_);
-	max_vel[1] = std::min(max_vel_y, vel[1] + acc_lim[1] * sim_time_);
-	max_vel[2] = std::min(max_vel_th, vel[2] + acc_lim[2] * sim_time_);
-
-	min_vel[0] = std::max(min_vel_x, vel[0] - acc_lim[0] * sim_time_);
-	min_vel[1] = std::max(min_vel_y, vel[1] - acc_lim[1] * sim_time_);
-	min_vel[2] = std::max(min_vel_th, vel[2] - acc_lim[2] * sim_time_);
 }
 
 bool SocialTrajectoryGenerator::areVelocityLimitsFulfilled(
