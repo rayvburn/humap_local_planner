@@ -160,6 +160,10 @@ namespace hubero_local_planner {
 		double goal_distance_scale = 0.8;
 		/// The weight for the obstacle distance part of the cost function
 		double occdist_scale = 0.01;
+		/// The weight for the alignment with the global plan
+		double alignment_scale = 0.6;
+		/// The weight for the achievement of the additional goal point placed in front of the mobile base
+		double goal_front_scale = 0.8;
 		/// The weight for the time to collision (TTC) cost function
 		double ttc_scale = 3.0;
 		/// The weight for the cost function that penalizes robot heading changes

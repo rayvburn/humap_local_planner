@@ -424,12 +424,14 @@ void HuberoPlanner::updateCostParameters() {
 	double occdist_scale_adjusted = cfg_->getCost()->occdist_scale * cm_resolution;
 	double path_distance_scale_adjusted = cfg_->getCost()->path_distance_scale * cm_resolution;
 	double goal_distance_scale_adjusted = cfg_->getCost()->goal_distance_scale * cm_resolution;
+	double alignment_scale_adjusted = cfg_->getCost()->alignment_scale * cm_resolution;
+	double goal_front_scale_adjusted = cfg_->getCost()->goal_front_scale * cm_resolution;
 
 	obstacle_costs_.setScale(occdist_scale_adjusted);
 	path_costs_.setScale(path_distance_scale_adjusted);
 	goal_costs_.setScale(goal_distance_scale_adjusted);
-	goal_front_costs_.setScale(goal_distance_scale_adjusted);
-	alignment_costs_.setScale(path_distance_scale_adjusted);
+	goal_front_costs_.setScale(goal_front_scale_adjusted);
+	alignment_costs_.setScale(alignment_scale_adjusted);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	chc_costs_.setScale(cfg_->getCost()->chc_scale);
 	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);

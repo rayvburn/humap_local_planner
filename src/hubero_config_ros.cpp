@@ -178,6 +178,8 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->path_distance_scale = cfg.path_distance_scale;
 	costs_->goal_distance_scale = cfg.goal_distance_scale;
 	costs_->occdist_scale = cfg.occdist_scale;
+	costs_->alignment_scale = cfg.alignment_scale;
+	costs_->goal_front_scale = cfg.goal_front_scale;
 	costs_->ttc_scale = cfg.ttc_scale;
 	costs_->chc_scale = cfg.chc_scale;
 	costs_->speedy_goal_scale = cfg.speedy_goal_scale;
