@@ -40,6 +40,22 @@ If one has changed simulation time, planner frequency or so, he must also adjust
 #### `force_internal_amplifier`
 A good practice is to debug all explored trajectories in `HuberoPlanner::findBestTrajectory`. For a custom application, user should uncomment/investigate explored trajectories with respective velocity limits. Once translational velocity starts repeating among consecutive `force_internal_amplifiers`, one can trim `max` value to the highest that impacts overall velocity. Note that it is highly related to `internal_force_factor` itself. It's wise to tune `internal_force_factor` without planning first - adjust this parameter to satisfying robot speeds.
 
+#### `sfm_aw_amplifier`
+Values outside of range defined by `<-1.0; +1.0>` do not affect generated trajectories set at all.
+
+#### Trajectory cost function parameters
+
+- `goal_distance_scale`
+  - bigger value implies lower costs along global path but in areas close to the actual goal
+- `occdist_scale`
+  - if too high (e.g., `1.05`), then robot may oscillate in proximity to goal
+- `goal_front_scale`
+  - keeping too low may instruct trajectory scorer to favour static trajectories instead of those going towards goal (when available)
+  - keeping too high may favour trajectories that do not head towards goal in close proximity to the goal
+- `backward_penalty`
+  - must be evaluated experimentally - let robot go until it starts backing up (which does not make sense in that situation), stop the robot and tune the value until proper trajectory is selected
+  - if `backward_scale` is zeroed, then `backward_penalty` does not affect scoring at all
+
 ## Usage
 
 ### Visual Studio Code
