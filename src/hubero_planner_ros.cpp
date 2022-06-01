@@ -590,6 +590,15 @@ std::vector<geometry_msgs::PoseStamped> HuberoPlannerROS::createLocalPlan(
 		tf2::convert(q, p.pose.orientation);
 		path.push_back(p);
 	}
+
+	// reset the visualization of the plan
+	if (path.empty()) {
+		geometry_msgs::PoseStamped p;
+		costmap_ros_->getRobotPose(p);
+		p.header.frame_id = planner_util_->getGlobalFrame();
+		p.header.stamp = ros::Time::now();
+		path.push_back(p);
+	}
 	return path;
 }
 
