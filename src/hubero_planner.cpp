@@ -792,7 +792,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		ROS_INFO_COND_NAMED(
 			cfg_->getDiagnostics()->log_explored_trajectories,
 			"HuberoPlanner",
-			"Explored %lu trajectories. Best trajectory consists of %u points and has cost of %2.2f. "
+			"Explored %lu trajectories. Best trajectory consists of %u points and has cost of %2.5f. "
 			"Commands base with x: %2.3f, y: %2.3f, th: %2.3f",
 			traj_explored_.size(),
 			result_traj_.getPointsSize(),
@@ -802,27 +802,6 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			result_traj_.thetav_
 		);
 	}
-
-	// evaluate components contribution in total cost
-	ROS_INFO_COND_NAMED(
-		cfg_->getDiagnostics()->log_trajectory_cost_details,
-		"HuberoPlanner",
-		"Best trajectory cost details: "
-		"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-		"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f",
-		obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(result_traj_),
-		oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(result_traj_),
-		path_costs_.getScale() * path_costs_.scoreTrajectory(result_traj_),
-		goal_costs_.getScale() * goal_costs_.scoreTrajectory(result_traj_),
-		goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(result_traj_),
-		alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(result_traj_),
-		backward_costs_.getScale() * backward_costs_.scoreTrajectory(result_traj_),
-		ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(result_traj_),
-		chc_costs_.getScale() * chc_costs_.scoreTrajectory(result_traj_),
-		speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(result_traj_),
-		velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(result_traj_),
-		contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(result_traj_)
-	);
 
 	if (!cfg_->getDiagnostics()->log_explored_trajectories && !cfg_->getDiagnostics()->log_pts_of_explored_trajectories) {
 		return;
@@ -846,6 +825,32 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			traj.xv_, traj.yv_, traj.thetav_,
 			traj.getPointsSize(),
 			traj_x, traj_y, traj_th
+		);
+
+		// base_local_planner::TrajectoryCostFunction::scoreTrajectory is not marked const
+		auto traj_copy = traj;
+
+		// evaluate components contribution in total cost of the trajectory
+		ROS_INFO_COND_NAMED(
+			cfg_->getDiagnostics()->log_trajectory_cost_details,
+			"HuberoPlanner",
+			"Explored trajectory %3d / %3lu cost details: "
+			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
+			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f",
+			traj_num,
+			traj_explored_.size(),
+			obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(traj_copy),
+			oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(traj_copy),
+			path_costs_.getScale() * path_costs_.scoreTrajectory(traj_copy),
+			goal_costs_.getScale() * goal_costs_.scoreTrajectory(traj_copy),
+			goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(traj_copy),
+			alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(traj_copy),
+			backward_costs_.getScale() * backward_costs_.scoreTrajectory(traj_copy),
+			ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(traj_copy),
+			chc_costs_.getScale() * chc_costs_.scoreTrajectory(traj_copy),
+			speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(traj_copy),
+			velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(traj_copy),
+			contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(traj_copy)
 		);
 
 		// skip if points of explored trajectories are not needed to be printed
