@@ -164,6 +164,8 @@ namespace hubero_local_planner {
 		double alignment_scale = 0.6;
 		/// The weight for the achievement of the additional goal point placed in front of the mobile base
 		double goal_front_scale = 0.8;
+		/// The weight for the backward motion penalisation
+		double backward_scale = 0.5;
 		/// The weight for the time to collision (TTC) cost function
 		double ttc_scale = 3.0;
 		/// The weight for the cost function that penalizes robot heading changes
@@ -182,6 +184,8 @@ namespace hubero_local_planner {
 		double scaling_speed = 0.25;
 		/// The maximum factor to scale the robot's footprint by
 		double max_scaling_factor = 0.2;
+		/// Penalty (cost) value assigned to trajectory that starts with backward motion
+		double backward_penalty = 20.0;
 		/// The duration of maximum world state prediction to detect robot collision
 		double ttc_rollout_time = 3.0;
 		/// The distance threshold for collision detection in TTC prediction

@@ -28,6 +28,7 @@
 #include <base_local_planner/oscillation_cost_function.h>
 #include <base_local_planner/map_grid_cost_function.h>
 #include <base_local_planner/obstacle_cost_function.h>
+#include <base_local_planner/prefer_forward_cost_function.h>
 #include <base_local_planner/twirling_cost_function.h>
 #include <base_local_planner/simple_scored_sampling_planner.h>
 
@@ -407,6 +408,8 @@ protected:
 	base_local_planner::MapGridCostFunction alignment_costs_;
 	/// Cost function that prefers trajectories that make the nose go towards (local) nose goal
 	base_local_planner::MapGridCostFunction goal_front_costs_;
+	/// Cost function that prefers forward trajectories instead of those that consist of backward motions
+	base_local_planner::PreferForwardCostFunction backward_costs_;
 	/// Cost function that penalizes trajectories that can cause collision in a longer horizon
 	TTCCostFunction ttc_costs_;
 	/// Cost function that penalizes robot heading changes

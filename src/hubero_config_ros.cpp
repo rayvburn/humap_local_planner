@@ -180,6 +180,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->occdist_scale = cfg.occdist_scale;
 	costs_->alignment_scale = cfg.alignment_scale;
 	costs_->goal_front_scale = cfg.goal_front_scale;
+	costs_->backward_scale = cfg.backward_scale;
 	costs_->ttc_scale = cfg.ttc_scale;
 	costs_->chc_scale = cfg.chc_scale;
 	costs_->speedy_goal_scale = cfg.speedy_goal_scale;
@@ -189,6 +190,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
 	costs_->scaling_speed = cfg.scaling_speed;
 	costs_->max_scaling_factor = cfg.max_scaling_factor;
+	costs_->backward_penalty = cfg.backward_penalty;
 	costs_->ttc_rollout_time = cfg.ttc_rollout_time;
 	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
 	costs_->forward_point_distance = cfg.forward_point_distance;

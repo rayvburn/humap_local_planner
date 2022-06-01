@@ -28,6 +28,7 @@ HuberoPlanner::HuberoPlanner(
 	goal_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
 	goal_front_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
 	alignment_costs_(planner_util_->getCostmap()),
+	backward_costs_(0.0),
 	ttc_costs_(world_model_),
 	speedy_goal_costs_(goal_),
 	velocity_smoothness_costs_(vel_),
@@ -61,6 +62,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&goal_costs_);
 	critics.push_back(&alignment_costs_);
 	critics.push_back(&goal_front_costs_);
+	critics.push_back(&backward_costs_);
 	critics.push_back(&ttc_costs_);
 	critics.push_back(&chc_costs_);
 	critics.push_back(&speedy_goal_costs_);
@@ -432,6 +434,7 @@ void HuberoPlanner::updateCostParameters() {
 	goal_costs_.setScale(goal_distance_scale_adjusted);
 	goal_front_costs_.setScale(goal_front_scale_adjusted);
 	alignment_costs_.setScale(alignment_scale_adjusted);
+	backward_costs_.setScale(cfg_->getCost()->backward_scale);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	chc_costs_.setScale(cfg_->getCost()->chc_scale);
 	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
@@ -450,6 +453,7 @@ void HuberoPlanner::updateCostParameters() {
 	);
 	goal_front_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	alignment_costs_.setXShift(cfg_->getCost()->forward_point_distance);
+	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
 }
@@ -805,13 +809,14 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		"HuberoPlanner",
 		"Best trajectory cost details: "
 		"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-		"TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f",
+		"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f",
 		obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(result_traj_),
 		oscillation_costs_.getScale() * oscillation_costs_.scoreTrajectory(result_traj_),
 		path_costs_.getScale() * path_costs_.scoreTrajectory(result_traj_),
 		goal_costs_.getScale() * goal_costs_.scoreTrajectory(result_traj_),
 		goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(result_traj_),
 		alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(result_traj_),
+		backward_costs_.getScale() * backward_costs_.scoreTrajectory(result_traj_),
 		ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(result_traj_),
 		chc_costs_.getScale() * chc_costs_.scoreTrajectory(result_traj_),
 		speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(result_traj_),
