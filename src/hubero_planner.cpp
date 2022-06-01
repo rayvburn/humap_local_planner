@@ -675,6 +675,10 @@ bool HuberoPlanner::planOrientationAdjustment() {
 	result_traj_.thetav_ = cmd_vel.angular.z;
 	// negative cost when trajectory is invalid
 	result_traj_.cost_ = traj_valid ? 0.0 : -1.0;
+
+	// update explored trajectories (1 valid trajectory will be added to the list)
+	traj_explored_.clear();
+	traj_explored_.push_back(result_traj_);
 	return traj_valid;
 }
 
