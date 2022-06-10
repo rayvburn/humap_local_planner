@@ -106,6 +106,21 @@ namespace hubero_local_planner {
 	};
 
 	/**
+	 * @brief General parameters related to trajectory generation
+	 */
+	struct TrajectoryGeneration {
+		/// True enables generator that produces evenly spaced elements from a list of feasible velocities.
+		/// If set to false only social trajectory generator is used
+		bool use_equisampled_velocities_generator = true;
+		/// How many velocity samples along platform's X axis will be checked
+		unsigned int equisampled_vx = 5;
+		/// How many velocity samples along platform's Y axis will be checked
+		unsigned int equisampled_vy = 1;
+		/// How many velocity samples around platform's Z axis will be checked
+		unsigned int equisampled_vth = 10;
+	};
+
+	/**
 	 * @brief Set of trajectory generator parameters with default values
 	 *
 	 * Granularities define how many equidistant amplifiers will be investigated (in how many samples to divide the
@@ -218,6 +233,7 @@ public:
 		general_ = std::make_shared<GeneralParams>();
 		sfm_ = std::make_shared<SfmParams>();
 		fis_ = std::make_shared<FisParams>();
+		traj_gen_ = std::make_shared<TrajectoryGeneration>();
 		traj_sampling_ = std::make_shared<TrajectorySamplingParams>();
 		costs_ = std::make_shared<CostParams>();
 		diagnostics_ = std::make_shared<DiagnosticsParams>();
@@ -239,6 +255,10 @@ public:
 		return fis_;
 	}
 
+	std::shared_ptr<const TrajectoryGeneration> getTrajectoryGeneration() const {
+		return traj_gen_;
+	}
+
 	std::shared_ptr<const TrajectorySamplingParams> getTrajectorySampling() const {
 		return traj_sampling_;
 	}
@@ -258,6 +278,7 @@ protected:
 	std::shared_ptr<GeneralParams> general_;
 	std::shared_ptr<SfmParams> sfm_;
 	std::shared_ptr<FisParams> fis_;
+	std::shared_ptr<TrajectoryGeneration> traj_gen_;
 	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;
 	std::shared_ptr<CostParams> costs_;
 	std::shared_ptr<DiagnosticsParams> diagnostics_;
