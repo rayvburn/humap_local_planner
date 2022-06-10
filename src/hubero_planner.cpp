@@ -38,7 +38,7 @@ HuberoPlanner::HuberoPlanner(
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
 
 	// prints Fuzzy Inference System configuration, FIS used for trajectory generation
-	generator_.printFisConfiguration();
+	generator_social_.printFisConfiguration();
 
 	// configure trajectory critics
 	/*
@@ -71,7 +71,7 @@ HuberoPlanner::HuberoPlanner(
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
-	generator_list.push_back(&generator_);
+	generator_list.push_back(&generator_social_);
 
 	// score sampled trajectories
 	scored_sampling_planner_ = base_local_planner::SimpleScoredSamplingPlanner(generator_list, critics);
@@ -86,7 +86,7 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 	std::lock_guard<std::mutex> l(configuration_mutex_);
 	cfg_ = cfg;
 
-	generator_.setParameters(
+	generator_social_.setParameters(
 		cfg->getSfm(),
 		cfg->getFis(),
 		cfg->getGeneral()->sim_time,
@@ -257,7 +257,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	createEnvironmentModel(pose_, world_model_);
 
 	// initialize generator with updated parameters
-	generator_.initialise(
+	generator_social_.initialise(
 		world_model_,
 		velocity,
 		cfg_->getLimits(),
@@ -268,7 +268,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	base_local_planner::Trajectory traj;
 
 	// perform SFM and fuzzy logic computations without planning
-	generator_.generateTrajectoryWithoutPlanning(traj);
+	generator_social_.generateTrajectoryWithoutPlanning(traj);
 
 	drive_velocities.pose.position.x = traj.xv_;
 	drive_velocities.pose.position.y = traj.yv_;
@@ -345,7 +345,7 @@ geometry::Vector HuberoPlanner::computeForceAtPosition(const Vector& pos) {
 	auto world_model = World(pose, robot_vel_glob, goal_local_, goal_);
 	createEnvironmentModel(pose, world_model);
 
-	generator_.initialise(
+	generator_social_.initialise(
 		world_model,
 		vel_,
 		cfg_->getLimits(),
@@ -354,12 +354,12 @@ geometry::Vector HuberoPlanner::computeForceAtPosition(const Vector& pos) {
 	);
 
 	base_local_planner::Trajectory traj;
-	generator_.generateTrajectoryWithoutPlanning(traj);
+	generator_social_.generateTrajectoryWithoutPlanning(traj);
 
-	return generator_.getForceInternal()
-		+ generator_.getForceInteractionStatic()
-		+ generator_.getForceInteractionDynamic()
-		+ generator_.getForceSocial();
+	return generator_social_.getForceInternal()
+		+ generator_social_.getForceInteractionStatic()
+		+ generator_social_.getForceInteractionDynamic()
+		+ generator_social_.getForceSocial();
 }
 
 // static
@@ -616,7 +616,7 @@ bool HuberoPlanner::planMovingRobot() {
 	TrajectorySamplingParams tsp = *cfg_->getTrajectorySampling();
 
 	// initialize generator with updated parameters
-	generator_.initialise(
+	generator_social_.initialise(
 		world_model_,
 		vel_,
 		tsp,
@@ -625,7 +625,7 @@ bool HuberoPlanner::planMovingRobot() {
 		true // discretize by time
 	);
 
-	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_` internally
+	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_social_` internally
 	result_traj_.cost_ = -7;
 	result_traj_.resetPoints();
 	traj_explored_.clear();
@@ -766,17 +766,17 @@ bool HuberoPlanner::checkInPlaceTrajectory(
 }
 
 void HuberoPlanner::collectTrajectoryMotionData() {
-	motion_data_.behaviour_active_ = generator_.getActiveFuzzyBehaviour();
-	motion_data_.closest_points_static_ = generator_.getRobotStaticObstacleDistances();
-	motion_data_.closest_points_dynamic_ = generator_.getRobotDynamicObstacleDistances();
+	motion_data_.behaviour_active_ = generator_social_.getActiveFuzzyBehaviour();
+	motion_data_.closest_points_static_ = generator_social_.getRobotStaticObstacleDistances();
+	motion_data_.closest_points_dynamic_ = generator_social_.getRobotDynamicObstacleDistances();
 	motion_data_.force_combined_ =
-		generator_.getForceInternal()
-		+ generator_.getForceInteractionDynamic()
-		+ generator_.getForceInteractionStatic()
-		+ generator_.getForceSocial();
-	motion_data_.force_interaction_ = generator_.getForceInteractionStatic() + generator_.getForceInteractionDynamic();
-	motion_data_.force_internal_ = generator_.getForceInternal();
-	motion_data_.force_social_ = generator_.getForceSocial();
+		generator_social_.getForceInternal()
+		+ generator_social_.getForceInteractionDynamic()
+		+ generator_social_.getForceInteractionStatic()
+		+ generator_social_.getForceSocial();
+	motion_data_.force_interaction_ = generator_social_.getForceInteractionStatic() + generator_social_.getForceInteractionDynamic();
+	motion_data_.force_internal_ = generator_social_.getForceInternal();
+	motion_data_.force_social_ = generator_social_.getForceSocial();
 }
 
 void HuberoPlanner::logTrajectoriesDetails() {

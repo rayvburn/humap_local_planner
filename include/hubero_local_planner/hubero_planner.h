@@ -393,7 +393,7 @@ protected:
 	 * @defgroup planning Search-based planning utils
 	 * @{
 	 */
-	SocialTrajectoryGenerator generator_;
+	SocialTrajectoryGenerator generator_social_;
 	base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
 
 	/// Cost function that discards trajectories that move into obstacles
