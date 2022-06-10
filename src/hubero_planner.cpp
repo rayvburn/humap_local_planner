@@ -2,8 +2,6 @@
 #include <hubero_local_planner/utils/transformations.h>
 #include <hubero_local_planner/sfm/social_force_model.h>
 
-#include <base_local_planner/simple_trajectory_generator.h>
-
 #include <math.h>
 
 #include <hubero_local_planner/utils/debug.h>
@@ -72,9 +70,15 @@ HuberoPlanner::HuberoPlanner(
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
 	generator_list.push_back(&generator_social_);
+	generator_list.push_back(&generator_vel_space_);
 
 	// score sampled trajectories
-	scored_sampling_planner_ = base_local_planner::SimpleScoredSamplingPlanner(generator_list, critics);
+	scored_sampling_planner_ = base_local_planner::SimpleScoredSamplingPlanner(
+		generator_list,
+		critics,
+		-1, // unlimited number of samples allowed
+		true // always use all provided generators
+	);
 }
 
 HuberoPlanner::~HuberoPlanner() {
@@ -96,6 +100,14 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 		cfg->getDiagnostics()->log_trajectory_generation_samples,
 		cfg->getDiagnostics()->log_trajectory_generation_details,
 		cfg->getDiagnostics()->log_trajectory_generation_fails
+	);
+
+	generator_vel_space_.setParameters(
+		cfg->getGeneral()->sim_time,
+		cfg->getGeneral()->sim_granularity,
+		cfg->getGeneral()->angular_sim_granularity,
+		true, // DO NOT limit the velocities to those that do not overshoot goal in sim_time
+		cfg->getGeneral()->sim_period
 	);
 
 	updateCostParameters();
@@ -624,6 +636,26 @@ bool HuberoPlanner::planMovingRobot() {
 		cfg_->getSfm()->mass,
 		true // discretize by time
 	);
+
+	if (cfg_->getTrajectoryGeneration()->use_equisampled_velocities_generator) {
+		Eigen::Vector3f vsamples;
+		vsamples[0] = cfg_->getTrajectoryGeneration()->equisampled_vx;
+		vsamples[1] = cfg_->getTrajectoryGeneration()->equisampled_vy;
+		vsamples[2] = cfg_->getTrajectoryGeneration()->equisampled_vth;
+
+		// must copy limits since SimpleTrajectoryGenerator::initialise is not marked as const input;
+		// limits must exist until at least end of this method
+		base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+
+		generator_vel_space_.initialise(
+			pose_.getAsEigen2D(),
+			vel_.getAsEigen<Eigen::Vector3f>(),
+			goal_.getAsEigen2D(),
+			&limits,
+			vsamples,
+			true // use_acceleration_limits
+		);
+	}
 
 	// find best trajectory by sampling and scoring the samples, `scored_sampling_planner_` uses `generator_social_` internally
 	result_traj_.cost_ = -7;

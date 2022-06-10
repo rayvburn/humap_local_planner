@@ -32,6 +32,8 @@
 #include <base_local_planner/twirling_cost_function.h>
 #include <base_local_planner/simple_scored_sampling_planner.h>
 
+#include <base_local_planner/simple_trajectory_generator.h>
+
 // useful, free functions
 #include <base_local_planner/goal_functions.h>
 
@@ -394,6 +396,7 @@ protected:
 	 * @{
 	 */
 	SocialTrajectoryGenerator generator_social_;
+	base_local_planner::SimpleTrajectoryGenerator generator_vel_space_;
 	base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
 
 	/// Cost function that discards trajectories that move into obstacles

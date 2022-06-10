@@ -144,6 +144,11 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	limits_->yaw_goal_tolerance = cfg.yaw_goal_tolerance;
 	limits_->twist_rotation_compensation = cfg.twist_rotation_compensation;
 
+	traj_gen_->use_equisampled_velocities_generator = cfg.use_equisampled_velocities_generator;
+	traj_gen_->equisampled_vx = cfg.equisampled_vx;
+	traj_gen_->equisampled_vy = cfg.equisampled_vy;
+	traj_gen_->equisampled_vth = cfg.equisampled_vth;
+
 	traj_sampling_->sfm_desired_speed_amplifier_min = cfg.sfm_desired_speed_amplifier_min;
 	traj_sampling_->sfm_desired_speed_amplifier_max = cfg.sfm_desired_speed_amplifier_max;
 	traj_sampling_->sfm_desired_speed_amplifier_granularity = cfg.sfm_desired_speed_amplifier_granularity;
