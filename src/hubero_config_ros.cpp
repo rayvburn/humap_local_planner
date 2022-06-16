@@ -207,6 +207,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	diagnostics_->log_explored_trajectories = cfg.log_explored_trajectories;
 	diagnostics_->log_pts_of_explored_trajectories = cfg.log_pts_of_explored_trajectories;
 	diagnostics_->log_trajectory_cost_details = cfg.log_trajectory_cost_details;
+	diagnostics_->force_robot_stop = cfg.force_robot_stop;
 }
 
 } /* namespace hubero_local_planner */

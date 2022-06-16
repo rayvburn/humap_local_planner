@@ -224,6 +224,8 @@ namespace hubero_local_planner {
 		bool log_pts_of_explored_trajectories = false;
 		/// Whether to print info on cost of the best trajectory
 		bool log_trajectory_cost_details = false;
+		/// Whether to force stoppage of robot without disabling planning (useful for cost tuning)
+		bool force_robot_stop = false;
 	};
 
 class HuberoConfig {

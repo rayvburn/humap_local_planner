@@ -252,6 +252,13 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	cmd_vel.linear.y = drive_cmds.pose.position.y;
 	cmd_vel.angular.z = tf2::getYaw(drive_cmds.pose.orientation);
 
+	// check forced-stop mode for cost tuning
+	if (cfg_->getDiagnostics()->force_robot_stop) {
+		cmd_vel.linear.x = 0.0;
+		cmd_vel.linear.y = 0.0;
+		cmd_vel.angular.z = 0.0;
+	}
+
 	// visualization
 	auto vis_data = planner_->getMotionData();
 
