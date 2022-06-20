@@ -358,7 +358,11 @@ protected:
 	/// Stores the trajectory with a highest score, updated by the SimpleScoredSamplingPlanner instance
 	base_local_planner::Trajectory result_traj_;
 
-	/// Global plan that gets pruned in @ref updatePlan call
+	/**
+	 * Global plan that gets pruned in @ref updatePlan call
+	 *
+	 * Contains only this part of the global plan that is contained by local costmap
+	 */
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
 	bool goal_reached_;
 
