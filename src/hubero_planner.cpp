@@ -141,9 +141,6 @@ bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	global_plan_.resize(plan_local_pruned.size());
 	std::copy(plan_local_pruned.cbegin(), plan_local_pruned.cend(), global_plan_.begin());
 
-	// try to update goal pose
-	goal_ = getGoalFromPlan();
-
 	// update local goal pose
 	if (!chooseLocalGoal()) {
 		ROS_ERROR_NAMED("HuberoPlanner", "Could not choose local goal during plan update");
@@ -331,7 +328,27 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 	// when we get a new plan, we also want to clear any latch we may have on goal tolerances
 	stop_rotate_controller_.resetLatching();
 
-	return planner_util_->setPlan(orig_global_plan);
+	bool plan_updated = planner_util_->setPlan(orig_global_plan);
+
+	geometry_msgs::PoseStamped goal_new;
+	if (!planner_util_->getGoal(goal_new)) {
+		// can't update the goal stored locally
+		return plan_updated;
+	}
+
+	// heuristics to detect a new global goal
+	double goal_xy_diff = (goal_.getPosition() - Pose(goal_new).getPosition()).calculateLength();
+	double goal_yaw_diff = angles::shortest_angular_distance(
+		goal_.getYaw(),
+		tf2::getYaw(goal_new.pose.orientation)
+	);
+	// use goal tolerances to detect goal pose relocation
+	if (goal_xy_diff >= cfg_->getLimits()->xy_goal_tolerance
+		|| std::abs(goal_yaw_diff) >= cfg_->getLimits()->yaw_goal_tolerance
+	) {
+		goal_ = Pose(goal_new);
+	}
+	return plan_updated;
 }
 
 bool HuberoPlanner::checkGoalReached(
@@ -602,16 +619,11 @@ bool HuberoPlanner::chooseLocalGoal() {
 		}
 	}
 
-	// seems that we have reached the furthest point in the plan
-	goal_local_ = getGoalFromPlan();
-	return true;
-}
-
-Pose HuberoPlanner::getGoalFromPlan() const {
-	// it's safer to use second to last element, last may consist some strange pose,
+	// Seems that we have reached the furthest point in the plan - use a pose from the end of the pose list.
+	// Note that it's safer to use second to last element, last may consist some strange pose,
 	// e.g. point backwards or unreachable goal pose
 	if (global_plan_.size() > 2) {
-		return Pose(global_plan_.end()[-2].pose);
+		goal_local_ = Pose(global_plan_.end()[-2].pose);
 	}
 
 	ROS_DEBUG_NAMED(
@@ -619,7 +631,9 @@ Pose HuberoPlanner::getGoalFromPlan() const {
 		"Cannot retrieve goal from the plan since it is too short (%lu poses)",
 		global_plan_.size()
 	);
-	return goal_;
+
+	goal_local_ = goal_;
+	return true;
 }
 
 bool HuberoPlanner::planMovingRobot() {
