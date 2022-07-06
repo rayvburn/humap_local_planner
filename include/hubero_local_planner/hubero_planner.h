@@ -40,6 +40,7 @@
 // MapGridVisualizer
 #include <base_local_planner/map_grid.h>
 
+#include <hubero_local_planner/planner_state.h>
 #include <hubero_local_planner/obstacles.h>
 #include <hubero_local_planner/person.h>
 #include <hubero_local_planner/robot_footprint_model.h>
@@ -331,7 +332,7 @@ protected:
 	/**
 	 * @brief Performs so called stop & rotate action to adjust robot orientation to the goal orientation
 	 */
-	bool planOrientationAdjustment();
+	bool planOrientationAdjustment(const Pose& goal);
 
 	/**
 	 * @brief Helper method for LatchedStopRotateController to check if trajectory is valid
@@ -353,6 +354,14 @@ protected:
 	 * @brief Prints details of @ref traj_explored_
 	 */
 	void logTrajectoriesDetails();
+
+	/**
+	 * Planner state handler that introduces different behaviours of planner
+	 *
+	 * Behaviours depend on the navigation stage and goal placement. This was mostly introduced for non-holonomic
+	 * mobile bases that suffer from chaotic rotations once new goal is placed far behind the robot
+	 */
+	std::unique_ptr<PlannerState> state_ptr_;
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
 
@@ -387,6 +396,8 @@ protected:
 	Pose goal_;
 	/// @brief Local goal expressed in the planner's frame
 	Pose goal_local_;
+	/// @brief Motion initiation goal expressed in the planner's frame
+	Pose goal_initiation_;
 	/// @brief The most recent environment (obstacles) model
 	ObstContainerConstPtr obstacles_;
 	/// @brief The most recent information on people in the environment
