@@ -37,17 +37,11 @@ LatchedStopRotateController::LatchedStopRotateController(const std::string& name
  * Also goal orientation might not yet be true
  */
 bool LatchedStopRotateController::isPositionReached(
-	base_local_planner::LocalPlannerUtil* planner_util,
-	const geometry_msgs::PoseStamped& global_pose
+	const geometry_msgs::PoseStamped& goal_pose,
+	const geometry_msgs::PoseStamped& global_pose,
+	const double& xy_goal_tolerance
 ) {
-	double xy_goal_tolerance = planner_util->getCurrentLimits().xy_goal_tolerance;
-
-	//we assume the global goal is the last point in the global plan
-	geometry_msgs::PoseStamped goal_pose;
-	if ( ! planner_util->getGoal(goal_pose)) {
-		ROS_ERROR_NAMED("latched_stop_rotate", "Could not get goal");
-		return false;
-	}
+	// @rayvburn planner_util argument replaced with goal_pose and xy_goal_tolerance
 
 	double goal_x = goal_pose.pose.position.x;
 	double goal_y = goal_pose.pose.position.y;
@@ -67,13 +61,12 @@ bool LatchedStopRotateController::isPositionReached(
  * Meaning we might have overshot on the position beyond tolerance, yet still return true.
  */
 bool LatchedStopRotateController::isGoalReached(
-	base_local_planner::LocalPlannerUtil* planner_util,
+	const geometry_msgs::PoseStamped& goal_pose,
 	const geometry_msgs::PoseStamped& robot_vel,
-	const geometry_msgs::PoseStamped& global_pose
+	const geometry_msgs::PoseStamped& global_pose,
+	const base_local_planner::LocalPlannerLimits& limits
 ) {
-	double xy_goal_tolerance = planner_util->getCurrentLimits().xy_goal_tolerance;
-	double theta_stopped_vel = planner_util->getCurrentLimits().theta_stopped_vel;
-	double trans_stopped_vel = planner_util->getCurrentLimits().trans_stopped_vel;
+	//@rayvburn planner_util argument replaced with goal_pose and limits
 
 	//copy over the odometry information
 	nav_msgs::Odometry base_odom = fillOdometry(robot_vel, global_pose);
@@ -81,21 +74,13 @@ bool LatchedStopRotateController::isGoalReached(
 	// ```odom_helper.getOdom(base_odom);```
 	// manually fill up the Odometry message with @ref fillOdometry
 
-	//we assume the global goal is the last point in the global plan
-	geometry_msgs::PoseStamped goal_pose;
-	if ( ! planner_util->getGoal(goal_pose)) {
-		return false;
-	}
-
 	double goal_x = goal_pose.pose.position.x;
 	double goal_y = goal_pose.pose.position.y;
-
-	base_local_planner::LocalPlannerLimits limits = planner_util->getCurrentLimits();
 
 	//check to see if we've reached the goal position
 	if (
 		(latch_xy_goal_tolerance_ && xy_tolerance_latch_)
-		|| base_local_planner::getGoalPositionDistance(global_pose, goal_x, goal_y) <= xy_goal_tolerance
+		|| base_local_planner::getGoalPositionDistance(global_pose, goal_x, goal_y) <= limits.xy_goal_tolerance
 	) {
 		//if the user wants to latch goal tolerance, if we ever reach the goal location, we'll
 		//just rotate in place
@@ -108,7 +93,7 @@ bool LatchedStopRotateController::isGoalReached(
 		//check to see if the goal orientation has been reached
 		if (fabs(angle) <= limits.yaw_goal_tolerance) {
 			//make sure that we're actually stopped before returning success
-			if (base_local_planner::stopped(base_odom, theta_stopped_vel, trans_stopped_vel)) {
+			if (base_local_planner::stopped(base_odom, limits.theta_stopped_vel, limits.trans_stopped_vel)) {
 				return true;
 			}
 		}
@@ -165,7 +150,7 @@ bool LatchedStopRotateController::rotateToGoal(
 	geometry_msgs::Twist& cmd_vel,
 	Eigen::Vector3f acc_lim,
 	double sim_period,
-	base_local_planner::LocalPlannerLimits& limits,
+	const base_local_planner::LocalPlannerLimits& limits,
 	std::function<bool(
 		Eigen::Vector3f pos,
 		Eigen::Vector3f vel,
@@ -219,22 +204,16 @@ bool LatchedStopRotateController::computeVelocityCommandsStopRotate(
 	geometry_msgs::Twist& cmd_vel,
 	Eigen::Vector3f acc_lim,
 	double sim_period,
-	base_local_planner::LocalPlannerUtil* planner_util,
+	const geometry_msgs::PoseStamped& goal_pose,
 	const geometry_msgs::PoseStamped& robot_vel,
 	const geometry_msgs::PoseStamped& global_pose,
+	const base_local_planner::LocalPlannerLimits& limits,
 	std::function<bool(
 		Eigen::Vector3f pos,
 		Eigen::Vector3f vel,
 		Eigen::Vector3f vel_samples)> obstacle_check
 ) {
-	//we assume the global goal is the last point in the global plan
-	geometry_msgs::PoseStamped goal_pose;
-	if ( ! planner_util->getGoal(goal_pose)) {
-		ROS_ERROR_NAMED("latched_stop_rotate", "Could not get goal pose");
-		return false;
-	}
-
-	base_local_planner::LocalPlannerLimits limits = planner_util->getCurrentLimits();
+	//@rayvburn planner_util argument replaced with goal_pose and limits
 
 	//if the user wants to latch goal tolerance, if we ever reach the goal location, we'll
 	//just rotate in place

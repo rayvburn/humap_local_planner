@@ -201,9 +201,15 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 
 	// decide whether planning with robot moving robot or adjusting its orientation while stopped
 	geometry_msgs::PoseStamped pose_stamped;
+	geometry_msgs::PoseStamped goal_stamped;
 	// header is not essential here, pose must be expressed in planning frame
 	pose_stamped.pose = pose_.getAsMsgPose();
-	bool plan_moving_robot = !stop_rotate_controller_.isPositionReached(planner_util_.get(), pose_stamped);
+	goal_stamped.pose = goal_.getAsMsgPose();
+	bool plan_moving_robot = !stop_rotate_controller_.isPositionReached(
+		goal_stamped,
+		pose_stamped,
+		cfg_->getLimits()->xy_goal_tolerance
+	);
 
 	// find trajectory and store results in `result_traj_`
 	bool traj_valid = false;
@@ -359,7 +365,14 @@ bool HuberoPlanner::checkGoalReached(
 	printf("[HuberoPlanner::checkGoalReached] \r\n");
 
 	// stop_rotate_controller_ internally changes its state in `isGoalReached`
-	goal_reached_ = stop_rotate_controller_.isGoalReached(planner_util_.get(), velocity, pose);
+	geometry_msgs::PoseStamped velocity;
+	velocity.pose = vel_.getAsMsgPose();
+	geometry_msgs::PoseStamped pose;
+	pose.pose = pose_.getAsMsgPose();
+	geometry_msgs::PoseStamped goal_pose;
+	goal_pose.pose = goal_.getAsMsgPose();
+
+	goal_reached_ = stop_rotate_controller_.isGoalReached(goal_pose, velocity, pose, *cfg_->getLimits());
 	return goal_reached_;
 }
 
@@ -693,6 +706,9 @@ bool HuberoPlanner::planOrientationAdjustment() {
 	geometry_msgs::PoseStamped pose;
 	pose.pose = pose_.getAsMsgPose();
 
+	geometry_msgs::PoseStamped goal_pose;
+	goal_pose.pose = goal_.getAsMsgPose();
+
 	// base_local_planner::LocalPlannerLimits::getAccLimits is not marked as `const`...
 	Eigen::Vector3f acc_limits;
 	acc_limits[0] = cfg_->getLimits()->acc_lim_x;
@@ -706,9 +722,10 @@ bool HuberoPlanner::planOrientationAdjustment() {
 		cmd_vel,
 		acc_limits,
 		cfg_->getGeneral()->sim_period,
-		planner_util_.get(),
+		goal_pose,
 		velocity,
 		pose,
+		*cfg_->getLimits(),
 		std::bind(
 			&HuberoPlanner::checkInPlaceTrajectory,
 			this,
