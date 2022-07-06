@@ -148,6 +148,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	traj_gen_->equisampled_vx = cfg.equisampled_vx;
 	traj_gen_->equisampled_vy = cfg.equisampled_vy;
 	traj_gen_->equisampled_vth = cfg.equisampled_vth;
+	traj_gen_->equisampled_min_vel_x = cfg.equisampled_min_vel_x;
 
 	traj_sampling_->sfm_desired_speed_amplifier_min = cfg.sfm_desired_speed_amplifier_min;
 	traj_sampling_->sfm_desired_speed_amplifier_max = cfg.sfm_desired_speed_amplifier_max;

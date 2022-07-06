@@ -118,6 +118,9 @@ namespace hubero_local_planner {
 		unsigned int equisampled_vy = 1;
 		/// How many velocity samples around platform's Z axis will be checked
 		unsigned int equisampled_vth = 10;
+		/// Minimum linear velocity that is used by the equisampled velocities generator
+		/// Helpful if the generator is not allowed to follow general rule that allows to e.g. produce backward motions
+		double equisampled_min_vel_x = 0.1;
 	};
 
 	/**
