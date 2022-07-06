@@ -141,11 +141,8 @@ bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	global_plan_.resize(plan_local_pruned.size());
 	std::copy(plan_local_pruned.cbegin(), plan_local_pruned.cend(), global_plan_.begin());
 
-	// update local goal pose
-	if (!chooseLocalGoal()) {
-		ROS_ERROR_NAMED("HuberoPlanner", "Could not choose local goal during plan update");
-		return false;
-	}
+	// update local goal pose - located at parameterized distance from the current pose
+	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance);
 	return true;
 }
 
@@ -615,38 +612,66 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 	}
 }
 
-bool HuberoPlanner::chooseLocalGoal() {
+Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const {
 	if (global_plan_.empty()) {
 		ROS_ERROR_NAMED("HuberoPlanner", "Cannot choose local goal because global plan is empty");
-		return false;
+		return Pose();
 	}
 
 	// find a point far enough so the social force can drive the robot towards instead of produce oscillations
-	for (const auto& pose_plan: global_plan_) {
-		double dist_x = pose_plan.pose.position.x - pose_.getX();
-		double dist_y = pose_plan.pose.position.y - pose_.getY();
+	for (
+		std::vector<geometry_msgs::PoseStamped>::const_iterator it = global_plan_.begin();
+		it != global_plan_.end();
+		++it
+	) {
+		double dist_x = it->pose.position.x - pose_.getX();
+		double dist_y = it->pose.position.y - pose_.getY();
 		double dist_sq = dist_x * dist_x + dist_y * dist_y;
-		if (dist_sq > cfg_->getGeneral()->local_goal_distance) {
-			goal_local_ = Pose(pose_plan.pose);
-			return true;
+		if (dist_sq > dist_from_current_pose) {
+			// global path does not account orientation - interpolate
+			auto it_prev = std::prev(it);
+			// make sure that iterator is valid (within vector range)
+			if (it_prev >= global_plan_.begin()) {
+				// orientation of the local goal is determined based on direction that allows to pass
+				// through 2 consecutive path points (local goal and the previous one)
+				Vector p0(it_prev->pose.position.x, it_prev->pose.position.y, it_prev->pose.position.z);
+				Vector p1(it->pose.position.x, it->pose.position.y, it->pose.position.z);
+				Angle dir_v = (p1 - p0).calculateDirection();
+				return Pose(
+					Vector(it->pose.position.x, it->pose.position.y, it->pose.position.z),
+					Quaternion(dir_v.getRadian())
+				);
+			}
+			// fallback - cannot determine orientation, global goal orientation is assumed
+			return Pose(
+				Vector(
+					it->pose.position.x,
+					it->pose.position.y,
+					it->pose.position.z
+				),
+				Quaternion(
+					global_plan_.back().pose.orientation.x,
+					global_plan_.back().pose.orientation.y,
+					global_plan_.back().pose.orientation.z,
+					global_plan_.back().pose.orientation.w
+				)
+			);
 		}
 	}
-
-	// Seems that we have reached the furthest point in the plan - use a pose from the end of the pose list.
-	// Note that it's safer to use second to last element, last may consist some strange pose,
-	// e.g. point backwards or unreachable goal pose
-	if (global_plan_.size() > 2) {
-		goal_local_ = Pose(global_plan_.end()[-2].pose);
-	}
-
-	ROS_DEBUG_NAMED(
-		"HuberoPlanner",
-		"Cannot retrieve goal from the plan since it is too short (%lu poses)",
-		global_plan_.size()
+	// cannot determine orientation, global goal orientation is assumed
+	return Pose(
+		Vector(
+			global_plan_.back().pose.position.x,
+			global_plan_.back().pose.position.y,
+			global_plan_.back().pose.position.z
+		),
+		Quaternion(
+			global_plan_.back().pose.orientation.x,
+			global_plan_.back().pose.orientation.y,
+			global_plan_.back().pose.orientation.z,
+			global_plan_.back().pose.orientation.w
+		)
 	);
-
-	goal_local_ = goal_;
-	return true;
 }
 
 bool HuberoPlanner::planMovingRobot() {

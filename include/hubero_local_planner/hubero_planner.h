@@ -310,9 +310,13 @@ protected:
 	void createEnvironmentModel(const Pose& pose_ref, World& world_model);
 
 	/**
-	 * @brief Updates @ref goal_local_ with a pose that is located far enough from the robot or it is the global goal
+	 * @brief Retrieves pose that is @ref dist_from_current_pose far from the current pose
+	 *
+	 * Current pose is the first pose of the global plan.
+	 * If plan length is shorter than @ref dist_from_current_pose, the goal pose (last pose of the global plan)
+	 * is used instead.
 	 */
-	bool chooseLocalGoal();
+	Pose getPoseFromPlan(const double& dist_from_current_pose) const;
 
 	/**
 	 * @brief Retrieves goal pose from the global plan
