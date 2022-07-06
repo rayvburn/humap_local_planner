@@ -731,6 +731,7 @@ bool HuberoPlanner::planMovingRobot() {
 		// must copy limits since SimpleTrajectoryGenerator::initialise is not marked as const input;
 		// limits must exist until at least end of this method
 		base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+		limits.min_vel_x = cfg_->getTrajectoryGeneration()->equisampled_min_vel_x;
 
 		generator_vel_space_.initialise(
 			pose_.getAsEigen2D(),
