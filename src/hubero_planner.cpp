@@ -190,16 +190,20 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	/*
 	 * Based on DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
 	 * We want the robot nose to be drawn to its final position before robot turns towards goal orientation
+	 * Also, `goal_front_costs_` uses `Last` as `CostAggregationType`
 	 */
-	std::vector<geometry_msgs::PoseStamped> front_global_plan = global_plan_;
-	Angle angle_to_goal(Vector(goal_.getY() - pose_.getY(), goal_.getX() - pose_.getX(), 0.0));
-	angle_to_goal.normalize();
-
-	double front_plan_shift_x = cfg_->getCost()->forward_point_distance * cos(angle_to_goal.getRadian());
-	double front_plan_shift_y = cfg_->getCost()->forward_point_distance * sin(angle_to_goal.getRadian());
-	front_global_plan.back().pose.position.x = front_global_plan.back().pose.position.x + front_plan_shift_x;
-	front_global_plan.back().pose.position.y = front_global_plan.back().pose.position.y + front_plan_shift_y;
-
+	static constexpr double FRONT_PLAN_POSES_NUM = 10;
+	std::vector<geometry_msgs::PoseStamped> front_global_plan;
+	for (
+		double dist = 0.0;
+		dist <= cfg_->getCost()->forward_point_distance;
+		dist += cfg_->getCost()->forward_point_distance / FRONT_PLAN_POSES_NUM
+	) {
+		geometry_msgs::PoseStamped plan_pose;
+		plan_pose.header.frame_id = planner_util_->getGlobalFrame();
+		plan_pose.pose = getPoseFromPlan(dist).getAsMsgPose();
+		front_global_plan.push_back(plan_pose);
+	}
 	goal_front_costs_.setTargetPoses(front_global_plan);
 
 	// reset TTC datasets collected during previous iteration
