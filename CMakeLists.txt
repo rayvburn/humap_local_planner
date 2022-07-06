@@ -205,6 +205,7 @@ add_library(hubero_local_planner
     src/velocity_smoothness_cost_function.cpp
     src/contextualized_cost_function.cpp
     src/latched_stop_rotate_controller.cpp
+    src/planner_state.cpp
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world transformations person ${IGNITION-MATH_LIBRARIES})
@@ -281,5 +282,10 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_fuzzy_trapezoids_dynamic test/test_fuzzy_trapezoids_dynamic.cpp)
   if(TARGET test_fuzzy_trapezoids_dynamic)
     target_link_libraries(test_fuzzy_trapezoids_dynamic fuzzy)
+  endif()
+
+  catkin_add_gtest(test_planner_state test/test_planner_state.cpp)
+  if(TARGET test_planner_state)
+    target_link_libraries(test_planner_state hubero_local_planner)
   endif()
 endif()

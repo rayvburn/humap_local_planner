@@ -17,6 +17,7 @@ HuberoPlanner::HuberoPlanner(
 		RobotFootprintModelPtr robot_model,
 		std::vector<geometry_msgs::Point> footprint_spec
 ):
+	state_ptr_(nullptr),
 	planner_util_(planner_util),
 	goal_reached_(false),
 	obstacles_(nullptr),
@@ -78,6 +79,33 @@ HuberoPlanner::HuberoPlanner(
 		critics,
 		-1, // unlimited number of samples allowed
 		true // always use all provided generators
+	);
+
+	// helper functions for PlannerState
+	auto goal_reached_fun = std::function<bool()>([&]{
+		geometry_msgs::PoseStamped velocity;
+		velocity.pose = vel_.getAsMsgPose();
+		geometry_msgs::PoseStamped pose;
+		pose.pose = pose_.getAsMsgPose();
+		geometry_msgs::PoseStamped goal_pose;
+		goal_pose.pose = goal_.getAsMsgPose();
+		return stop_rotate_controller_.isGoalReached(goal_pose, velocity, pose, *cfg_->getLimits());
+	});
+	auto pos_reached_fun = std::function<bool()>([&]{
+		geometry_msgs::PoseStamped pose;
+		pose.pose = pose_.getAsMsgPose();
+		geometry_msgs::PoseStamped goal_pose;
+		goal_pose.pose = goal_.getAsMsgPose();
+		return stop_rotate_controller_.isPositionReached(goal_pose, pose, cfg_->getLimits()->xy_goal_tolerance);
+	});
+
+	state_ptr_ = std::make_unique<PlannerState>(
+		pose_,
+		goal_,
+		goal_local_,
+		goal_initiation_,
+		pos_reached_fun,
+		goal_reached_fun
 	);
 }
 
@@ -141,6 +169,9 @@ bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	global_plan_.resize(plan_local_pruned.size());
 	std::copy(plan_local_pruned.cbegin(), plan_local_pruned.cend(), global_plan_.begin());
 
+	// update movement initiation pose - located slightly further than xy_goal_tolerance
+	goal_initiation_ = getPoseFromPlan(1.1 * cfg_->getLimits()->xy_goal_tolerance);
+
 	// update local goal pose - located at parameterized distance from the current pose
 	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance);
 	return true;
@@ -196,24 +227,26 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
 	createEnvironmentModel(pose_, world_model_);
 
-	// decide whether planning with robot moving robot or adjusting its orientation while stopped
-	geometry_msgs::PoseStamped pose_stamped;
-	geometry_msgs::PoseStamped goal_stamped;
-	// header is not essential here, pose must be expressed in planning frame
-	pose_stamped.pose = pose_.getAsMsgPose();
-	goal_stamped.pose = goal_.getAsMsgPose();
-	bool plan_moving_robot = !stop_rotate_controller_.isPositionReached(
-		goal_stamped,
-		pose_stamped,
-		cfg_->getLimits()->xy_goal_tolerance
-	);
+	// update internal state to decide which behaviour should be selected for operation
+	state_ptr_->update();
 
 	// find trajectory and store results in `result_traj_`
 	bool traj_valid = false;
-	if (plan_moving_robot) {
-		traj_valid = planMovingRobot();
-	} else {
-		traj_valid = planOrientationAdjustment();
+	switch (state_ptr_->getState()) {
+		case PlannerState::STOPPED:
+			traj_valid = true;
+			break;
+		case PlannerState::INITIATE_EXECUTION:
+			traj_valid = planOrientationAdjustment(goal_initiation_);
+			break;
+		case PlannerState::ADJUST_ORIENTATION:
+			traj_valid = planOrientationAdjustment(goal_);
+			break;
+		case PlannerState::MOVE:
+			traj_valid = planMovingRobot();
+			break;
+		default:
+			break;
 	}
 
 	// debrief stateful scoring functions
@@ -349,7 +382,16 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 	if (goal_xy_diff >= cfg_->getLimits()->xy_goal_tolerance
 		|| std::abs(goal_yaw_diff) >= cfg_->getLimits()->yaw_goal_tolerance
 	) {
+		// update both goals (global and local, see call below)
 		goal_ = Pose(goal_new);
+		// this is not perfectly accurate - we use the last pose instead of the first from the global plan (which must
+		// have been transformed first); reason to do this is that a local goals must be updated before state update
+		geometry_msgs::PoseStamped pose_msg;
+		pose_msg.pose = pose_.getAsMsgPose();
+		pose_msg.header = goal_new.header;
+		updatePlan(pose_msg);
+		// immediately notify planner state handler about this event
+		state_ptr_->update(true);
 	}
 	return plan_updated;
 }
@@ -360,16 +402,7 @@ bool HuberoPlanner::checkGoalReached(
 	const geometry_msgs::PoseStamped& goal
 ) {
 	printf("[HuberoPlanner::checkGoalReached] \r\n");
-
-	// stop_rotate_controller_ internally changes its state in `isGoalReached`
-	geometry_msgs::PoseStamped velocity;
-	velocity.pose = vel_.getAsMsgPose();
-	geometry_msgs::PoseStamped pose;
-	pose.pose = pose_.getAsMsgPose();
-	geometry_msgs::PoseStamped goal_pose;
-	goal_pose.pose = goal_.getAsMsgPose();
-
-	goal_reached_ = stop_rotate_controller_.isGoalReached(goal_pose, velocity, pose, *cfg_->getLimits());
+	goal_reached_ = state_ptr_->isGoalReached();
 	return goal_reached_;
 }
 
@@ -722,7 +755,7 @@ bool HuberoPlanner::planMovingRobot() {
 	return traj_valid;
 }
 
-bool HuberoPlanner::planOrientationAdjustment() {
+bool HuberoPlanner::planOrientationAdjustment(const Pose& goal) {
 	// NOTE: LatchedStopRotateController assumes that all received poses are expressed in the same frame,
 	// headers of stamped types are not required then
 	geometry_msgs::PoseStamped velocity;
@@ -732,7 +765,7 @@ bool HuberoPlanner::planOrientationAdjustment() {
 	pose.pose = pose_.getAsMsgPose();
 
 	geometry_msgs::PoseStamped goal_pose;
-	goal_pose.pose = goal_.getAsMsgPose();
+	goal_pose.pose = goal.getAsMsgPose();
 
 	// base_local_planner::LocalPlannerLimits::getAccLimits is not marked as `const`...
 	Eigen::Vector3f acc_limits;
