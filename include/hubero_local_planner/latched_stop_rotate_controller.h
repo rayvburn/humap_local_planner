@@ -33,14 +33,16 @@ public:
 	LatchedStopRotateController(const std::string& name = "");
 
 	bool isPositionReached(
-		base_local_planner::LocalPlannerUtil* planner_util,
-		const geometry_msgs::PoseStamped& global_pose
+		const geometry_msgs::PoseStamped& goal_pose,
+		const geometry_msgs::PoseStamped& global_pose,
+		const double& xy_goal_tolerance
 	);
 
 	bool isGoalReached(
-		base_local_planner::LocalPlannerUtil* planner_util,
+		const geometry_msgs::PoseStamped& goal_pose,
 		const geometry_msgs::PoseStamped& robot_vel,
-		const geometry_msgs::PoseStamped& global_pose
+		const geometry_msgs::PoseStamped& global_pose,
+		const base_local_planner::LocalPlannerLimits& limits
 	);
 
 	void resetLatching() {
@@ -81,7 +83,7 @@ public:
 		geometry_msgs::Twist& cmd_vel,
 		Eigen::Vector3f acc_lim,
 		double sim_period,
-		base_local_planner::LocalPlannerLimits& limits,
+		const base_local_planner::LocalPlannerLimits& limits,
 		std::function<bool(
 			Eigen::Vector3f pos,
 			Eigen::Vector3f vel,
@@ -92,9 +94,10 @@ public:
 		geometry_msgs::Twist& cmd_vel,
 		Eigen::Vector3f acc_lim,
 		double sim_period,
-		base_local_planner::LocalPlannerUtil* planner_util,
+		const geometry_msgs::PoseStamped& goal_pose,
 		const geometry_msgs::PoseStamped& robot_vel,
 		const geometry_msgs::PoseStamped& global_pose,
+		const base_local_planner::LocalPlannerLimits& limits,
 		std::function<bool(
 			Eigen::Vector3f pos,
 			Eigen::Vector3f vel,
