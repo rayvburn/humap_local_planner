@@ -4,7 +4,6 @@ project(hubero_local_planner)
 add_definitions(-std=c++17)
 
 # prevent some unrelated warnings
-cmake_policy(SET CMP0054 OLD)
 include(FindPackageHandleStandardArgs)
 set(FPHSA_NAME_MISMATCHED TRUE)
 
