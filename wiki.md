@@ -47,6 +47,7 @@ Values outside of range defined by `<-1.0; +1.0>` do not affect generated trajec
 
 - `goal_distance_scale`
   - bigger value implies lower costs along global path but in areas close to the actual goal
+  - if robot tends to select slow trajectories with minimal rotations, try to increase this value
 - `occdist_scale`
   - if too high (e.g., `1.05`), then robot may oscillate in proximity to goal
 - `goal_front_scale`
