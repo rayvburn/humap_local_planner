@@ -84,7 +84,7 @@ HuberoPlanner::HuberoPlanner(
 	// helper functions for PlannerState
 	auto goal_reached_fun = std::function<bool()>([&]{
 		geometry_msgs::PoseStamped velocity;
-		velocity.pose = vel_.getAsMsgPose();
+		velocity.pose = Pose(vel_.getX(), vel_.getY(), vel_.getZ()).getAsMsgPose();
 		geometry_msgs::PoseStamped pose;
 		pose.pose = pose_.getAsMsgPose();
 		geometry_msgs::PoseStamped goal_pose;
@@ -764,7 +764,7 @@ bool HuberoPlanner::planOrientationAdjustment(const Pose& goal) {
 	// NOTE: LatchedStopRotateController assumes that all received poses are expressed in the same frame,
 	// headers of stamped types are not required then
 	geometry_msgs::PoseStamped velocity;
-	velocity.pose = vel_.getAsMsgPose();
+	velocity.pose = Pose(vel_.getX(), vel_.getY(), vel_.getZ()).getAsMsgPose();
 
 	geometry_msgs::PoseStamped pose;
 	pose.pose = pose_.getAsMsgPose();
