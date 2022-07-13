@@ -385,6 +385,11 @@ bool HuberoPlannerROS::updateObstacleContainerWithCostmapConverter() {
 		return false;
 	}
 
+	// don't need to re-create the same obstacle set for the planner
+	if (!costmap_converter_->isUpdated()) {
+		return false;
+	}
+
 	//Get obstacles from costmap converter
 	costmap_converter::ObstacleArrayConstPtr obstacles = costmap_converter_->getObstacles();
 	if (!obstacles) {
