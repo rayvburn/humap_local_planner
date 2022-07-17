@@ -943,14 +943,16 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		ROS_INFO_COND_NAMED(
 			cfg_->getDiagnostics()->log_explored_trajectories,
 			"HuberoPlanner",
-			"Explored trajectory %3d / %3lu: cost %2.5f, vel {x %2.3f, y %2.3f, th %2.3f}, "
-			"points %u, end {x %2.2f, y %2.2f, th %2.2f}",
+			"%sExplored trajectory %3d / %3lu: cost %2.5f, vel {x %2.3f, y %2.3f, th %2.3f}, "
+			"points %u, end {x %2.2f, y %2.2f, th %2.2f}%s",
+			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			++traj_num,
 			traj_explored_.size(),
 			traj.cost_,
 			traj.xv_, traj.yv_, traj.thetav_,
 			traj.getPointsSize(),
-			traj_x, traj_y, traj_th
+			traj_x, traj_y, traj_th,
+			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
 		);
 
 		// base_local_planner::TrajectoryCostFunction::scoreTrajectory is not marked const
@@ -960,9 +962,10 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		ROS_INFO_COND_NAMED(
 			cfg_->getDiagnostics()->log_trajectory_cost_details,
 			"HuberoPlanner",
-			"Explored trajectory %3d / %3lu cost details: "
+			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f",
+			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f%s",
+			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			traj_num,
 			traj_explored_.size(),
 			obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(traj_copy),
@@ -976,7 +979,8 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			chc_costs_.getScale() * chc_costs_.scoreTrajectory(traj_copy),
 			speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(traj_copy),
 			velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(traj_copy),
-			contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(traj_copy)
+			contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(traj_copy),
+			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
 		);
 
 		// skip if points of explored trajectories are not needed to be printed
