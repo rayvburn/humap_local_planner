@@ -2,6 +2,25 @@
 
 A local planning module for A Framework to Simulate Human Behaviour in Robot Research
 
+## Planner behaviour
+
+Finite state machine of the planner is shown in the following diagram:
+
+```plantuml
+@startuml
+state "Initiate Movement" as init
+state "Move" as move
+state "Adjust Orientation" as adjust
+state "Stop" as stop
+
+[*] --> init
+init --> move : reached orientation \n of the first pose in a global plan \n (30 degrees tolerance)
+move --> adjust : \treached goal position
+adjust --> stop : \treached goal orientation
+stop --> init : received new \n goal pose
+@enduml
+```
+
 ## Prerequisites
 
 ### `apt` packages
