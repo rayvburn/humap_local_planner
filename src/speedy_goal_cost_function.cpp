@@ -41,8 +41,11 @@ double SpeedyGoalCostFunction::scoreTrajectory(base_local_planner::Trajectory& t
 		return 0.0;
 	}
 
-	// difference from ideal is the cost
-	return trans_vel_traj - vel_trans_ideal_;
+	// difference from ideal velocity
+	double trans_vel_diff = trans_vel_traj - vel_trans_ideal_;
+	// cost for the same velocity difference grows as robot approaches the global goal
+	double dist_factor = std::exp(-dist_to_goal);
+	return dist_factor * trans_vel_diff;
 }
 
 } // namespace hubero_local_planner
