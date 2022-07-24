@@ -257,6 +257,13 @@ public:
 	}
 
 	/**
+	 * @brief Returns planning state according to the internal finite state machine
+	 */
+	PlannerState::State getState() const {
+		return state_ptr_->getState();
+	}
+
+	/**
 	 * @brief Returns const reference to all recently explored trajectories
 	 */
 	inline const std::vector<base_local_planner::Trajectory>& getExploredTrajectories() const {
