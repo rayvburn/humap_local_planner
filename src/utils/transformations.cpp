@@ -53,8 +53,8 @@ void computeTwistHolonomic(
 void computeTwist(
 	const Pose& pose,
 	const Vector& force,
-	const Vector& robot_vel_glob,
-	const double& sim_period,
+	const Vector& /*robot_vel_glob*/,
+	const double& /*dt*/,
 	const double& robot_mass,
 	const double& min_vel_x,
 	const double& max_vel_x,
@@ -62,36 +62,48 @@ void computeTwist(
 	const double& twist_rotation_compensation,
 	Vector& cmd_vel
 ) {
+	/*
+	 * Compute how much the acceleration (force) affects global velocity of the robot
+	 *
+	 * Note that this function is used in connection with artificial force field concepts.
+	 * We omit `dt` here since the force actually affects robot motion in each time step
+	 * \textbf{without implication from the previous time step}, i.e., acceleration directly affects velocity.
+	 */
+
 	// no force - no movement (strain physical laws)
-	if (force.calculateLength() <= 1e-08) {
+	if (force.calculateLength() <= 1e-08 || robot_mass <= 1e-06) {
 		cmd_vel = Vector(0.0, 0.0, 0.0);
 		return;
 	}
 
-	// convert 2D forces into robot forces with non-holonomic contraints
-	double yaw = pose.getYaw();
-
-	// alias
-	double dt = sim_period;
-
-	// conversion
-	Angle force_dir(force);
-
 	// global force affects global acceleration directly
 	Vector acc_v = force / robot_mass;
-	// compute how much force affects global velocity of the robot
-	Vector vel_v_new = acc_v * dt;
 
-	// inverted rotation matrix expressed as 2 eqn
-	// @url https://github.com/yinzixuan126/modified_dwa/blob/b379c01e37adc1f6414005750633b05e1a024ae5/iri_navigation/iri_akp_local_planner_companion/local_lib/src/scene_elements/robot.cpp#L91
+	/*
+	 * Previous implementation multiplied `acc_v * dt`, see hubero_local_planner#55 and explanation above
+	 * for details
+	 */
+	Vector vel_v_new = acc_v;
+
+	// orientation in global coordinate system
+	double yaw = pose.getYaw();
+
+	/*
+	 * Inverted rotation matrix expressed as 2 equations
+	 * @url https://github.com/yinzixuan126/modified_dwa/blob/b379c01e37adc1f6414005750633b05e1a024ae5/iri_navigation/iri_akp_local_planner_companion/local_lib/src/scene_elements/robot.cpp#L91
+	 */
 	// projection to robot pose (dot product)
 	double vv = +cos(yaw) * vel_v_new.getX() + sin(yaw) * vel_v_new.getY();
 	// cross product theta x f
 	double vw = -sin(yaw) * vel_v_new.getX() + cos(yaw) * vel_v_new.getY();
 
-	// EXPERIMENTAL
+	/*
+	 * Optional heuristics to strengthen rotation - provides better turning in crowded/cluttered environments
+	 *
+	 * Configurable by `twist_rotation_compensation` parameter via `dynamic_reconfigure`
+	 */
+	Angle force_dir(force);
 	Angle ang_z_force_diff(force_dir.getRadian() - yaw);
-    // strengthen rotation
 	vw += twist_rotation_compensation * ang_z_force_diff.getRadian();
 
 	// logging section
