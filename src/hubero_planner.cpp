@@ -713,15 +713,11 @@ Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const 
 }
 
 bool HuberoPlanner::planMovingRobot() {
-	// prepare data for planning
-	// TSP: Trajectory Sampling Parameters - create a copy
-	TrajectorySamplingParams tsp = *cfg_->getTrajectorySampling();
-
 	// initialize generator with updated parameters
 	generator_social_.initialise(
 		world_model_,
 		vel_,
-		tsp,
+		*cfg_->getTrajectorySampling(),
 		cfg_->getLimits(),
 		cfg_->getSfm()->mass,
 		true // discretize by time
