@@ -577,13 +577,6 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 		obstacles.push_back(obstacle);
 	}
 
-	ROS_INFO_NAMED(
-		"HuberoPlanner",
-		"Creating environment model with %2lu obstacles extracted from world and %2lu people",
-		obstacles.size(),
-		people_->size()
-	);
-
 	// fill sparse world model with obstacles
 	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
 	for (const ObstaclePtr obstacle: obstacles) {
@@ -648,6 +641,15 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 			force_dynamic_object_interpretation
 		);
 	}
+
+	ROS_DEBUG_NAMED(
+		"HuberoPlanner",
+		"Created environment model with %2lu objects extracted from world and %2lu people (%2lu static and %2lu dynamic obstacles)",
+		obstacles.size(),
+		people_->size(),
+		world_model.getStaticObjectsData().size(),
+		world_model.getDynamicObjectsData().size()
+	);
 }
 
 Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const {
