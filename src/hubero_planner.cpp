@@ -310,7 +310,8 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 		world_model_,
 		velocity,
 		cfg_->getLimits(),
-		cfg_->getSfm()->mass
+		cfg_->getSfm()->mass,
+		true // discretize by time
 	);
 
 	// trajectory that stores velocity commands, contains only seed vels
