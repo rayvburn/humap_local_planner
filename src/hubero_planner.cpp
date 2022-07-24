@@ -736,11 +736,27 @@ bool HuberoPlanner::planMovingRobot() {
 		/*
 		 * This generator shouldn't create in-place trajectories as they are often highest rated by cost functions
 		 *
+		 * Let `min_vel_x` comply with acceleration limits, try to keep it bigger than
+		 * `equisampled_min_vel_x` and `limits.min_vel_x` if possible
+		 *
 		 * TODO: this is prepared only for non-holonomic mobile bases
 		 */
-		limits.min_vel_x = std::max(
-			cfg_->getTrajectoryGeneration()->equisampled_min_vel_x,
-			limits.min_vel_x
+		auto maximum_from_min_vel_x = std::max(
+			// do not violate kinematic requirements/constraints
+			std::max(
+				cfg_->getTrajectoryGeneration()->equisampled_min_vel_x,
+				limits.min_vel_x
+			),
+			// keep velocities as high as possible
+			std::max(
+				cfg_->getTrajectoryGeneration()->equisampled_min_vel_x,
+				vel_.getX() - limits.acc_lim_x * cfg_->getGeneral()->sim_period
+			)
+		);
+		// do not limit velocities to maximum (this is most likely not necessary)
+		limits.min_vel_x = std::min(
+			maximum_from_min_vel_x,
+			limits.max_vel_x
 		);
 
 		generator_vel_space_.initialise(
