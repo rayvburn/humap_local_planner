@@ -57,6 +57,10 @@ Values outside of range defined by `<-1.0; +1.0>` do not affect generated trajec
   - must be evaluated experimentally - let robot go until it starts backing up (which does not make sense in that situation), stop the robot and tune the value until proper trajectory is selected
   - if `backward_scale` is zeroed, then `backward_penalty` does not affect scoring at all
 
+#### Equisampled velocities trajectory generator parameters
+
+The planner uses 2 trajectory generators to create trajectories that are later scored. `equisampled_min_vel_x` should be kept relatively small - approx. `0.1 m/s`. Setting `0.0 m/s` may produce in-place trajectories because those may be scored highest. On the other hand, in some cluttered areas setting this value too high, e.g., `0.3 m/s` will make the planner to not make use of the fallback-generator ("equisampled velocities trajectory generator") since those trajectories may be scored lower than, e.g., going to the goal using backwards motion.
+
 ## Usage
 
 ### Visual Studio Code
