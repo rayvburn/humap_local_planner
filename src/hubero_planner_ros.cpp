@@ -11,6 +11,7 @@
 #include <base_local_planner/goal_functions.h>
 #include <nav_msgs/Path.h>
 #include <sensor_msgs/point_cloud2_iterator.h>
+#include <std_msgs/UInt8.h>
 
 #include <memory>
 #include <regex>
@@ -61,6 +62,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
 		ttc_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("ttc_prediction", 1);
 		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
+		planner_state_pub_ = private_nh.advertise<std_msgs::UInt8>("planner_state", 1);
 
 		std::string people_topic("/people");
 		private_nh.param("people_topic", people_topic, people_topic);
@@ -291,6 +293,11 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	if (cost_grid_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_cost_grid_pcl) {
 		cost_grid_pcl_pub_.publish(createCostGridPcl());
 	}
+
+	// publish planner state to ROS topic
+	std_msgs::UInt8 planner_state;
+	planner_state.data = static_cast<uint8_t>(planner_->getState());
+	planner_state_pub_.publish(planner_state);
 	return true;
 }
 
