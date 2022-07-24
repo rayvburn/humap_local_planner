@@ -40,7 +40,7 @@ void computeTwistHolonomic(
 	const geometry::Pose& pose,
 	const geometry::Vector& force,
 	const geometry::Vector& robot_vel_glob,
-	const double& sim_period,
+	const double& dt,
 	const double& robot_mass,
 	const double& min_vel_x,
 	const double& max_vel_x,
