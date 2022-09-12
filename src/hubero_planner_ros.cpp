@@ -16,14 +16,6 @@
 #include <memory>
 #include <regex>
 
-#include <hubero_local_planner/utils/debug.h>
-// debugging macros
-#define DEBUG_BASIC 1
-#define DEBUG_VERBOSE 1
-#define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
-#define debug_print_verbose(fmt, ...) _template_debug_print_basic_(DEBUG_VERBOSE, fmt, ##__VA_ARGS__)
-#define debug_print_warn(fmt, ...) _template_debug_print_warn_(1, fmt, ##__VA_ARGS__)
-
 //register this planner as a BaseLocalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(hubero_local_planner::HuberoPlannerROS, nav_core::BaseLocalPlanner)
 
@@ -88,10 +80,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		RobotFootprintModelPtr robot_model;
 		std::vector<geometry_msgs::Point> footprint_spec;
 		std::tie(robot_model, footprint_spec) = getRobotFootprintFromParamServer(private_nh);
-
-		debug_print_basic("Robot model - inscribed radius = %2.4f \r\n",
-				robot_model->getInscribedRadius()
-		);
+		ROS_INFO("Robot model has inscribed radius of %2.4f", robot_model->getInscribedRadius());
 
 		// get parameters of HuberoConfig via the node handle and override the default config
 		cfg_ = std::make_shared<HuberoConfigROS>();
@@ -193,7 +182,6 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 		ROS_ERROR("hubero_local_planner has not been initialized, please call initialize() before using this planner");
 		return false;
 	}
-	ROS_INFO("[HuberoPlannerROS] computeVelocityCommands()");
 
 	// retrieve environment information and pass them to the HuBeRo planner
 
@@ -201,35 +189,33 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	geometry_msgs::PoseStamped robot_pose_geom;
 	costmap_ros_->getRobotPose(robot_pose_geom);
 	Pose robot_pose(robot_pose_geom);
-	debug_print_verbose("pose: x %2.4f / y %2.4f / z %2.4f / Rr %2.4f, Rp %2.4f, Ry %2.4f | frame: %s \r\n",
-		robot_pose.getX(),
-		robot_pose.getY(),
-		robot_pose.getZ(),
-		robot_pose.getRoll(),
-		robot_pose.getPitch(),
-		robot_pose.getYaw(),
-		costmap_ros_->getGlobalFrameID().c_str()
-	);
 
 	// Get robot velocity
 	geometry_msgs::PoseStamped robot_vel_geom;
 	odom_helper_.getRobotVel(robot_vel_geom);
 	Vector robot_vel(robot_vel_geom);
-	debug_print_verbose("vel: x %2.4f / y %2.4f / yaw %2.4f \r\n",
-		robot_vel.getX(),
-		robot_vel.getY(),
-		robot_vel.getZ()
-	);
 
 	// Get robot goal
 	geometry_msgs::PoseStamped robot_goal_geom;
 	planner_util_->getGoal(robot_goal_geom);
 	Pose robot_goal(robot_goal_geom);
-	debug_print_verbose("goal: x %2.4f / y %2.4f / yaw %2.4f | frame: %s \r\n",
-			robot_goal.getX(),
-			robot_goal.getY(),
-			robot_goal.getYaw(),
-			robot_goal_geom.header.frame_id.c_str()
+
+	ROS_DEBUG(
+		"pose (`%s`): x %5.3f, y %5.3f, th %5.3f | "
+		"vel (`%s`): x %5.3f, y %5.3f, th %5.3f | "
+		"goal (`%s`): x %5.3f, y %5.3f, th %5.3f\r\n",
+		robot_pose_geom.header.frame_id.c_str(),
+		robot_pose.getX(),
+		robot_pose.getY(),
+		robot_pose.getYaw(),
+		robot_vel_geom.header.frame_id.c_str(),
+		robot_vel.getX(),
+		robot_vel.getY(),
+		robot_vel.getZ(),
+		robot_goal_geom.header.frame_id.c_str(),
+		robot_goal.getX(),
+		robot_goal.getY(),
+		robot_goal.getYaw()
 	);
 
 	// prepare obstacles
