@@ -36,6 +36,11 @@ HuberoPlanner::HuberoPlanner(
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
 
+	// avoid initializing global goal with zeros as it may be a valid initial goal
+	goal_global_frame_.pose.position.x = NAN;
+	goal_global_frame_.pose.position.y = NAN;
+	goal_global_frame_.pose.orientation.w = NAN;
+
 	// prints Fuzzy Inference System configuration, FIS used for trajectory generation
 	generator_social_.printFisConfiguration();
 
@@ -371,21 +376,37 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 
 	bool plan_updated = planner_util_->setPlan(orig_global_plan);
 
+	// get goal pose transformed to the local frame (usually 'odom')
 	geometry_msgs::PoseStamped goal_new;
 	if (!planner_util_->getGoal(goal_new)) {
 		// can't update the goal stored locally
 		return plan_updated;
 	}
 
+	// next step is the new goal detection (necessary for switching between FSM states)
+	// first, make sure that the given global plan is not empty and frames are the same
+	if (orig_global_plan.empty()
+		|| (!goal_global_frame_.header.frame_id.empty()
+		&& goal_global_frame_.header.frame_id != orig_global_plan.back().header.frame_id)
+	) {
+		return plan_updated;
+	}
+
+	// compare goals expressed in global frames, those are better references compared to poses in local frame
 	// heuristics to detect a new global goal
-	double goal_xy_diff = (goal_.getPosition() - Pose(goal_new).getPosition()).calculateLength();
-	double goal_yaw_diff = angles::shortest_angular_distance(
-		goal_.getYaw(),
-		tf2::getYaw(goal_new.pose.orientation)
-	);
+	auto goal_global_prev = Pose(goal_global_frame_);
+	auto goal_global_new = Pose(orig_global_plan.back());
+	double goal_xy_diff = (goal_global_prev.getPosition() - goal_global_new.getPosition()).calculateLength();
+	double goal_yaw_diff = angles::shortest_angular_distance(goal_global_prev.getYaw(), goal_global_new.getYaw());
+
+	// update for further comparisons
+	goal_global_frame_ = orig_global_plan.back();
+
 	// use goal tolerances to detect goal pose relocation
 	if (goal_xy_diff >= cfg_->getLimits()->xy_goal_tolerance
+		|| std::isnan(goal_xy_diff)
 		|| std::abs(goal_yaw_diff) >= cfg_->getLimits()->yaw_goal_tolerance
+		|| std::isnan(goal_yaw_diff)
 	) {
 		// update both goals (global and local, see call below)
 		goal_ = Pose(goal_new);
