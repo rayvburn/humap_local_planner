@@ -384,6 +384,11 @@ protected:
 	 * Contains only this part of the global plan that is contained by local costmap
 	 */
 	std::vector<geometry_msgs::PoseStamped> global_plan_;
+	/**
+	 * @brief Stores the newest goal pose that is expressed in the global frame
+	 * Goal expressed in the global frame does not move, in contrary to the local frame ('odom')
+	 */
+	geometry_msgs::PoseStamped goal_global_frame_;
 	bool goal_reached_;
 
 	/**
