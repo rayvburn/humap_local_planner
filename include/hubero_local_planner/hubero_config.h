@@ -33,6 +33,8 @@ namespace hubero_local_planner {
 		double local_goal_distance = 1.0;
 		/// The radius of the circular representation of person-obstacle used by the sparse environment model
 		double person_model_radius = 0.4;
+		/// Half of the field of view of a detected person
+		double person_fov = 3.31613 / 2.0;
 		/// The factor by which robot's inscribed radius will be multiplied to caluclate distance between closest
 		/// points of the robot footprint and environment object (static/dynamic)
 		double obstacle_extension_multiplier = 1.0;
@@ -194,6 +196,8 @@ namespace hubero_local_planner {
 		double velocity_smoothness_scale = 13.0;
 		/// The weight for the cost function that penalizes trajectories based on contexts embedded into costmap
 		double contextualized_costs_scale = 0.13;
+		/// The weight for the cost function that penalizes trajectories that people may find disturbing
+		double disturbance_scale = 7.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians
@@ -212,6 +216,8 @@ namespace hubero_local_planner {
 		double forward_point_distance = 0.325;
 		/// The distance threshold of penalization of high speeds near global goal
 		double speedy_goal_distance = 0.85;
+		/// Multiplier of the exponent of the spatial factor of disturbance costs
+		double disturbance_spatial_exp_factor = -0.8;
 	};
 
 	struct DiagnosticsParams {
