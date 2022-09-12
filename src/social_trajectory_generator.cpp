@@ -1,14 +1,12 @@
 #include <hubero_local_planner/social_trajectory_generator.h>
+#include <hubero_local_planner/utils/transformations.h>
 
-#include <base_local_planner/simple_trajectory_generator.h> // static methods used in 'computeNewPositions' and 'computeNewVelocities'
-#include <hubero_local_planner/hubero_planner_ros.h> // static methods (computeTwist) used in generateTrajectory
-#include <hubero_local_planner/utils/transformations.h> // free functions
-
-#include <cmath> // hypot
+#include <cmath>
 
 namespace hubero_local_planner {
 
 using namespace base_local_planner;
+using namespace geometry;
 
 SocialTrajectoryGenerator::SocialTrajectoryGenerator():
 	params_set_(false),
