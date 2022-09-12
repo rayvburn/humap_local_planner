@@ -82,6 +82,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->sim_time = cfg.sim_time;
 	general_->local_goal_distance = cfg.local_goal_distance;
 	general_->person_model_radius = cfg.person_model_radius;
+	general_->person_fov = cfg.person_fov;
 	general_->obstacle_extension_multiplier = cfg.obstacle_extension_multiplier;
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
@@ -192,6 +193,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->speedy_goal_scale = cfg.speedy_goal_scale;
 	costs_->velocity_smoothness_scale = cfg.velocity_smoothness_scale;
 	costs_->contextualized_costs_scale = cfg.contextualized_costs_scale;
+	costs_->disturbance_scale = cfg.disturbance_scale;
 	costs_->oscillation_reset_dist = cfg.oscillation_reset_dist;
 	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
 	costs_->scaling_speed = cfg.scaling_speed;
@@ -201,6 +203,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
 	costs_->forward_point_distance = cfg.forward_point_distance;
 	costs_->speedy_goal_distance = cfg.speedy_goal_distance;
+	costs_->disturbance_spatial_exp_factor = cfg.disturbance_spatial_exp_factor;
 
 	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;
 	diagnostics_->log_trajectory_generation_details = cfg.log_trajectory_generation_details;

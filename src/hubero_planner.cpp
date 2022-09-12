@@ -21,6 +21,7 @@ HuberoPlanner::HuberoPlanner(
 	planner_util_(planner_util),
 	goal_reached_(false),
 	obstacles_(nullptr),
+	people_(std::make_shared<const PeopleContainer>()),
 	robot_model_(robot_model),
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
@@ -72,6 +73,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&speedy_goal_costs_);
 	critics.push_back(&velocity_smoothness_costs_);
 	critics.push_back(&contextualized_costs_);
+	critics.push_back(&disturbance_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -213,6 +215,9 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 
 	// reset TTC datasets collected during previous iteration
 	ttc_costs_.reset();
+
+	// update cost function with the people detections dataset
+	disturbance_costs_.setPeopleDetections(*people_);
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
@@ -538,6 +543,7 @@ void HuberoPlanner::updateCostParameters() {
 	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
 	velocity_smoothness_costs_.setScale(cfg_->getCost()->velocity_smoothness_scale);
 	contextualized_costs_.setScale(cfg_->getCost()->contextualized_costs_scale);
+	disturbance_costs_.setScale(cfg_->getCost()->disturbance_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -554,6 +560,11 @@ void HuberoPlanner::updateCostParameters() {
 	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
+	disturbance_costs_.setParameters(
+		2.0 * cfg_->getGeneral()->person_fov, // create value of full FOV
+		cfg_->getGeneral()->person_model_radius,
+		cfg_->getCost()->disturbance_spatial_exp_factor
+	);
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_model) {
@@ -1009,7 +1020,8 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			"HuberoPlanner",
 			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f%s",
+			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f, "
+			"disturb %2.2f%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			traj_num,
 			traj_explored_.size(),
@@ -1025,6 +1037,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(traj_copy),
 			velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(traj_copy),
 			contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(traj_copy),
+			disturbance_costs_.getScale() * disturbance_costs_.scoreTrajectory(traj_copy),
 			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
 		);
 
