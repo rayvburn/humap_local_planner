@@ -4,11 +4,6 @@
 
 #include <math.h>
 
-#include <hubero_local_planner/utils/debug.h>
-// debugging macros
-#define DEBUG_BASIC 1
-#define debug_print_basic(fmt, ...) _template_debug_print_basic_(DEBUG_BASIC, fmt, ##__VA_ARGS__)
-
 namespace hubero_local_planner {
 
 HuberoPlanner::HuberoPlanner(
