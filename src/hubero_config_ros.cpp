@@ -19,6 +19,7 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 	nh.param("sim_time", general_->sim_time, general_->sim_time);
 	nh.param("sim_granularity", general_->sim_granularity, general_->sim_granularity);
 	nh.param("angular_sim_granularity", general_->angular_sim_granularity, general_->angular_sim_granularity);
+	nh.param("obstacles_closest_polygons_num", general_->obstacles_closest_polygons_num, general_->obstacles_closest_polygons_num);
 
 	// `sim_period` is handled differently - derived from `controller_frequency`
 	std::string controller_frequency_param;
@@ -87,6 +88,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->planning_approach = cfg.planning_approach;
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
 	general_->publish_cost_grid_pcl = cfg.publish_cost_grid_pcl;
+	general_->obstacles_closest_polygons_num = cfg.obstacles_closest_polygons_num;
 
 	sfm_->fov = cfg.fov;
 	sfm_->mass = cfg.mass;
