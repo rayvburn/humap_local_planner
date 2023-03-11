@@ -32,8 +32,9 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 		return -10.0;
 	}
 
-	double dt = traj.time_delta_;
-	if (dt <= 0.0 || std::isinf(dt)) {
+	const double dt = traj.time_delta_;
+	// we can proceed only when `dt` is properly defined
+	if (dt <= 1e-12 || std::isinf(dt) || std::isnan(dt)) {
 		return -12.0;
 	}
 
