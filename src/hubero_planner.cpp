@@ -434,7 +434,6 @@ bool HuberoPlanner::checkGoalReached(
 	const geometry_msgs::PoseStamped& velocity,
 	const geometry_msgs::PoseStamped& goal
 ) {
-	printf("[HuberoPlanner::checkGoalReached] \r\n");
 	goal_reached_ = state_ptr_->isGoalReached();
 	return goal_reached_;
 }
