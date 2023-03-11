@@ -905,9 +905,6 @@ bool HuberoPlanner::checkInPlaceTrajectory(
 	critics.push_back(&goal_front_costs_);
 	critics.push_back(&chc_costs_);
 	critics.push_back(&speedy_goal_costs_);
-	// TODO: for some reason TTC Cost Function causes deadlock (just before its first operation in `scoreTrajectory`)
-	// This needs to be checked with debugger thoroughly
-	// critics.push_back(&ttc_costs_);
 
 	base_local_planner::SimpleScoredSamplingPlanner traj_scorer(traj_gen_list, critics);
 
