@@ -419,7 +419,13 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 		updatePlan(pose_msg);
 		// immediately notify planner state handler about this event
 		state_ptr_->update(true);
+		return plan_updated;
 	}
+	/*
+	 * Frequently update local goal to avoid problem with goal relocation that is caused by global pose estimate correction.
+	 * When the global pose estimate significantly moved the robot's 'odom' frame and the local goal will not be valid anymore
+	 */
+	goal_ = Pose(goal_new);
 	return plan_updated;
 }
 
