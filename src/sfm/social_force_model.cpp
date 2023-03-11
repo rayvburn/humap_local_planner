@@ -423,8 +423,12 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 	Vector y_alpha_i = robot.vel * dt;
 	y_alpha_i.setZ(0.00); // planar (this could be ommitted)
 
+	// helper to avoid duplicate operations
+	auto dy_alpha_i = d_alpha_i - y_alpha_i;
+	auto dy_alpha_i_len = dy_alpha_i.calculateLength();
+
 	// semi-minor axis of the elliptic formulation
-	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i_len + (d_alpha_i - y_alpha_i).calculateLength()),2) -
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i_len + dy_alpha_i_len), 2) -
 								   std::pow(y_alpha_i.calculateLength(), 2) );
 
 	// division by ~0 prevention - returning zeros vector instead of NaNs
@@ -451,8 +455,8 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 
 	// ~force (acceleration) calculation
 	Vector f_alpha_i;
-	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).calculateLength()) /
-			    2*w_alpha_i) * 0.5 * (d_alpha_i.normalized() + (d_alpha_i - y_alpha_i).normalized());
+	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + dy_alpha_i_len) /
+			    2*w_alpha_i) * 0.5 * (d_alpha_i.normalized() + (dy_alpha_i).normalized());
 
 	/*
 	 * Check whether beta is within the field of view to determine a proper factor for force in case
