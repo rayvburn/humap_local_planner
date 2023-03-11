@@ -11,7 +11,7 @@ PersonDisturbanceCostFunction::PersonDisturbanceCostFunction():
 	disturbance_spatial_factor_exp_(-0.8)
 {}
 
-void PersonDisturbanceCostFunction::setPeopleDetections(const std::vector<Person>& people) {
+void PersonDisturbanceCostFunction::setPeopleDetections(const std::vector<people_msgs_utils::Person>& people) {
 	people_ = people;
 }
 

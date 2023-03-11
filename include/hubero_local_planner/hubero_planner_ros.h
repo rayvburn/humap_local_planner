@@ -28,7 +28,7 @@
 #include <sensor_msgs/PointCloud2.h>
 
 #include <people_msgs/People.h>
-#include <hubero_local_planner/person.h>
+#include <people_msgs_utils/person.h>
 
 namespace hubero_local_planner {
 using namespace geometry;
@@ -178,7 +178,7 @@ protected:
 
 	/// @brief Subscriber of aggregated data with people present in the environment
 	ros::Subscriber people_sub_;
-	PeopleContainerPtr people_;
+	std::shared_ptr<people_msgs_utils::People> people_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;

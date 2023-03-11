@@ -13,6 +13,8 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <std_msgs/UInt8.h>
 
+#include <people_msgs_utils/utils.h>
+
 #include <memory>
 #include <regex>
 
@@ -73,7 +75,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		obstacles_ = std::make_shared<ObstContainer>();
 		obstacles_->reserve(500);
 
-		people_ = std::make_shared<PeopleContainer>();
+		people_ = std::make_shared<people_msgs_utils::People>();
 		people_->reserve(50);
 
 		// create robot footprint/contour model
@@ -346,28 +348,53 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 	// clear vector, we receive a new aggregated info
 	people_->clear();
 
-	// transform position (if required) and overall message into concise class definition
-	for (const auto& person: msg->people) {
+	// extract all data embedded in people_msgs/People
+	std::vector<people_msgs_utils::Person> people_orig;
+	std::tie(people_orig, std::ignore) = people_msgs_utils::createFromPeople(msg->people);
+
+	/*
+	 * NOTE: there is a snippet from srpb::logger below; see https://github.com/rayvburn/people_msgs_utils/issues/5
+	 */
+	// transform to the planner frame
+	for (const auto person: people_orig) {
 		// first, check reliability of the tracked person, accept only accurate ones
-		if (person.reliability < 1e-02) {
+		if (person.getReliability() < 1e-02) {
 			continue;
 		}
 
-		// in raw `person` we fully rely on position - create a HuBeRo-friendly `Person` object
-		// that has a properly parsed orientation data (possibly in tags)
-		Person hp(person);
-		geometry::Pose tf(
-			transform.transform.translation.x,
-			transform.transform.translation.y,
-			transform.transform.translation.z,
-			transform.transform.rotation.x,
-			transform.transform.rotation.y,
-			transform.transform.rotation.z,
-			transform.transform.rotation.w
-		);
-		hp.transform(tf);
+		// transform pose
+		geometry_msgs::PoseWithCovarianceStamped pose;
+		pose.header = msg->header;
+		pose.pose.pose.position = person.getPosition();
+		pose.pose.pose.orientation = person.getOrientation();
+		// pose covariance
+		auto pose_cov = person.getCovariancePose();
+		std::copy(pose_cov.cbegin(), pose_cov.cend(), pose.pose.covariance.begin());
+		// transform pose with tf2 library
+		geometry_msgs::PoseWithCovarianceStamped pose_transformed;
+		tf2::doTransform(pose, pose_transformed, transform);
 
-		people_->push_back(hp);
+		// compose velocity with covariance
+		geometry_msgs::PoseWithCovarianceStamped vel;
+		vel.header = msg->header;
+		vel.pose.pose = person.getVelocity();
+		// velocity covariance
+		auto vel_cov = person.getCovarianceVelocity();
+		std::copy(vel_cov.cbegin(), vel_cov.cend(), vel.pose.covariance.begin());
+		// TODO: transform velocity to the local frame of the person, currently metrics don't use that information
+
+		// collect person entries in the target container
+		people_->emplace_back(
+			person.getName(),
+			pose_transformed.pose,
+			vel.pose,
+			person.getReliability(),
+			person.isOccluded(),
+			person.isMatched(),
+			person.getDetectionID(),
+			person.getTrackAge(),
+			person.getGroupName()
+		);
 	}
 }
 

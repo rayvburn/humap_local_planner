@@ -28,6 +28,7 @@ find_package(catkin REQUIRED
         roscpp
         tf2
         tf2_ros
+        people_msgs_utils
 )
 
 if(NOT DEFINED IGN_MATH_VER)
@@ -44,6 +45,7 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
+    ${people_msgs_utils_INCLUDE_DIRS}
     ${IGNITION-MATH_INCLUDE_DIRS}
 )
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -66,6 +68,7 @@ catkin_package(
         costmap_converter
         tf2
         tf2_ros
+        people_msgs_utils
 )
 
 set(HEADERS_FUZZY
@@ -162,10 +165,6 @@ set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
 target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-### Person
-add_library(person include/hubero_local_planner/person.h src/person.cpp)
-target_link_libraries(person geometry)
-set_target_properties(person PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### World - ontology
 add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
 target_link_libraries(world geometry transformations ${IGNITION-MATH_LIBRARIES})
@@ -208,7 +207,19 @@ add_library(hubero_local_planner
     src/planner_state.cpp
 )
 add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world transformations person ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(hubero_local_planner
+    ${catkin_LIBRARIES}
+    fuzzy
+    sfm
+    vis
+    config
+    config_ros
+    geometry
+    world
+    transformations
+    ${people_msgs_utils_LIBRARIES}
+    ${IGNITION-MATH_LIBRARIES}
+)
 
 ## Executables
 # None

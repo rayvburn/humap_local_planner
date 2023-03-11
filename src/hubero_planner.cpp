@@ -16,7 +16,8 @@ HuberoPlanner::HuberoPlanner(
 	planner_util_(planner_util),
 	goal_reached_(false),
 	obstacles_(nullptr),
-	people_(std::make_shared<const PeopleContainer>()),
+	// people_ must be initialized, otherwise disturbance_costs_ cannot see a valid ptr
+	people_(std::make_shared<const people_msgs_utils::People>()),
 	robot_model_(robot_model),
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
@@ -218,7 +219,7 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
-	const PeopleContainerConstPtr people,
+	std::shared_ptr<const people_msgs_utils::People> people,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -293,7 +294,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
-	const PeopleContainerConstPtr people,
+	std::shared_ptr<const people_msgs_utils::People> people,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -578,12 +579,12 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 		// vector of containment rates (within people radiuses) of the obstacle
 		std::vector<double> containment_rates;
 
-		for (const Person& person: *people_) {
+		for (const auto& person: *people_) {
 			// number of polygon points that are located within a radius of person model
 			int polygon_pts_within_radius = 0;
 
 			for (const auto& pt: polygon.points) {
-				double dist = std::hypot(pt.x - person.getPose().getX(), pt.y - person.getPose().getY());
+				double dist = std::hypot(pt.x - person.getPositionX(), pt.y - person.getPositionY());
 				if (dist <= cfg_->getGeneral()->person_model_radius) {
 					polygon_pts_within_radius++;
 				}
@@ -646,10 +647,10 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 	}
 
 	// represent human with an obstacle
-	for (const Person& person: *people_) {
+	for (const auto& person: *people_) {
 		ObstaclePtr person_model_ptr = std::make_shared<CircularObstacle>(
-			person.getPose().getX(),
-			person.getPose().getY(),
+			person.getPositionX(),
+			person.getPositionY(),
 			cfg_->getGeneral()->person_model_radius
 		);
 

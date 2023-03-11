@@ -1,7 +1,7 @@
 #pragma once
 
 #include <base_local_planner/trajectory_cost_function.h>
-#include <hubero_local_planner/person.h>
+#include <people_msgs_utils/person.h>
 
 #include <vector>
 
@@ -19,7 +19,7 @@ public:
 	/**
 	 * @brief Updates dataset containing people detections
 	 */
-	void setPeopleDetections(const std::vector<Person>& people);
+	void setPeopleDetections(const std::vector<people_msgs_utils::Person>& people);
 
 	/**
 	 * @brief Set the Parameters object
@@ -102,7 +102,7 @@ public:
 	static double calculateGaussianAngle(double x, double mean, double variance, bool normalize = false);
 
 protected:
-	std::vector<Person> people_;
+	std::vector<people_msgs_utils::Person> people_;
 	double fov_person_;
 	double person_model_radius_;
 	double disturbance_spatial_factor_exp_;
