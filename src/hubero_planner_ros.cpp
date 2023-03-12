@@ -352,49 +352,16 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 	std::vector<people_msgs_utils::Person> people_orig;
 	std::tie(people_orig, std::ignore) = people_msgs_utils::createFromPeople(msg->people);
 
-	/*
-	 * NOTE: there is a snippet from srpb::logger below; see https://github.com/rayvburn/people_msgs_utils/issues/5
-	 */
 	// transform to the planner frame
-	for (const auto person: people_orig) {
+	for (auto& person: people_orig) {
 		// first, check reliability of the tracked person, accept only accurate ones
 		if (person.getReliability() < 1e-02) {
 			continue;
 		}
-
-		// transform pose
-		geometry_msgs::PoseWithCovarianceStamped pose;
-		pose.header = msg->header;
-		pose.pose.pose.position = person.getPosition();
-		pose.pose.pose.orientation = person.getOrientation();
-		// pose covariance
-		auto pose_cov = person.getCovariancePose();
-		std::copy(pose_cov.cbegin(), pose_cov.cend(), pose.pose.covariance.begin());
-		// transform pose with tf2 library
-		geometry_msgs::PoseWithCovarianceStamped pose_transformed;
-		tf2::doTransform(pose, pose_transformed, transform);
-
-		// compose velocity with covariance
-		geometry_msgs::PoseWithCovarianceStamped vel;
-		vel.header = msg->header;
-		vel.pose.pose = person.getVelocity();
-		// velocity covariance
-		auto vel_cov = person.getCovarianceVelocity();
-		std::copy(vel_cov.cbegin(), vel_cov.cend(), vel.pose.covariance.begin());
-		// TODO: transform velocity to the local frame of the person, currently metrics don't use that information
-
+		// transform pose and vel
+		person.transform(transform);
 		// collect person entries in the target container
-		people_->emplace_back(
-			person.getName(),
-			pose_transformed.pose,
-			vel.pose,
-			person.getReliability(),
-			person.isOccluded(),
-			person.isMatched(),
-			person.getDetectionID(),
-			person.getTrackAge(),
-			person.getGroupName()
-		);
+		people_->push_back(person);
 	}
 }
 
