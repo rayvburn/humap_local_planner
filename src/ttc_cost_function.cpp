@@ -49,9 +49,12 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 	std::vector<std::vector<Distance>> state_prediction_dynamic;
 
 	// recreate world model sequence
+	std::vector<World> world_sequence;
 	// create a copy of initial world model for pose predictions
 	World world_model_pred = world_model_;
 
+	// save world initial state
+	world_sequence.push_back(world_model_pred);
 	double timestamp = 0.0;
 
 	double traj_time = traj.getPointsSize() * dt;
@@ -60,6 +63,7 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 	double dist_min_static = std::numeric_limits<double>::max();
 	double dist_min_dynamic = std::numeric_limits<double>::max();
 
+	/* Starting trajectory recreation */
 	// simulate forward
 	for (unsigned int sim_step = 0; sim_step < traj.getPointsSize(); sim_step++) {
 		// retrieve 2d pose from trajectory
@@ -121,8 +125,12 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 		// recreate world prediction (from trajectory)
 		world_model_pred.predict(robot_vel, dt);
 		timestamp += dt;
+
+		// save world state
+		world_sequence.push_back(world_model_pred);
 	}
 
+	/* Starting velocity computation for simulation forward beyond */
 	// now, investigate further state (beyond trajectory bounds)
 	// stick to trajectory time delta and maintain last velocity of the trajectory
 	geometry::Vector base_vel_last;
@@ -159,6 +167,7 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 		robot_global_vel
 	);
 
+	/* Starting simulation further beyond */
 	// predict further beyond trajectory simulation time, velocity doesn't change here
 	for (double t = 0; t <= max_sim_time_; t += dt) {
 		// save state for a specific timestamp
@@ -186,6 +195,9 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 
 		world_model_pred.predict(robot_global_vel, dt);
 		timestamp += dt;
+
+		// save world state
+		world_sequence.push_back(world_model_pred);
 	}
 
 	// save data for a specific trajectory
