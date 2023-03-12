@@ -744,17 +744,15 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
 	sensor_msgs::PointCloud2Modifier cloud_mod(traj_cloud);
 	// floats all over here to use handy iterator pattern
 	cloud_mod.setPointCloud2Fields(
-		6,
+		5,
 		"x", 1, sensor_msgs::PointField::FLOAT32,
 		"y", 1, sensor_msgs::PointField::FLOAT32,
-		"z", 1, sensor_msgs::PointField::FLOAT32,
 		"theta", 1, sensor_msgs::PointField::FLOAT32,
 		"type", 1, sensor_msgs::PointField::FLOAT32,
 		"timestep", 1, sensor_msgs::PointField::FLOAT32
 	);
 
 	// differentiate types so they will be easier to distinguish visually
-	const float TYPE_ROBOT = 0.0;
 	const float TYPE_OBSTACLE_STATIC = 100.0;
 	const float TYPE_OBSTACLE_DYNAMIC = 200.0;
 
@@ -767,8 +765,6 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
 			for (const auto& obj: ts) {
 				// count obstacle
 				num_points++;
-				// count robot pose closest to the obstacle
-				num_points++;
 			}
 		}
 	}
@@ -778,8 +774,6 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
 			// iterate over objects
 			for (const auto& obj: ts) {
 				// count obstacle
-				num_points++;
-				// count robot pose closest to the obstacle
 				num_points++;
 			}
 		}
@@ -793,14 +787,6 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
 		for (const auto& ts: traj) {
 			// iterate over objects
 			for (const auto& obj: ts) {
-				// robot pose
-				iter_x[0] = obj.robot.getX();
-				iter_x[1] = obj.robot.getY();
-				iter_x[2] = obj.robot.getZ();
-				iter_x[3] = obj.robot.getYaw();
-				iter_x[4] = TYPE_ROBOT;
-				iter_x[5] = timestep;
-				++iter_x;
 				// obstacle pose
 				iter_x[0] = obj.object.getX();
 				iter_x[1] = obj.object.getY();
@@ -820,14 +806,6 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
 		for (const auto& ts: traj) {
 			// iterate over objects
 			for (const auto& obj: ts) {
-				// robot pose
-				iter_x[0] = obj.robot.getX();
-				iter_x[1] = obj.robot.getY();
-				iter_x[2] = obj.robot.getZ();
-				iter_x[3] = obj.robot.getYaw();
-				iter_x[4] = TYPE_ROBOT;
-				iter_x[5] = timestep;
-				++iter_x;
 				// obstacle pose
 				iter_x[0] = obj.object.getX();
 				iter_x[1] = obj.object.getY();
