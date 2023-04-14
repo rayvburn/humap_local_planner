@@ -196,6 +196,8 @@ add_library(hubero_local_planner
     include/hubero_local_planner/obstacles.h
     include/hubero_local_planner/robot_footprint_model.h
     include/hubero_local_planner/social_trajectory_generator.h
+    # class definition in the header, see doc in the file for details
+    include/hubero_local_planner/trajectory.h
     src/social_trajectory_generator.cpp
     src/ttc_cost_function.cpp
     src/chc_cost_function.cpp
@@ -242,7 +244,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 ## Testing ##
 #############
-
+# catkin run_tests --no-deps hubero_local_planner --verbose
 if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_velocity_conversions test/test_velocity_conversions.cpp)
   if(TARGET test_velocity_conversions)
@@ -298,5 +300,10 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_planner_state test/test_planner_state.cpp)
   if(TARGET test_planner_state)
     target_link_libraries(test_planner_state hubero_local_planner)
+  endif()
+
+  catkin_add_gtest(test_trajectory test/test_trajectory.cpp)
+  if(TARGET test_trajectory)
+    target_link_libraries(test_trajectory hubero_local_planner)
   endif()
 endif()
