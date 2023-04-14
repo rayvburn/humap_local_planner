@@ -24,6 +24,7 @@
     <build_depend>teb_local_planner</build_depend>
     <build_depend>costmap_converter</build_depend>
     <build_depend>people_msgs_utils</build_depend>
+    <build_depend>social_nav_utils</build_depend>
 
     <run_depend>base_local_planner</run_depend>
     <run_depend>costmap_2d</run_depend>
@@ -38,6 +39,7 @@
     <run_depend>teb_local_planner</run_depend>
     <run_depend>costmap_converter</run_depend>
     <run_depend>people_msgs_utils</run_depend>
+    <run_depend>social_nav_utils</run_depend>
 
     <export>
         <nav_core plugin="${prefix}/blp_plugin.xml" />

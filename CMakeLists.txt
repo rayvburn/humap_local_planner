@@ -29,6 +29,7 @@ find_package(catkin REQUIRED
         tf2
         tf2_ros
         people_msgs_utils
+        social_nav_utils
 )
 
 if(NOT DEFINED IGN_MATH_VER)
@@ -69,6 +70,7 @@ catkin_package(
         tf2
         tf2_ros
         people_msgs_utils
+        social_nav_utils
 )
 
 set(HEADERS_FUZZY
@@ -220,6 +222,7 @@ target_link_libraries(hubero_local_planner
     world
     transformations
     ${people_msgs_utils_LIBRARIES}
+    ${social_nav_utils_LIBRARIES}
     ${IGNITION-MATH_LIBRARIES}
 )
 
