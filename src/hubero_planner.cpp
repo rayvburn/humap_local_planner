@@ -70,6 +70,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&velocity_smoothness_costs_);
 	critics.push_back(&contextualized_costs_);
 	critics.push_back(&heading_disturbance_costs_);
+	critics.push_back(&personal_space_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -214,6 +215,7 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 
 	// update cost function with the people detections dataset
 	heading_disturbance_costs_.setPeopleDetections(*people_);
+	personal_space_costs_.setPeopleDetections(*people_);
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
@@ -545,6 +547,7 @@ void HuberoPlanner::updateCostParameters() {
 	velocity_smoothness_costs_.setScale(cfg_->getCost()->velocity_smoothness_scale);
 	contextualized_costs_.setScale(cfg_->getCost()->contextualized_costs_scale);
 	heading_disturbance_costs_.setScale(cfg_->getCost()->heading_dir_scale);
+	personal_space_costs_.setScale(cfg_->getCost()->personal_space_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -1022,7 +1025,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
 			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f, "
-			"head_dir %2.2f%s",
+			"head_dir %2.2f, PSI %2.2f%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			traj_num,
 			traj_explored_.size(),
@@ -1039,6 +1042,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(traj_copy),
 			contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(traj_copy),
 			heading_disturbance_costs_.getScale() * heading_disturbance_costs_.scoreTrajectory(traj_copy),
+			personal_space_costs_.getScale() * personal_space_costs_.scoreTrajectory(traj_copy),
 			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
 		);
 

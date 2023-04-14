@@ -14,6 +14,7 @@
 #include <hubero_local_planner/speedy_goal_cost_function.h>
 #include <hubero_local_planner/velocity_smoothness_cost_function.h>
 #include <hubero_local_planner/heading_disturbance_cost_function.h>
+#include <hubero_local_planner/personal_space_intrusion_cost_function.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -458,6 +459,8 @@ protected:
 	ContextualizedCostFunction contextualized_costs_;
 	/// Penalizes robot trajectories that drive it towards the center of any person
 	HeadingDisturbanceCostFunction heading_disturbance_costs_;
+	// Penalizes robot intrusions into people's personal spaces
+	PersonalSpaceIntrusionCostFunction personal_space_costs_;
 	/// @}
 
 }; // class HuberoPlanner

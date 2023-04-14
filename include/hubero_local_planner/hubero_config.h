@@ -200,6 +200,8 @@ namespace hubero_local_planner {
 		double contextualized_costs_scale = 0.13;
 		/// The weight for the cost function that penalizes trajectories that leading towards human center
 		double heading_dir_scale = 7.0;
+		/// The weight for the cost function that penalizes trajectories that intrude human personal space
+		double personal_space_scale = 7.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians
