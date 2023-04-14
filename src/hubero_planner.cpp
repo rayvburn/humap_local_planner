@@ -16,7 +16,7 @@ HuberoPlanner::HuberoPlanner(
 	planner_util_(planner_util),
 	goal_reached_(false),
 	obstacles_(nullptr),
-	// people_ must be initialized, otherwise disturbance_costs_ cannot see a valid ptr
+	// people_ must be initialized, otherwise heading_disturbance_costs_ cannot see a valid ptr
 	people_(std::make_shared<const people_msgs_utils::People>()),
 	robot_model_(robot_model),
 	obstacle_costs_(planner_util_->getCostmap()),
@@ -69,7 +69,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&speedy_goal_costs_);
 	critics.push_back(&velocity_smoothness_costs_);
 	critics.push_back(&contextualized_costs_);
-	critics.push_back(&disturbance_costs_);
+	critics.push_back(&heading_disturbance_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -213,7 +213,7 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	ttc_costs_.reset();
 
 	// update cost function with the people detections dataset
-	disturbance_costs_.setPeopleDetections(*people_);
+	heading_disturbance_costs_.setPeopleDetections(*people_);
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
@@ -544,7 +544,7 @@ void HuberoPlanner::updateCostParameters() {
 	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
 	velocity_smoothness_costs_.setScale(cfg_->getCost()->velocity_smoothness_scale);
 	contextualized_costs_.setScale(cfg_->getCost()->contextualized_costs_scale);
-	disturbance_costs_.setScale(cfg_->getCost()->disturbance_scale);
+	heading_disturbance_costs_.setScale(cfg_->getCost()->disturbance_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -561,7 +561,7 @@ void HuberoPlanner::updateCostParameters() {
 	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
-	disturbance_costs_.setParameters(
+	heading_disturbance_costs_.setParameters(
 		2.0 * cfg_->getGeneral()->person_fov, // create value of full FOV
 		cfg_->getGeneral()->person_model_radius,
 		cfg_->getCost()->disturbance_spatial_exp_factor
@@ -1035,7 +1035,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(traj_copy),
 			velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(traj_copy),
 			contextualized_costs_.getScale() * contextualized_costs_.scoreTrajectory(traj_copy),
-			disturbance_costs_.getScale() * disturbance_costs_.scoreTrajectory(traj_copy),
+			heading_disturbance_costs_.getScale() * heading_disturbance_costs_.scoreTrajectory(traj_copy),
 			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
 		);
 

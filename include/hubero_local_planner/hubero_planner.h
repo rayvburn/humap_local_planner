@@ -13,7 +13,7 @@
 #include <hubero_local_planner/ttc_cost_function.h>
 #include <hubero_local_planner/speedy_goal_cost_function.h>
 #include <hubero_local_planner/velocity_smoothness_cost_function.h>
-#include <hubero_local_planner/person_disturbance_cost_function.h>
+#include <hubero_local_planner/heading_disturbance_cost_function.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -457,7 +457,7 @@ protected:
 	/// Takes into account various contexts included in layered costmap (includes obstacle inflation too)
 	ContextualizedCostFunction contextualized_costs_;
 	/// Prevents robot from execution paths and movements that nearby people may find disturbing
-	PersonDisturbanceCostFunction disturbance_costs_;
+	HeadingDisturbanceCostFunction heading_disturbance_costs_;
 	/// @}
 
 }; // class HuberoPlanner

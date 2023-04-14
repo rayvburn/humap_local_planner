@@ -1,31 +1,31 @@
-#include <hubero_local_planner/person_disturbance_cost_function.h>
+#include <hubero_local_planner/heading_disturbance_cost_function.h>
 #include <angles/angles.h>
 
 #include <hubero_local_planner/utils/transformations.h>
 
 namespace hubero_local_planner {
 
-PersonDisturbanceCostFunction::PersonDisturbanceCostFunction():
+HeadingDisturbanceCostFunction::HeadingDisturbanceCostFunction():
 	fov_person_(3.31613),
 	person_model_radius_(0.4),
 	disturbance_spatial_factor_exp_(-0.8)
 {}
 
-void PersonDisturbanceCostFunction::setPeopleDetections(const std::vector<people_msgs_utils::Person>& people) {
+void HeadingDisturbanceCostFunction::setPeopleDetections(const std::vector<people_msgs_utils::Person>& people) {
 	people_ = people;
 }
 
-void PersonDisturbanceCostFunction::setParameters(double fov_person, double person_model_radius, double spatial_factor_exp) {
+void HeadingDisturbanceCostFunction::setParameters(double fov_person, double person_model_radius, double spatial_factor_exp) {
 	fov_person_ = fov_person;
 	person_model_radius_ = person_model_radius;
 	disturbance_spatial_factor_exp_ = spatial_factor_exp;
 }
 
-bool PersonDisturbanceCostFunction::prepare() {
+bool HeadingDisturbanceCostFunction::prepare() {
 	return true;
 }
 
-double PersonDisturbanceCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
+double HeadingDisturbanceCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 	if (people_.empty()) {
 		return 0.0;
 	}
@@ -107,7 +107,7 @@ double PersonDisturbanceCostFunction::scoreTrajectory(base_local_planner::Trajec
 				vy_robot = robot_vel.getY();
 			}
 
-			double disturbance = PersonDisturbanceCostFunction::calculateDirectionDisturbance(
+			double disturbance = HeadingDisturbanceCostFunction::calculateDirectionDisturbance(
 				x_robot,
 				y_robot,
 				th_robot,
@@ -146,7 +146,7 @@ double PersonDisturbanceCostFunction::scoreTrajectory(base_local_planner::Trajec
 }
 
 // static
-double PersonDisturbanceCostFunction::calculateDirectionDisturbance(
+double HeadingDisturbanceCostFunction::calculateDirectionDisturbance(
 	double x_robot,
 	double y_robot,
 	double yaw_robot,
@@ -243,14 +243,14 @@ double PersonDisturbanceCostFunction::calculateDirectionDisturbance(
 	*/
 	// 1D Gaussian function, note that angle domain wraps at 3.14 so we must check for maximum of gaussians
 	// located at gamma_X and shifted 2 * pi to the left and right; gamma angle should already be normalized here
-	double gaussian_dir_cc = PersonDisturbanceCostFunction::calculateGaussianAngle(gamma, gamma_cc, gamma_cc_variance);
+	double gaussian_dir_cc = HeadingDisturbanceCostFunction::calculateGaussianAngle(gamma, gamma_cc, gamma_cc_variance);
 
 	// 3 sigma rule - let the cost spread only over the CF region
 	double gamma_cf_stddev = (gamma_cf_range / 2.0) / 3.0;
 	double gamma_cf_variance = std::pow(gamma_cf_stddev, 2);
 	// mean - center of the cross front region
 	double gamma_cf_center = angles::normalize_angle(gamma_cf_start + gamma_cf_range / 2.0);
-	double gaussian_dir_cf = PersonDisturbanceCostFunction::calculateGaussianAngle(
+	double gaussian_dir_cf = HeadingDisturbanceCostFunction::calculateGaussianAngle(
 		gamma,
 		gamma_cf_center,
 		gamma_cf_variance
@@ -264,7 +264,7 @@ double PersonDisturbanceCostFunction::calculateDirectionDisturbance(
 	double variance_fov = std::pow(fov_stddev, 2);
 	// starting from the left side, half of the `fov_person` is located in 0.0 and rel_loc is 0.0
 	// when obstacle is in front of the object
-	double gaussian_fov = PersonDisturbanceCostFunction::calculateGaussian(rel_loc_angle, 0.0, variance_fov);
+	double gaussian_fov = HeadingDisturbanceCostFunction::calculateGaussian(rel_loc_angle, 0.0, variance_fov);
 
 	// check how fast the robot moves
 	double speed_factor = std::sqrt(std::pow(vx_robot, 2) + std::pow(vy_robot, 2));
@@ -277,7 +277,7 @@ double PersonDisturbanceCostFunction::calculateDirectionDisturbance(
 }
 
 // static
-double PersonDisturbanceCostFunction::calculateGaussian(double x, double mean, double variance, bool normalize) {
+double HeadingDisturbanceCostFunction::calculateGaussian(double x, double mean, double variance, bool normalize) {
 	double scale = 1.0;
 	// with normalization, maximum possible value will be 1.0; otherwise, it depends on the value of variance
 	if (!normalize) {
@@ -287,7 +287,7 @@ double PersonDisturbanceCostFunction::calculateGaussian(double x, double mean, d
 }
 
 // static
-double PersonDisturbanceCostFunction::calculateGaussianAngle(double x, double mean, double variance, bool normalize) {
+double HeadingDisturbanceCostFunction::calculateGaussianAngle(double x, double mean, double variance, bool normalize) {
 	double gaussian1 = calculateGaussian(x, mean             , variance, normalize);
 	double gaussian2 = calculateGaussian(x, mean - 2.0 * M_PI, variance, normalize);
 	double gaussian3 = calculateGaussian(x, mean + 2.0 * M_PI, variance, normalize);

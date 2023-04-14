@@ -12,9 +12,9 @@ namespace hubero_local_planner {
  *
  * Penalizes robot motion that e.g. drives it towards person
  */
-class PersonDisturbanceCostFunction: public base_local_planner::TrajectoryCostFunction {
+class HeadingDisturbanceCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
-	PersonDisturbanceCostFunction();
+	HeadingDisturbanceCostFunction();
 
 	/**
 	 * @brief Updates dataset containing people detections
