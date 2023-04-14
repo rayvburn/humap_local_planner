@@ -195,7 +195,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->speedy_goal_scale = cfg.speedy_goal_scale;
 	costs_->velocity_smoothness_scale = cfg.velocity_smoothness_scale;
 	costs_->contextualized_costs_scale = cfg.contextualized_costs_scale;
-	costs_->disturbance_scale = cfg.disturbance_scale;
+	costs_->heading_dir_scale = cfg.heading_dir_scale;
 	costs_->oscillation_reset_dist = cfg.oscillation_reset_dist;
 	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
 	costs_->scaling_speed = cfg.scaling_speed;
@@ -205,7 +205,6 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
 	costs_->forward_point_distance = cfg.forward_point_distance;
 	costs_->speedy_goal_distance = cfg.speedy_goal_distance;
-	costs_->disturbance_spatial_exp_factor = cfg.disturbance_spatial_exp_factor;
 
 	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;
 	diagnostics_->log_trajectory_generation_details = cfg.log_trajectory_generation_details;

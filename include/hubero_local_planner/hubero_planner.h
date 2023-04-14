@@ -456,7 +456,7 @@ protected:
 	VelocitySmoothnessCostFunction velocity_smoothness_costs_;
 	/// Takes into account various contexts included in layered costmap (includes obstacle inflation too)
 	ContextualizedCostFunction contextualized_costs_;
-	/// Prevents robot from execution paths and movements that nearby people may find disturbing
+	/// Penalizes robot trajectories that drive it towards the center of any person
 	HeadingDisturbanceCostFunction heading_disturbance_costs_;
 	/// @}
 

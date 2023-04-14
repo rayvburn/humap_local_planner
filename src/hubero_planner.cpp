@@ -544,7 +544,7 @@ void HuberoPlanner::updateCostParameters() {
 	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
 	velocity_smoothness_costs_.setScale(cfg_->getCost()->velocity_smoothness_scale);
 	contextualized_costs_.setScale(cfg_->getCost()->contextualized_costs_scale);
-	heading_disturbance_costs_.setScale(cfg_->getCost()->disturbance_scale);
+	heading_disturbance_costs_.setScale(cfg_->getCost()->heading_dir_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -562,9 +562,12 @@ void HuberoPlanner::updateCostParameters() {
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
 	heading_disturbance_costs_.setParameters(
-		2.0 * cfg_->getGeneral()->person_fov, // create value of full FOV
+		// creates value of the full FOV
+		2.0 * cfg_->getGeneral()->person_fov,
 		cfg_->getGeneral()->person_model_radius,
-		cfg_->getCost()->disturbance_spatial_exp_factor
+		// TODO: for non-circular robots this won't be a valid circumradius
+		robot_model_->getInscribedRadius(),
+		cfg_->getLimits()->max_vel_trans
 	);
 }
 
@@ -1019,7 +1022,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
 			"backward %2.2f, TTC %2.2f, CHC %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f, "
-			"disturb %2.2f%s",
+			"head_dir %2.2f%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			traj_num,
 			traj_explored_.size(),
