@@ -34,6 +34,7 @@ HuberoPlannerROS::HuberoPlannerROS():
 		),
 		obstacles_(nullptr),
 		people_(nullptr),
+		groups_(nullptr),
 		dsrv_(nullptr),
 		cfg_(nullptr),
 		tf_buffer_(nullptr),
@@ -77,6 +78,8 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 
 		people_ = std::make_shared<people_msgs_utils::People>();
 		people_->reserve(50);
+		groups_ = std::make_shared<people_msgs_utils::Groups>();
+		groups_->reserve(25);
 
 		// create robot footprint/contour model
 		RobotFootprintModelPtr robot_model;
@@ -233,9 +236,9 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 		// update costs for trajectory scoring
 		planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
 		// sample trajectories and choose the one with the lowest cost
-		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, drive_cmds);
+		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
 	} else {
-		trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, drive_cmds);
+		trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
 	}
 
 	cmd_vel.linear.x = drive_cmds.pose.position.x;
@@ -311,7 +314,7 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 	std::lock_guard<std::mutex> l(cb_mutex_);
 
-	if (people_ == nullptr) {
+	if (people_ == nullptr || groups_ == nullptr) {
 		return;
 	}
 
@@ -347,10 +350,12 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 
 	// clear vector, we receive a new aggregated info
 	people_->clear();
+	groups_->clear();
 
 	// extract all data embedded in people_msgs/People
 	std::vector<people_msgs_utils::Person> people_orig;
-	std::tie(people_orig, std::ignore) = people_msgs_utils::createFromPeople(msg->people);
+	std::vector<people_msgs_utils::Group> groups_orig;
+	std::tie(people_orig, groups_orig) = people_msgs_utils::createFromPeople(msg->people);
 
 	// transform to the planner frame
 	for (auto& person: people_orig) {
@@ -362,6 +367,16 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 		person.transform(transform);
 		// collect person entries in the target container
 		people_->push_back(person);
+	}
+	for (auto& group: groups_orig) {
+		// first, check reliability of the tracked group, accept only accurate ones
+		if (group.getReliability() < 1e-02) {
+			continue;
+		}
+		// transform pose and vel
+		group.transform(transform);
+		// collect group entries in the target container
+		groups_->push_back(group);
 	}
 }
 

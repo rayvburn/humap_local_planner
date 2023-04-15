@@ -18,6 +18,7 @@ HuberoPlanner::HuberoPlanner(
 	obstacles_(nullptr),
 	// people_ must be initialized, otherwise heading_disturbance_costs_ cannot see a valid ptr
 	people_(std::make_shared<const people_msgs_utils::People>()),
+	groups_(std::make_shared<const people_msgs_utils::Groups>()),
 	robot_model_(robot_model),
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
@@ -222,6 +223,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
 	std::shared_ptr<const people_msgs_utils::People> people,
+	std::shared_ptr<const people_msgs_utils::Groups> groups,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -231,6 +233,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	vel_ = velocity;
 	obstacles_ = obstacles;
 	people_ = people;
+	groups_ = groups;
 
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
 	Vector robot_vel_glob;
@@ -297,6 +300,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
 	std::shared_ptr<const people_msgs_utils::People> people,
+	std::shared_ptr<const people_msgs_utils::Groups> groups,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -305,6 +309,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	vel_ = velocity;
 	obstacles_ = obstacles;
 	people_ = people;
+	groups_ = groups;
 
 	// velocity transformation - from base coordinate system to planner's frame (global velocity vector)
 	Vector robot_vel_glob;
