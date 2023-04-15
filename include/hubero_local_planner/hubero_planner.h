@@ -15,6 +15,7 @@
 #include <hubero_local_planner/velocity_smoothness_cost_function.h>
 #include <hubero_local_planner/heading_disturbance_cost_function.h>
 #include <hubero_local_planner/personal_space_intrusion_cost_function.h>
+#include <hubero_local_planner/fformation_space_intrusion_cost_function.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -466,6 +467,8 @@ protected:
 	HeadingDisturbanceCostFunction heading_disturbance_costs_;
 	// Penalizes robot intrusions into people's personal spaces
 	PersonalSpaceIntrusionCostFunction personal_space_costs_;
+	// Penalizes robot intrusions into F-formation's O-spaces
+	FformationSpaceIntrusionCostFunction fformation_space_costs_;
 	/// @}
 
 }; // class HuberoPlanner
