@@ -48,8 +48,8 @@
 #include <hubero_local_planner/robot_footprint_model.h>
 #include <hubero_local_planner/utils/teb_utils.h>
 
-#include <people_msgs_utils/person.h>
-#include <people_msgs_utils/group.h>
+#include <hubero_local_planner/person.h>
+#include <hubero_local_planner/group.h>
 
 #include <nav_msgs/Path.h>
 
@@ -157,8 +157,8 @@ public:
 	base_local_planner::Trajectory findBestTrajectory(
 		const Vector& velocity,
 		const ObstContainerConstPtr obstacles,
-		std::shared_ptr<const people_msgs_utils::People> people,
-		std::shared_ptr<const people_msgs_utils::Groups> groups,
+		std::shared_ptr<const People> people,
+		std::shared_ptr<const Groups> groups,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
 
@@ -173,8 +173,8 @@ public:
 	base_local_planner::Trajectory findTrajectory(
 		const Vector& velocity,
 		const ObstContainerConstPtr obstacles,
-		std::shared_ptr<const people_msgs_utils::People> people,
-		std::shared_ptr<const people_msgs_utils::Groups> groups,
+		std::shared_ptr<const People> people,
+		std::shared_ptr<const Groups> groups,
 		geometry_msgs::PoseStamped& drive_velocities
 	);
 
@@ -420,9 +420,9 @@ protected:
 	/// @brief The most recent environment (obstacles) model
 	ObstContainerConstPtr obstacles_;
 	/// @brief The most recent information on people in the environment
-	std::shared_ptr<const people_msgs_utils::People> people_;
+	std::shared_ptr<const People> people_;
 	/// @brief The most recent information on groups (F-formations) in the environment
-	std::shared_ptr<const people_msgs_utils::Groups> groups_;
+	std::shared_ptr<const Groups> groups_;
 	/// @brief Robot footprint model
 	RobotFootprintModelPtr robot_model_;
 	/// @brief World model

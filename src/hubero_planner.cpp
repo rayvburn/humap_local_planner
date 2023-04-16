@@ -17,8 +17,8 @@ HuberoPlanner::HuberoPlanner(
 	goal_reached_(false),
 	obstacles_(nullptr),
 	// people_ must be initialized, otherwise heading_disturbance_costs_ cannot see a valid ptr
-	people_(std::make_shared<const people_msgs_utils::People>()),
-	groups_(std::make_shared<const people_msgs_utils::Groups>()),
+	people_(std::make_shared<const People>()),
+	groups_(std::make_shared<const Groups>()),
 	robot_model_(robot_model),
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
@@ -224,8 +224,8 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
-	std::shared_ptr<const people_msgs_utils::People> people,
-	std::shared_ptr<const people_msgs_utils::Groups> groups,
+	std::shared_ptr<const People> people,
+	std::shared_ptr<const Groups> groups,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
@@ -301,8 +301,8 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
-	std::shared_ptr<const people_msgs_utils::People> people,
-	std::shared_ptr<const people_msgs_utils::Groups> groups,
+	std::shared_ptr<const People> people,
+	std::shared_ptr<const Groups> groups,
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run

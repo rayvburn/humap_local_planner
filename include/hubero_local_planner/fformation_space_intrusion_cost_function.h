@@ -1,7 +1,7 @@
 #pragma once
 
 #include <base_local_planner/trajectory_cost_function.h>
-#include <people_msgs_utils/group.h>
+#include <hubero_local_planner/group.h>
 
 #include <vector>
 
@@ -17,7 +17,7 @@ public:
 	/**
 	 * @brief Updates dataset containing F-formations (groups) detections
 	 */
-	void setFformationsDetections(const std::vector<people_msgs_utils::Group>& groups);
+	void setFformationsDetections(const std::vector<Group>& groups);
 
 	/**
 	 * @brief General updating of context values if required.
@@ -31,7 +31,7 @@ public:
 	virtual double scoreTrajectory(base_local_planner::Trajectory& traj) override;
 
 protected:
-	std::vector<people_msgs_utils::Group> groups_;
+	std::vector<Group> groups_;
 };
 
 } // namespace hubero_local_planner

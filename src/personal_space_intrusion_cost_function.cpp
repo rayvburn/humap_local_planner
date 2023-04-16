@@ -8,7 +8,7 @@ namespace hubero_local_planner {
 PersonalSpaceIntrusionCostFunction::PersonalSpaceIntrusionCostFunction()
 {}
 
-void PersonalSpaceIntrusionCostFunction::setPeopleDetections(const std::vector<people_msgs_utils::Person>& people) {
+void PersonalSpaceIntrusionCostFunction::setPeopleDetections(const std::vector<Person>& people) {
 	people_ = people;
 }
 
@@ -25,30 +25,13 @@ double PersonalSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner::T
 	double dt = traj.time_delta_;
 	unsigned int num = traj.getPointsSize();
 
-	// helper to match current state of person with the predicted trajectory
-	struct PersonWithTrajPrediction {
-		people_msgs_utils::Person person;
-		Trajectory traj;
-		// Constructor
-		PersonWithTrajPrediction(const people_msgs_utils::Person& person, const Trajectory& traj):
-			person(person), traj(traj)
-		{}
-	};
-
-	// prediction of people poses over the trajectory time is the first stage
-	std::vector<PersonWithTrajPrediction> people_w_traj;
-	for (const auto& person: people_) {
-		// predict object's trajectory
-		people_w_traj.push_back(PersonWithTrajPrediction(person, Trajectory(person, dt, num)));
-	}
-
 	// storage for intrusions related to subsequent people
 	std::vector<double> people_intrusions;
 
 	// iterate over predicted poses of a person, compare against each pose of robot trajectory
 	// against all people pose predictions ...
 	Trajectory robot_traj(traj);
-	for (const auto& person: people_w_traj) {
+	for (const auto& person: people_) {
 		// storage for intrusions against person throughout the trajectory
 		std::vector<double> person_intrusions;
 
@@ -57,8 +40,8 @@ double PersonalSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner::T
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);
 			auto v_robot = robot_traj.getVelocity(i);
-			auto p_person = person.traj.getPose(i);
-			auto v_person = person.traj.getVelocity(i);
+			auto p_person = person.getTrajectoryPrediction().getPose(i);
+			auto v_person = person.getTrajectoryPrediction().getVelocity(i);
 
 			// personal space model depends on the speed, according to Kirby's thesis (4.5 - 4.7)
 			double vel_lin = std::hypot(v_person.getX(), v_person.getY());
@@ -71,10 +54,10 @@ double PersonalSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner::T
 				p_person.getX(),
 				p_person.getY(),
 				p_person.getYaw(),
-				person.person.getCovariancePoseXX(),
-				person.person.getCovariancePoseXY(),
-				person.person.getCovariancePoseYX(),
-				person.person.getCovariancePoseYY(),
+				person.getCovariancePoseXX(),
+				person.getCovariancePoseXY(),
+				person.getCovariancePoseYX(),
+				person.getCovariancePoseYY(),
 				ps_var_front,
 				ps_var_rear,
 				ps_var_side,

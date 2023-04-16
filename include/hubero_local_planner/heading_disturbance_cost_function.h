@@ -1,7 +1,7 @@
 #pragma once
 
 #include <base_local_planner/trajectory_cost_function.h>
-#include <people_msgs_utils/person.h>
+#include <hubero_local_planner/person.h>
 
 #include <vector>
 
@@ -19,7 +19,7 @@ public:
 	/**
 	 * @brief Updates dataset containing people detections
 	 */
-	void setPeopleDetections(const std::vector<people_msgs_utils::Person>& people);
+	void setPeopleDetections(const std::vector<Person>& people);
 
 	/**
 	 * @brief Set the Parameters object
@@ -48,7 +48,7 @@ public:
 	virtual double scoreTrajectory(base_local_planner::Trajectory& traj) override;
 
 protected:
-	std::vector<people_msgs_utils::Person> people_;
+	std::vector<Person> people_;
 	double fov_person_;
 	double person_model_radius_;
 	double robot_circumradius_;

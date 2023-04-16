@@ -12,7 +12,7 @@ HeadingDisturbanceCostFunction::HeadingDisturbanceCostFunction():
 	max_speed_(0.55)
 {}
 
-void HeadingDisturbanceCostFunction::setPeopleDetections(const std::vector<people_msgs_utils::Person>& people) {
+void HeadingDisturbanceCostFunction::setPeopleDetections(const std::vector<Person>& people) {
 	people_ = people;
 }
 
@@ -41,30 +41,13 @@ double HeadingDisturbanceCostFunction::scoreTrajectory(base_local_planner::Traje
 	double dt = traj.time_delta_;
 	unsigned int num = traj.getPointsSize();
 
-	// helper to match current state of person with the predicted trajectory
-	struct PersonWithTrajPrediction {
-		people_msgs_utils::Person person;
-		Trajectory traj;
-		// Constructor
-		PersonWithTrajPrediction(const people_msgs_utils::Person& person, const Trajectory& traj):
-			person(person), traj(traj)
-		{}
-	};
-
-	// prediction of people poses over the trajectory time is the first stage
-	std::vector<PersonWithTrajPrediction> people_w_traj;
-	for (const auto& person: people_) {
-		// predict object's trajectory
-		people_w_traj.push_back(PersonWithTrajPrediction(person, Trajectory(person, dt, num)));
-	}
-
 	// storage for disturbances related to subsequent people
 	std::vector<double> people_disturbances;
 
 	// iterate over predicted poses of a person, compare against each pose of robot trajectory
 	// against all people pose predictions ...
 	Trajectory robot_traj(traj);
-	for (const auto& person: people_w_traj) {
+	for (const auto& person: people_) {
 		// storage for disturbances against person throughout the trajectory
 		std::vector<double> person_disturbances;
 
@@ -73,17 +56,17 @@ double HeadingDisturbanceCostFunction::scoreTrajectory(base_local_planner::Traje
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);
 			auto v_robot = robot_traj.getVelocity(i);
-			auto p_person = person.traj.getPose(i);
-			auto v_person = person.traj.getVelocity(i);
+			auto p_person = person.getTrajectoryPrediction().getPose(i);
+			auto v_person = person.getTrajectoryPrediction().getVelocity(i);
 
 			// delegate cost computation
 			social_nav_utils::HeadingDirectionDisturbance heading_direction_penalty(
 				p_person.getX(),
 				p_person.getY(),
 				p_person.getYaw(),
-				person.person.getCovariancePoseXX(),
-				person.person.getCovariancePoseXY(),
-				person.person.getCovariancePoseYY(),
+				person.getCovariancePoseXX(),
+				person.getCovariancePoseXY(),
+				person.getCovariancePoseYY(),
 				p_robot.getX(),
 				p_robot.getY(),
 				p_robot.getYaw(),

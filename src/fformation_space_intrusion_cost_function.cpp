@@ -8,7 +8,7 @@ namespace hubero_local_planner {
 FformationSpaceIntrusionCostFunction::FformationSpaceIntrusionCostFunction()
 {}
 
-void FformationSpaceIntrusionCostFunction::setFformationsDetections(const std::vector<people_msgs_utils::Group>& groups) {
+void FformationSpaceIntrusionCostFunction::setFformationsDetections(const std::vector<Group>& groups) {
 	groups_ = groups;
 }
 
@@ -20,8 +20,6 @@ double FformationSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner:
 	if (groups_.empty()) {
 		return 0.0;
 	}
-
-	// NOTE: group is not assumed to be a dynamic entity - pose is the same throughout the trajectory horizon
 
 	double dt = traj.time_delta_;
 	unsigned int num = traj.getPointsSize();
@@ -35,19 +33,18 @@ double FformationSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner:
 		// storage for robot intrusions against groups throughout the trajectory
 		std::vector<double> group_intrusions;
 
-		// pose of the group does not change over the trajectory duration
-		auto p_group = geometry::Pose(group.getPositionX(), group.getPositionY(), group.getOrientationYaw());
-
-		// extra computations for the group
-		// take half of the span and apply 2 sigma rule
-		// (mean is the center of the O-space, 2 times stddev corresponds to its span)
-		double variance_ospace_x = std::pow((group.getSpanX() / 2.0) / 2.0, 2);
-		double variance_ospace_y = std::pow((group.getSpanY() / 2.0) / 2.0, 2);
-
 		// check all robot trajectory points ...
 		for (unsigned int i = 0; i < robot_traj.getSteps(); i++) {
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);
+			auto p_group = group.getTrajectoryPrediction().getPose(i);
+
+			// NOTE: span could change over the prediction horizon
+			// extra computations for the group
+			// take half of the span and apply 2 sigma rule
+			// (mean is the center of the O-space, 2 times stddev corresponds to its span)
+			double variance_ospace_x = std::pow((group.getSpanX() / 2.0) / 2.0, 2);
+			double variance_ospace_y = std::pow((group.getSpanY() / 2.0) / 2.0, 2);
 
 			// delegate cost computation
 			social_nav_utils::FormationSpaceIntrusion fsi_penalty(

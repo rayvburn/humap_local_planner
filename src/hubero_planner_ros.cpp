@@ -76,9 +76,9 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		obstacles_ = std::make_shared<ObstContainer>();
 		obstacles_->reserve(500);
 
-		people_ = std::make_shared<people_msgs_utils::People>();
+		people_ = std::make_shared<People>();
 		people_->reserve(50);
-		groups_ = std::make_shared<people_msgs_utils::Groups>();
+		groups_ = std::make_shared<Groups>();
 		groups_->reserve(25);
 
 		// create robot footprint/contour model
@@ -357,6 +357,10 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 	std::vector<people_msgs_utils::Group> groups_orig;
 	std::tie(people_orig, groups_orig) = people_msgs_utils::createFromPeople(msg->people);
 
+	// trajectory prediction helpers
+	double dt = cfg_->getGeneral()->sim_granularity;
+	unsigned int prediction_steps = std::ceil(cfg_->getGeneral()->sim_time / cfg_->getGeneral()->sim_granularity);
+
 	// transform to the planner frame
 	for (auto& person: people_orig) {
 		// first, check reliability of the tracked person, accept only accurate ones
@@ -365,8 +369,8 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 		}
 		// transform pose and vel
 		person.transform(transform);
-		// collect person entries in the target container
-		people_->push_back(person);
+		// collect person entries in the target container creating an object and predicting its trajectory
+		people_->push_back(Person(person, dt, prediction_steps));
 	}
 	for (auto& group: groups_orig) {
 		// first, check reliability of the tracked group, accept only accurate ones
@@ -375,8 +379,8 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 		}
 		// transform pose and vel
 		group.transform(transform);
-		// collect group entries in the target container
-		groups_->push_back(group);
+		// collect group entries in the target container creating an object and predicting its trajectory
+		groups_->push_back(Group(group, dt, prediction_steps));
 	}
 }
 
