@@ -114,6 +114,28 @@ public:
 		}
 	}
 
+	/**
+	 * Similar to the templated constructor but this supports not dynamic objects to have a proper trajectory assigned
+	 */
+	template <typename T>
+	explicit Trajectory(
+		const T& object,
+		unsigned int steps
+	): dt_(1e-03) {
+		// current pose
+		poses_.push_back(geometry::Pose(object.getPose()));
+		// current velocity
+		geometry::Vector vel(0.0, 0.0, 0.0);
+		vels_.push_back(vel);
+
+		// create future pose set for each detected object (assuming constant velocity)
+		for (unsigned int i = 1; i < steps; i++) {
+			// to predict, refer to the newest available pose and initial velocity
+			poses_.push_back(computeNextPose(poses_.back(), vel, dt_));
+			vels_.push_back(vel);
+		}
+	}
+
 	size_t getSteps() const {
 		return poses_.size();
 	}
