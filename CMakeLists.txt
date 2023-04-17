@@ -202,7 +202,7 @@ add_library(hubero_local_planner
     include/hubero_local_planner/trajectory.h
     src/social_trajectory_generator.cpp
     src/ttc_cost_function.cpp
-    src/chc_cost_function.cpp
+    src/heading_change_smoothness_cost_function.cpp
     src/speedy_goal_cost_function.cpp
     src/velocity_smoothness_cost_function.cpp
     src/contextualized_cost_function.cpp

@@ -190,8 +190,8 @@ namespace hubero_local_planner {
 		double backward_scale = 0.5;
 		/// The weight for the time to collision (TTC) cost function
 		double ttc_scale = 3.0;
-		/// The weight for the cost function that penalizes robot heading changes
-		double chc_scale = 18.0;
+		/// The weight for the cost function that penalizes robot rotational velocity changes
+		double heading_change_smoothness_scale = 18.0;
 		/// The weight for the cost function that penalizes high speeds near global goal
 		double speedy_goal_scale = 12.0;
 		/// The weight for the cost function that penalizes velocity changes along trajectory

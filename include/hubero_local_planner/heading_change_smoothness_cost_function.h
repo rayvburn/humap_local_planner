@@ -9,9 +9,9 @@ namespace hubero_local_planner {
  *
  * Penalizes robot heading changes
  */
-class CHCCostFunction: public base_local_planner::TrajectoryCostFunction {
+class HeadingChangeSmoothnessCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
-	CHCCostFunction() = default;
+	HeadingChangeSmoothnessCostFunction() = default;
 
 	/**
 	 * @brief General updating of context values if required.

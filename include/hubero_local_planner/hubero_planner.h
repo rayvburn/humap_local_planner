@@ -8,7 +8,7 @@
 #include <hubero_local_planner/world.h>
 #include <hubero_local_planner/social_trajectory_generator.h>
 #include <hubero_local_planner/latched_stop_rotate_controller.h>
-#include <hubero_local_planner/chc_cost_function.h>
+#include <hubero_local_planner/heading_change_smoothness_cost_function.h>
 #include <hubero_local_planner/contextualized_cost_function.h>
 #include <hubero_local_planner/ttc_cost_function.h>
 #include <hubero_local_planner/speedy_goal_cost_function.h>
@@ -455,8 +455,8 @@ protected:
 	base_local_planner::PreferForwardCostFunction backward_costs_;
 	/// Cost function that penalizes trajectories that can cause collision in a longer horizon
 	TTCCostFunction ttc_costs_;
-	/// Cost function that penalizes robot heading changes
-	CHCCostFunction chc_costs_;
+	/// Cost function that penalizes robot rotational velocity changes
+	HeadingChangeSmoothnessCostFunction heading_change_smoothness_costs_;
 	/// Prevents overshoot when robot approaches goal position with a high speed
 	SpeedyGoalCostFunction speedy_goal_costs_;
 	/// Advantages trajectories that maintain velocities similar to the current one
