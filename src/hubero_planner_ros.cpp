@@ -55,7 +55,7 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
 		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
-		ttc_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("ttc_prediction", 1);
+		ttc_markers_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("ttc_prediction", 1);
 		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
 		planner_state_pub_ = private_nh.advertise<std_msgs::UInt8>("planner_state", 1);
 
@@ -275,9 +275,9 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 		traj_pcl_pub_.publish(createExploredTrajectoriesPcl());
 	}
 
-	// publish pcl with trajectory predictions used for TTC computation
-	if (ttc_pcl_pub_.getNumSubscribers() > 0) {
-		ttc_pcl_pub_.publish(createTTCTrajectoriesPcl());
+	// publish markers with trajectory predictions used for TTC computation
+	if (ttc_markers_pub_.getNumSubscribers() > 0) {
+		ttc_markers_pub_.publish(createTTCTrajectoriesMarkers());
 	}
 
 	// publish the visualization of the grid costs
@@ -718,93 +718,129 @@ sensor_msgs::PointCloud2 HuberoPlannerROS::createExploredTrajectoriesPcl() const
 	return traj_cloud;
 }
 
-sensor_msgs::PointCloud2 HuberoPlannerROS::createTTCTrajectoriesPcl() const {
+visualization_msgs::MarkerArray HuberoPlannerROS::createTTCTrajectoriesMarkers() const {
 	// const reference here
 	auto data_static = planner_->getTTCPredictionsStatic();
 	auto data_dynamic = planner_->getTTCPredictionsDynamic();
 
-	sensor_msgs::PointCloud2 traj_cloud;
-	traj_cloud.header.frame_id = planner_util_->getGlobalFrame();
-	traj_cloud.header.stamp = ros::Time::now();
+	std_msgs::ColorRGBA color_static;
+	color_static.r = 0.7;
+	color_static.g = 0.1;
+	color_static.b = 0.0;
+	// static are well established thus alpha (reliability) is high
+	color_static.a = 1.0;
 
-	sensor_msgs::PointCloud2Modifier cloud_mod(traj_cloud);
-	// floats all over here to use handy iterator pattern
-	cloud_mod.setPointCloud2Fields(
-		5,
-		"x", 1, sensor_msgs::PointField::FLOAT32,
-		"y", 1, sensor_msgs::PointField::FLOAT32,
-		"theta", 1, sensor_msgs::PointField::FLOAT32,
-		"type", 1, sensor_msgs::PointField::FLOAT32,
-		"timestep", 1, sensor_msgs::PointField::FLOAT32
-	);
+	std_msgs::ColorRGBA color_dynamic;
+	color_dynamic.r = 1.0;
+	color_dynamic.g = 0.5;
+	color_dynamic.b = 0.0;
 
-	// differentiate types so they will be easier to distinguish visually
-	const float TYPE_OBSTACLE_STATIC = 100.0;
-	const float TYPE_OBSTACLE_DYNAMIC = 200.0;
+	std_msgs::ColorRGBA color_robot;
+	color_robot.r = 0.15;
+	color_robot.g = 0.70;
+	color_robot.b = 0.35;
 
-	// check how many points there will be in a point cloud
-	unsigned int num_points = 0;
-	for (const auto& traj: data_static) {
-		// iterate over timestamps
-		for (const auto& ts: traj) {
+	// prepare container for the marker list with static objects
+	visualization_msgs::Marker mobj_static;
+	mobj_static.header.frame_id = planner_util_->getGlobalFrame();
+	mobj_static.header.stamp = ros::Time::now();
+	mobj_static.type = visualization_msgs::Marker::CUBE_LIST;
+	mobj_static.action = visualization_msgs::Marker::ADD;
+	mobj_static.ns = "static";
+	mobj_static.id = 0;
+	mobj_static.scale.x = 0.15;
+	mobj_static.scale.y = 0.15;
+	mobj_static.scale.z = 0.05;
+	mobj_static.pose.orientation.w = 1.0;
+
+	// prepare container for the marker list with dynamic objects
+	visualization_msgs::Marker mobj_dynamic = mobj_static;
+	mobj_dynamic.type = visualization_msgs::Marker::SPHERE_LIST;
+	mobj_dynamic.ns = "dynamic";
+	mobj_dynamic.id = 1;
+
+	// prepare container for the marker list with example robot poses
+	visualization_msgs::Marker mrobot = mobj_static;
+	mrobot.type = visualization_msgs::Marker::CUBE_LIST;
+	mrobot.ns = "robot";
+	mrobot.id = 2;
+
+	if (!data_static.empty() && !data_static.at(0).empty()) {
+		/*
+		* These are static obstacles:
+		* elements of `data_static`: do not iterate over different robot trajectories
+		* elements of `traj`: do not iterate over trajectory's different timestamps
+		*/
+		// iterate only over objects of an example trajectory at the first timestamp
+		for (const auto& obj: data_static.at(0).at(0)) {
+			geometry_msgs::Point pt_obstacle;
+			pt_obstacle.x = obj.object.getX();
+			pt_obstacle.y = obj.object.getY();
+			pt_obstacle.z = 0.0;
+			mobj_static.points.push_back(pt_obstacle);
+			mobj_static.colors.push_back(color_static);
+		}
+
+		// to differentiate alpha channel of the color
+		bool first_timestep = true;
+		// visualize robot trajectory - shows only robot closest point to an arbitrary obstacle
+		for (const auto& ts: data_static.at(0)) {
+			// arbitrary obstacle
+			auto obj_robot_arrangement = ts.at(0);
+			// vis robot
+			geometry_msgs::Point pt_robot;
+			pt_robot.x = obj_robot_arrangement.robot.getX();
+			pt_robot.y = obj_robot_arrangement.robot.getY();
+			pt_robot.z = 0.0;
+			mrobot.points.push_back(pt_robot);
+			auto color = color_robot;
+			// reliability (alpha) drops over time
+			if (first_timestep) {
+				first_timestep = false;
+				color.a = 0.90;
+			} else {
+				color.a = 0.08;
+			}
+			mrobot.colors.push_back(color);
+		}
+	}
+
+	if (!data_dynamic.empty()) {
+		/*
+		* Visualize dynamic obstacles
+		* elements of `data_dynamic`: do not iterate over different robot trajectories
+		*/
+		// to differentiate alpha channel of the color
+		bool first_timestep = true;
+
+		// iterate over timestamps of an example trajectory
+		for (const auto& ts: data_dynamic.at(0)) {
 			// iterate over objects
 			for (const auto& obj: ts) {
-				// count obstacle
-				num_points++;
+				geometry_msgs::Point pt;
+				pt.x = obj.object.getX();
+				pt.y = obj.object.getY();
+				pt.z = 0.0;
+				mobj_dynamic.points.push_back(pt);
+				auto color = color_dynamic;
+				// reliability (alpha) drops over time
+				if (first_timestep) {
+					first_timestep = false;
+					color.a = 0.90;
+				} else {
+					color.a = 0.04;
+				}
+				mobj_dynamic.colors.push_back(color);
 			}
 		}
 	}
-	for (const auto& traj: data_dynamic) {
-		// iterate over timestamps
-		for (const auto& ts: traj) {
-			// iterate over objects
-			for (const auto& obj: ts) {
-				// count obstacle
-				num_points++;
-			}
-		}
-	}
-	cloud_mod.resize(num_points);
 
-	float timestep = 0;
-	sensor_msgs::PointCloud2Iterator<float> iter_x(traj_cloud, "x");
-	for (const auto& traj: data_static) {
-		// iterate over timestamps
-		for (const auto& ts: traj) {
-			// iterate over objects
-			for (const auto& obj: ts) {
-				// obstacle pose
-				iter_x[0] = obj.object.getX();
-				iter_x[1] = obj.object.getY();
-				iter_x[2] = obj.object.getZ();
-				iter_x[3] = obj.object.getYaw();
-				iter_x[4] = TYPE_OBSTACLE_STATIC;
-				iter_x[5] = timestep;
-				++iter_x;
-			}
-			timestep += 1.0;
-		}
-	}
-
-	timestep = 0;
-	for (const auto& traj: data_dynamic) {
-		// iterate over timestamps
-		for (const auto& ts: traj) {
-			// iterate over objects
-			for (const auto& obj: ts) {
-				// obstacle pose
-				iter_x[0] = obj.object.getX();
-				iter_x[1] = obj.object.getY();
-				iter_x[2] = obj.object.getZ();
-				iter_x[3] = obj.object.getYaw();
-				iter_x[4] = TYPE_OBSTACLE_DYNAMIC;
-				iter_x[5] = timestep;
-				++iter_x;
-			}
-			timestep += 1.0;
-		}
-	}
-	return traj_cloud;
+	// collect all markers
+	visualization_msgs::MarkerArray marray;
+	marray.markers.push_back(mobj_static);
+	marray.markers.push_back(mobj_dynamic);
+	marray.markers.push_back(mrobot);
+	return marray;
 }
 
 sensor_msgs::PointCloud2 HuberoPlannerROS::createCostGridPcl() const {
