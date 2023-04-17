@@ -10,8 +10,8 @@ bool HeadingChangeSmoothnessCostFunction::prepare() {
 }
 
 double HeadingChangeSmoothnessCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
-	if (traj.getPointsSize() == 0) {
-		// no changes in heading as there is only 1 sample
+	if (traj.getPointsSize() <= 1) {
+		// too few samples
 		return 0.0;
 	}
 
@@ -21,11 +21,12 @@ double HeadingChangeSmoothnessCostFunction::scoreTrajectory(base_local_planner::
 	// heading change smoothness sum storage
 	double hcs = 0.0;
 	for (size_t i = 1; i < t.getPoses().size(); i++) {
-		hcs += std::abs(t.getVelocity(i).getZ() - t.getVelocity(i - 1).getZ());
+		double domega = t.getVelocity(i).getZ() - t.getVelocity(i - 1).getZ();
+        hcs += (std::abs(domega) / t.getTimeDelta());
 	}
 
 	// mean
-	return hcs / t.getPoses().size();
+	return hcs / static_cast<double>((t.getPoses().size() - 1));
 }
 
 } // namespace hubero_local_planner
