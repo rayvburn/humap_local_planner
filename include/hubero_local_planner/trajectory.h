@@ -83,6 +83,26 @@ public:
 	}
 
 	/**
+	 * Uses constant velocity model to expect trajectory initiated at @ref pose with velocity @ref vel
+	 */
+	explicit Trajectory(
+		const geometry::Pose& pose,
+		const geometry::Vector& vel,
+		double dt,
+		unsigned int steps
+	): dt_(dt) {
+		// save initial
+		poses_.push_back(pose);
+		vels_.push_back(vel);
+
+		for (unsigned int i = 1; i < steps; i++) {
+			// to predict, refer to the newest available pose and initial velocity
+			poses_.push_back(computeNextPose(poses_.back(), vel, dt_));
+			vels_.push_back(vel);
+		}
+	}
+
+	/**
 	 * Uses constant velocity assumption to compute expected trajectory of @ref object
 	 *
 	 * @tparam T supports @ref people_msgs_utils::People and @ref people_msgs_utils::Group types.
