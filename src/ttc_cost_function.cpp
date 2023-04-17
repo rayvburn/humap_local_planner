@@ -48,70 +48,33 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 	std::vector<std::vector<Distance>> state_prediction_static;
 	std::vector<std::vector<Distance>> state_prediction_dynamic;
 
-	// recreate world model sequence
-	std::vector<World> world_sequence;
-	// create a copy of initial world model for pose predictions
-	World world_model_pred = world_model_;
+	// recreate robot trajectory
+	Trajectory robot_traj(traj);
+	// predict world states sequence based on robot trajectory
+	std::vector<World> world_sequence = world_model_.predict(robot_traj);
 
-	// save world initial state
-	world_sequence.push_back(world_model_pred);
 	double timestamp = 0.0;
-
 	double traj_time = traj.getPointsSize() * dt;
 
 	// store the smallest distance to static or dynamic obstacle in a whole trajectory
 	double dist_min_static = std::numeric_limits<double>::max();
 	double dist_min_dynamic = std::numeric_limits<double>::max();
 
-	/* Starting trajectory recreation */
 	// simulate forward
-	for (unsigned int sim_step = 0; sim_step < traj.getPointsSize(); sim_step++) {
-		// retrieve 2d pose from trajectory
-		double traj_x, traj_y, traj_th = 0.0;
-		traj.getPoint(sim_step, traj_x, traj_y, traj_th);
-		auto traj_pose = geometry::Pose(
-			traj_x,
-			traj_y,
-			world_model_pred.getRobotData().centroid.getZ(),
-			world_model_pred.getRobotData().centroid.getRoll(),
-			world_model_pred.getRobotData().centroid.getPitch(),
-			traj_th
-		);
-
-		// eval robot displacement
-		auto robot_displacement = subtractPoses(traj_pose, world_model_pred.getRobotData().centroid);
-
-		// eval robot velocity
-		geometry::Vector robot_vel;
-		if (sim_step == 0) {
-			// use trajectory seed converted to global coordinates
-			computeVelocityGlobal(
-				geometry::Vector(traj.xv_, traj.yv_, traj.thetav_),
-				traj_pose,
-				robot_vel
-			);
-		} else {
-			// compute from pose difference
-			robot_vel = geometry::Vector(
-				robot_displacement.getX() / dt,
-				robot_displacement.getY() / dt,
-				robot_displacement.getYaw() / dt
-			);
-		}
-
+	for (const auto& world: world_sequence) {
 		// save state for a specific timestamp
 		collectWorldStateData(
-			world_model_pred,
+			world,
 			state_prediction_static,
 			state_prediction_dynamic
 		);
 
 		// check distances from robot and obstacles
-		dist_min_static = std::min(dist_min_static, world_model_pred.getDistanceClosestStaticObject());
-		dist_min_dynamic = std::min(dist_min_dynamic, world_model_pred.getDistanceClosestDynamicObject());
+		dist_min_static = std::min(dist_min_static, world.getDistanceClosestStaticObject());
+		dist_min_dynamic = std::min(dist_min_dynamic, world.getDistanceClosestDynamicObject());
 
 		if (checkForCollision(
-			world_model_pred,
+			world,
 			dist_min_static,
 			dist_min_dynamic)
 		) {
@@ -121,55 +84,19 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 			robot_dyn_obj_v_.push_back(state_prediction_dynamic);
 			return computeCost(timestamp, traj_time + max_sim_time_);
 		}
-
-		// recreate world prediction (from trajectory)
-		world_model_pred.predict(robot_vel, dt);
 		timestamp += dt;
-
-		// save world state
-		world_sequence.push_back(world_model_pred);
 	}
 
 	/* Starting velocity computation for simulation forward beyond */
 	// now, investigate further state (beyond trajectory bounds)
 	// stick to trajectory time delta and maintain last velocity of the trajectory
-	geometry::Vector base_vel_last;
-	if (traj.getPointsSize() >= 2) {
-		// compute velocity based on pose difference
-		// last point
-		double x_l, y_l, th_l = 0.0;
-		traj.getPoint(traj.getPointsSize() - 1, x_l, y_l, th_l);
-		// second to last point
-		double x_stl, y_stl, th_stl = 0.0;
-		traj.getPoint(traj.getPointsSize() - 2, x_stl, y_stl, th_stl);
-		// difference between poses
-		geometry::Vector pose_diff(
-			x_l - x_stl,
-			y_l - y_stl,
-			th_l - th_stl
-		);
-		// velocity at the end of the trajectory
-		base_vel_last = geometry::Vector(
-			pose_diff.getX() / dt,
-			pose_diff.getY() / dt,
-			pose_diff.getZ() / dt
-		);
-	} else {
-		// velocity is stored in as trajectory seed (only 1 point)
-		base_vel_last = geometry::Vector(traj.xv_, traj.yv_, traj.thetav_);
-	}
-
-	// convert to global velocity (used by world model representation)
-	geometry::Vector robot_global_vel;
-	computeVelocityGlobal(
-		base_vel_last,
-		world_model_pred.getRobotData().centroid,
-		robot_global_vel
-	);
+	geometry::Vector robot_global_vel = robot_traj.getVelocities().back();
 
 	/* Starting simulation further beyond */
 	// predict further beyond trajectory simulation time, velocity doesn't change here
 	for (double t = 0; t <= max_sim_time_; t += dt) {
+		auto world_model_pred = world_sequence.back();
+
 		// save state for a specific timestamp
 		collectWorldStateData(
 			world_model_pred,
@@ -204,6 +131,7 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 	robot_stat_obj_v_.push_back(state_prediction_static);
 	robot_dyn_obj_v_.push_back(state_prediction_dynamic);
 
+	/* Finished simulations - no TTC defined */
 	// TTC is assumed to be infinity - cost is zero
 	return 0.0;
 }
