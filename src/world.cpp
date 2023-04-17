@@ -113,6 +113,25 @@ void World::predict(const geometry::Vector& robot_vel, const double& sim_period)
 	*this = world_prediction;
 }
 
+std::vector<World> World::predict(const Trajectory& robot_traj) const {
+	std::vector<World> world_predictions;
+	// save current as initial state
+	world_predictions.push_back(*this);
+	// flag to skip first pose-vel pair that duplicates the internals of the world
+	bool first = true;
+	for (const auto& vel: robot_traj.getVelocities()) {
+		if (first) {
+			first = false;
+			continue;
+		}
+		// copy that since World::predict modifies the object
+		auto world = world_predictions.back();
+		world.predict(vel, robot_traj.getTimeDelta());
+		world_predictions.push_back(world);
+	}
+	return world_predictions;
+}
+
 StaticObject World::createObstacleStatic(
 		const geometry::Pose& robot_pose_closest,
 		const geometry::Pose& obstacle_pose_closest

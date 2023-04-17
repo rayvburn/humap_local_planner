@@ -245,7 +245,7 @@ void SocialTrajectoryGenerator::initialise(
 	robot_mass_ = robot_mass;
 }
 
-bool SocialTrajectoryGenerator::nextTrajectory(Trajectory& traj) {
+bool SocialTrajectoryGenerator::nextTrajectory(base_local_planner::Trajectory& traj) {
 	bool result = false;
 	if (hasMoreTrajectories()) {
 		// try to generate a new trajectory, starting with the initial world model given in `initialise`

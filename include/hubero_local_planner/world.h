@@ -14,6 +14,7 @@
 #include <hubero_local_planner/geometry/angle.h>
 
 #include <hubero_local_planner/defines.h>
+#include <hubero_local_planner/trajectory.h>
 
 #include <utility>
 #include <vector>
@@ -171,6 +172,13 @@ public:
      * @details Modifies class instance
      */
     void predict(const geometry::Vector& robot_vel, const double& sim_period);
+
+	/**
+	 * Predicts a sequence of world states assuming a @ref robot_traj robot trajectory
+	 *
+	 * @return Returns a vector of World states according to the number of trajectory steps
+	 */
+	std::vector<World> predict(const Trajectory& robot_traj) const;
 
 	inline const Robot& getRobotData() const {
 		return robot_;
