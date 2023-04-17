@@ -158,30 +158,24 @@ void computeVelocityGlobal(
 ) {
 	// slide 38 at https://www.cs.princeton.edu/courses/archive/fall11/cos495/COS495-Lecture3-RobotMotion.pdf
 	double yaw = pose.getYaw();
-	Eigen::Matrix3d rotation_yaw_inv;
-	// create a rotation matrix
-	rotation_yaw_inv <<
-		cos(yaw), 0, 0,
-		sin(yaw), 0, 0,
-		0, 0, 1;
-	// compute global velocity vector
-	Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local.getAsEigen<Eigen::Vector3d>();
+	/* Previously, Eigen Matrix was used, but switched to simplier approach for optimization:
+	 *
+	 * Eigen::Matrix3d rotation_yaw_inv;
+	 * // create a rotation matrix
+	 * rotation_yaw_inv <<
+	 * 	cos(yaw), 0, 0,
+	 * 	sin(yaw), 0, 0,
+	 * 	0, 0, 1;
+	 * // compute global velocity vector
+	 * Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local.getAsEigen<Eigen::Vector3d>();
+	 * vel_global = Vector(vel_global_eigen);
+	 *
+	 */
 	// prepare twist expressed in global coordinates
-	vel_global = Vector(vel_global_eigen);
-
-	debug_print_verbose("velocity local  : x: %2.4f, y: %2.4f, ang_z: %2.4f   (yaw: %2.4f,  sin(yaw): %2.4f,  cos(yaw): %2.4f) \r\n",
-		vel_local.getX(),
-		vel_local.getY(),
-		vel_local.getZ(),
-		yaw,
-		sin(yaw),
-		cos(yaw)
-	);
-
-	debug_print_verbose("velocity global: x: %2.4f, y: %2.4f, ang_z: %2.4f \r\n",
-		vel_global.getX(),
-		vel_global.getY(),
-		vel_global.getZ()
+	vel_global = Vector(
+		std::cos(yaw) * vel_local.getX(),
+		std::sin(yaw) * vel_local.getX(),
+		vel_local.getZ()
 	);
 }
 
@@ -191,17 +185,26 @@ void computeVelocityLocal(
 	Vector& vel_local
 ) {
 	double yaw = pose.getYaw();
-	Eigen::Matrix3d rotation_yaw;
-	// create a rotation matrix for nonholonomic, https://www.cs.cmu.edu/~rasc/Download/AMRobots3.pdf (3.2)
-	// pseudoinverted matrix above
-	rotation_yaw <<
-		cos(yaw), sin(yaw), 0,
-		0, 0, 0,
-		0, 0, 1;
-	// compute local velocity vector
-	Eigen::Vector3d vel_local_eigen = rotation_yaw * vel_global.getAsEigen<Eigen::Vector3d>();
-	// prepare twist expressed in local coordinates
-	vel_local = Vector(vel_local_eigen);
+	/* Previously, Eigen Matrix was used, but switched to simplier approach for optimization:
+	 *
+	 * Eigen::Matrix3d rotation_yaw;
+	 * // create a rotation matrix for nonholonomic, https://www.cs.cmu.edu/~rasc/Download/AMRobots3.pdf (3.2)
+	 * // pseudoinverted matrix above
+	 * rotation_yaw <<
+	 * 	cos(yaw), sin(yaw), 0,
+	 * 	0, 0, 0,
+	 * 	0, 0, 1;
+	 * // compute local velocity vector
+	 * Eigen::Vector3d vel_local_eigen = rotation_yaw * vel_global.getAsEigen<Eigen::Vector3d>();
+	 * // prepare twist expressed in local coordinates
+	 * vel_local = Vector(vel_local_eigen);
+	 *
+	 */
+	vel_local = Vector(
+		std::cos(yaw) * vel_global.getX() + std::sin(yaw) * vel_global.getY(),
+		0.0,
+		vel_global.getZ()
+	);
 }
 
 bool adjustTwistWithAccLimits(
