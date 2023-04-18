@@ -204,6 +204,8 @@ namespace hubero_local_planner {
 		double personal_space_scale = 7.0;
 		/// The weight for the cost function that penalizes trajectories that intrude F-formation space
 		double fformation_space_scale = 7.0;
+		/// The weight for the cost function that penalizes robot trajectories that are not compliant with proper speeds of passing people
+		double passing_speed_scale = 1.0;
 		/// The distance the robot must travel before oscillation flags are reset, in meters
 		double oscillation_reset_dist = 0.05;
 		/// The angle the robot must turn before oscillation flags are reset, in radians

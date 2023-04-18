@@ -198,6 +198,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->heading_dir_scale = cfg.heading_dir_scale;
 	costs_->personal_space_scale = cfg.personal_space_scale;
 	costs_->fformation_space_scale = cfg.fformation_space_scale;
+	costs_->passing_speed_scale = cfg.passing_speed_scale;
 	costs_->oscillation_reset_dist = cfg.oscillation_reset_dist;
 	costs_->oscillation_reset_angle = cfg.oscillation_reset_angle;
 	costs_->scaling_speed = cfg.scaling_speed;

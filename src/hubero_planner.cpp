@@ -73,6 +73,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&heading_disturbance_costs_);
 	critics.push_back(&personal_space_costs_);
 	critics.push_back(&fformation_space_costs_);
+	critics.push_back(&passing_speed_costs_);
 
 	// trajectory generators
 	std::vector<base_local_planner::TrajectorySampleGenerator*> generator_list;
@@ -219,6 +220,7 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	heading_disturbance_costs_.setPeopleDetections(*people_);
 	personal_space_costs_.setPeopleDetections(*people_);
 	fformation_space_costs_.setFformationsDetections(*groups_);
+	passing_speed_costs_.setPeopleDetections(*people_);
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
@@ -556,6 +558,7 @@ void HuberoPlanner::updateCostParameters() {
 	heading_disturbance_costs_.setScale(cfg_->getCost()->heading_dir_scale);
 	personal_space_costs_.setScale(cfg_->getCost()->personal_space_scale);
 	fformation_space_costs_.setScale(cfg_->getCost()->fformation_space_scale);
+	passing_speed_costs_.setScale(cfg_->getCost()->passing_speed_scale);
 
 	// update other cost params
 	oscillation_costs_.setOscillationResetDist(
@@ -1033,7 +1036,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
 			"backward %2.2f, TTC %2.2f, HSM %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, context %2.2f, "
-			"head_dir %2.2f, PSI %2.2f, FSI %2.2f%s",
+			"head_dir %2.2f, PSI %2.2f, FSI %2.2f, PSPD %2.2f%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			traj_num,
 			traj_explored_.size(),
@@ -1052,6 +1055,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			heading_disturbance_costs_.getScale() * heading_disturbance_costs_.scoreTrajectory(traj_copy),
 			personal_space_costs_.getScale() * personal_space_costs_.scoreTrajectory(traj_copy),
 			fformation_space_costs_.getScale() * fformation_space_costs_.scoreTrajectory(traj_copy),
+			passing_speed_costs_.getScale() * passing_speed_costs_.scoreTrajectory(traj_copy),
 			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
 		);
 
