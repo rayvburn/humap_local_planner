@@ -123,8 +123,107 @@ TEST(HuberoVelocityConversions, computeTwist) {
 	EXPECT_LT(cmd_vel.getZ(), 0.0);
 }
 
+TEST(HuberoVelocityConversions, computeVelocityLocal) {
+	Vector vel_local;
+
+	// 1) going straight ahead along X axis
+	computeVelocityLocal(
+		Vector( 1.0,  0.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN,  0.0      ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 2) going straight ahead along Y axis
+	computeVelocityLocal(
+		Vector( 0.0,  1.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN,  IGN_PI_2 ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 3) going straight aback Y axis
+	computeVelocityLocal(
+		Vector( 0.0, -1.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN, -IGN_PI_2 ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 4) going straight aback X axis
+	computeVelocityLocal(
+		Vector(-1.0,  0.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN,  IGN_PI   ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 5) backwards aback X axis
+	computeVelocityLocal(
+		Vector(-1.0,  0.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN,  0.0      ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), -1.0);
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 6) going with sqrt(2) at 45 degrees globally
+	computeVelocityLocal(
+		Vector( 1.0,  1.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN,  IGN_PI_4 ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), std::sqrt(1.0 + 1.0));
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 7) fully backwards
+	computeVelocityLocal(
+		Vector(-1.0, -1.0,  0.0      ), // vel_global
+		Pose  ( NAN,  NAN,  IGN_PI_4 ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), -std::sqrt(1.0 + 1.0));
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+
+	// 8)
+	computeVelocityLocal(
+		Vector(-1.0, -1.0, -IGN_PI_2       ), // vel_global
+		Pose  ( NAN,  NAN, -3.0 * IGN_PI_4 ), // pose
+		vel_local
+	);
+	EXPECT_DOUBLE_EQ(vel_local.getX(), std::sqrt(1.0 + 1.0));
+	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
+	EXPECT_DOUBLE_EQ(vel_local.getZ(), -IGN_PI_2);
+}
+
+TEST(HuberoVelocityConversions, DISABLED_computeVelocityLocalHolonomic) {
+	Vector vel_local;
+
+	// TODO: formulation for a holonomic-drives is needed
+	computeVelocityLocal(
+		Vector( 1.0,  1.0,  IGN_PI_2 ), // vel_global
+		Pose  ( NAN,  NAN,  0.0      ), // pose
+		vel_local
+	);
+	computeVelocityLocal(
+		Vector(-1.0, -1.0,  IGN_PI_2 ), // vel_global
+		Pose  ( NAN,  NAN,  0.0      ), // pose
+		vel_local
+	);
+}
+
 int main(int argc, char** argv) {
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
-
