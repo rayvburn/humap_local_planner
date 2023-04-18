@@ -100,4 +100,12 @@ geometry::Angle PlannerState::computeDirectionToPose(const geometry::Pose& pose_
 	return geometry::Angle(angle_pos_vector.getRadian() - pose_.getYaw());
 }
 
+std::string PlannerState::getStateName() const {
+	auto it = STATE_NAMES.find(state_);
+	if (it == STATE_NAMES.end()) {
+		return std::string("unknown");
+	}
+	return it->second;
+}
+
 } // namespace hubero_local_planner

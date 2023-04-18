@@ -2,6 +2,9 @@
 
 #include <hubero_local_planner/geometry/pose.h>
 
+#include <map>
+#include <string>
+
 namespace hubero_local_planner {
 
 /**
@@ -53,6 +56,8 @@ public:
 		return state_;
 	}
 
+	std::string getStateName() const;
+
 	/**
 	 * Checks if goal has been reached
 	 */
@@ -61,6 +66,14 @@ public:
 	}
 
 protected:
+	/// State-name map for conversion from enum to string
+	const std::map<State, std::string> STATE_NAMES = {
+		{State::INITIATE_EXECUTION, "init"},
+		{State::MOVE, "move"},
+		{State::ADJUST_ORIENTATION, "adjust"},
+		{State::STOPPED, "stop"}
+	};
+
 	State state_;
 
 	/// Angle expressed in radians

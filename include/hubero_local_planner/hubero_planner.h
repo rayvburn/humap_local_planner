@@ -278,6 +278,13 @@ public:
 	}
 
 	/**
+	 * @brief Returns string representation of the state according to the internal finite state machine
+	 */
+	std::string getStateName() const {
+		return state_ptr_->getStateName();
+	}
+
+	/**
 	 * @brief Returns const reference to all recently explored trajectories
 	 */
 	inline const std::vector<base_local_planner::Trajectory>& getExploredTrajectories() const {
