@@ -54,7 +54,7 @@ bool SocialConductor::computeBehaviourForce(
 
 		// scale force vector with relevant factors
 		double membership_factor = fis_outputs_v.at(i).membership;
-		double geom_factor = computeBehaviourStrength(dist_v.at(i), speed_agent, speeds_v.at(i));
+		double geom_factor = computeBehaviourStrength(cfg_->human_action_range, dist_v.at(i), speed_agent, speeds_v.at(i));
 		behaviour_force_ += v_temp * As_ * membership_factor * geom_factor * INTERACTION_STRENGTH_LEVELLING_FACTOR;
 
 		updateActiveBehaviour(fis_outputs_v.at(i).term_name);
@@ -107,17 +107,18 @@ void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
 }
 
 double SocialConductor::computeBehaviourStrength(
+	const double& action_range,
 	const double& dist_to_agent,
 	const double& speed_agent,
 	const double& speed_obstacle
 ) {
 	// check if obstacle is too far away
-	if (dist_to_agent > cfg_->human_action_range) {
+	if (dist_to_agent > action_range) {
 		return (0.0);
 	}
 
 	// in fact (SOCIAL_BEHAVIOUR_RANGE_END - SOCIAL_BEHAVIOUR_RANGE_START) but the start is 0.0
-	double a_dist = -1.0 / cfg_->human_action_range;
+	double a_dist = -1.0 / action_range;
 	// form of a line equation for readability, the independent variable is `dist_to_agent`
 	double dist_factor = a_dist * dist_to_agent + 1.0;
 

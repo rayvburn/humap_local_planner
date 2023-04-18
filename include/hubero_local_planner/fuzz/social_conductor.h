@@ -78,6 +78,14 @@ public:
 		return As_;
 	}
 
+	/// \brief Defines strength of the behaviour, based on distance to agent and relative speed between agent and human
+	static double computeBehaviourStrength(
+		const double& action_range,
+		const double& dist_to_agent,
+		const double& speed_agent,
+		const double& speed_obstacle
+	);
+
 	/// \brief Destructor
 	virtual ~SocialConductor() = default;
 
@@ -96,13 +104,6 @@ private:
 	/// \brief Updates `behaviour_active_str_` according to its length
 	/// and given behaviour name (method argument)
 	void updateActiveBehaviour(const std::string& beh_name);
-
-	/// \brief Defines strength of the behaviour, based on distance to agent and relative speed between agent and human
-	double computeBehaviourStrength(
-		const double& dist_to_agent,
-		const double& speed_agent,
-		const double& speed_obstacle
-	);
 
 	/// \brief Levelling factor
 	double As_;
