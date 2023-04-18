@@ -321,6 +321,7 @@ protected:
 	std::vector<geometry::Pose> diag_closest_points_static_;
 	std::vector<geometry::Pose> diag_closest_points_dynamic_;
 	std::string diag_behaviour_active_;
+	ros::Time diag_gen_start_time_;
 	/// @}
 
 }; // class SocialTrajectoryGenerator

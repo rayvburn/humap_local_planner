@@ -246,6 +246,11 @@ void SocialTrajectoryGenerator::initialise(
 }
 
 bool SocialTrajectoryGenerator::nextTrajectory(base_local_planner::Trajectory& traj) {
+	// count time needed for social trajectories generation
+	if (next_sample_index_ == 0) {
+		diag_gen_start_time_ = ros::Time::now();
+	}
+
 	bool result = false;
 	if (hasMoreTrajectories()) {
 		// try to generate a new trajectory, starting with the initial world model given in `initialise`
@@ -258,6 +263,21 @@ bool SocialTrajectoryGenerator::nextTrajectory(base_local_planner::Trajectory& t
 		}
 	}
 	next_sample_index_++;
+
+	// check if already finished trajectory generation and duration info logging is needed
+	if (log_generation_details_ && !hasMoreTrajectories()) {
+		auto full_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::nanoseconds((ros::Time::now() - diag_gen_start_time_).toNSec())
+		).count();
+		ROS_INFO_NAMED(
+			"SocTrajGen",
+			"\x1B[36m" // colorized printf
+			"Social trajectories (%3lu) generation took %3ld ms"
+			"\x1B[0m", // colorized printf
+			sample_amplifier_params_v_.size(),
+			full_time
+		);
+	}
 	return result;
 }
 
