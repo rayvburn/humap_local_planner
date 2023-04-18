@@ -564,6 +564,52 @@ bool HuberoPlanner::enlargeObstacle(
 	return false;
 }
 
+// static
+ObstContainer HuberoPlanner::extractNonPeopleObstacles(
+	const ObstContainer& obstacles,
+	const People& people,
+	double person_model_radius,
+	double min_containment_rate
+) {
+	// container for obstacles that are not people's legs etc.
+	ObstContainer obstacles_only;
+
+	for (const ObstaclePtr obstacle: obstacles) {
+		// create a temporary polygon to find distances between person center and its boundary points
+		geometry_msgs::Polygon polygon;
+		obstacle->toPolygonMsg(polygon);
+
+		// vector of containment rates (within people radiuses) of the obstacle
+		std::vector<double> containment_rates;
+
+		for (const auto& person: people) {
+			// number of polygon points that are located within a radius of person model
+			int polygon_pts_within_radius = 0;
+
+			for (const auto& pt: polygon.points) {
+				double dist = std::hypot(pt.x - person.getPositionX(), pt.y - person.getPositionY());
+				if (dist <= person_model_radius) {
+					polygon_pts_within_radius++;
+				}
+			}
+
+			// if a majority of polygon pts is located within radius - abort this obstacle, otherwise add to container
+			double containment_rate = static_cast<double>(polygon_pts_within_radius) / polygon.points.size();
+			containment_rates.push_back(containment_rate);
+		}
+
+		if (
+			!containment_rates.empty()
+			&&
+			*std::max_element(containment_rates.cbegin(), containment_rates.cend()) >= min_containment_rate
+		) {
+			continue;
+		}
+		obstacles_only.push_back(obstacle);
+	}
+	return obstacles_only;
+}
+
 void HuberoPlanner::updateCostParameters() {
 	// update cost scales (adjust them with costmap resolution)
 	double cm_resolution = planner_util_->getCostmap()->getResolution();
@@ -615,46 +661,13 @@ void HuberoPlanner::updateCostParameters() {
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_model) {
-	/*
-	 * People are detected independently from obstacles so they must be erased from obstacles.
-	 * Obstacle is treated as a person when most of its points are located within the given radius.
-	 */
-	static constexpr double PERSON_POLYGON_CONTAINMENT_RATE = 0.667;
-
-	ObstContainer obstacles;
-	for (const ObstaclePtr obstacle: *obstacles_) {
-		// create a temporary polygon to find distances between person center and its boundary points
-		geometry_msgs::Polygon polygon;
-		obstacle->toPolygonMsg(polygon);
-
-		// vector of containment rates (within people radiuses) of the obstacle
-		std::vector<double> containment_rates;
-
-		for (const auto& person: *people_) {
-			// number of polygon points that are located within a radius of person model
-			int polygon_pts_within_radius = 0;
-
-			for (const auto& pt: polygon.points) {
-				double dist = std::hypot(pt.x - person.getPositionX(), pt.y - person.getPositionY());
-				if (dist <= cfg_->getGeneral()->person_model_radius) {
-					polygon_pts_within_radius++;
-				}
-			}
-
-			// if a majority of polygon pts is located within radius - abort this obstacle, otherwise add to container
-			double containment_rate = static_cast<double>(polygon_pts_within_radius) / polygon.points.size();
-			containment_rates.push_back(containment_rate);
-		}
-
-		if (
-			!containment_rates.empty()
-			&&
-			*std::max_element(containment_rates.cbegin(), containment_rates.cend()) >= PERSON_POLYGON_CONTAINMENT_RATE
-		) {
-			continue;
-		}
-		obstacles.push_back(obstacle);
-	}
+	// erase people from original set of obstacles set
+	auto obstacles = HuberoPlanner::extractNonPeopleObstacles(
+		*obstacles_,
+		*people_,
+		cfg_->getGeneral()->person_model_radius,
+		HuberoPlanner::PERSON_POLYGON_CONTAINMENT_RATE
+	);
 
 	// fill sparse world model with obstacles
 	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();

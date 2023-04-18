@@ -63,6 +63,12 @@ using namespace geometry;
  */
 class HuberoPlanner {
 public:
+	/**
+	 * Percentage of obstacle points that must lie within person area to treat the obstacle as a person
+	 * See @ref extractNonPeopleObstacles for details
+	 */
+	static constexpr double PERSON_POLYGON_CONTAINMENT_RATE = 0.667;
+
 	// both environmental and internal drivers
 	struct MotionDriverData {
 		Vector force_combined_;
@@ -308,6 +314,28 @@ public:
 		Pose& obstacle_closest_to_robot_pose,
 		double extension_distance,
 		double distance_collision_imminent
+	);
+
+	/**
+	 * Given a set of obstacles and set of people, this function extracts generic obstacles that are not people
+	 *
+	 * People are detected independently from obstacles so they must be erased from obstacles.
+	 * Obstacle is treated as a person when most of its points (@ref min_containment_rate) are located within
+	 * the given radius @ref person_model_radius
+	 *
+	 * @param obstacles a set of all obstacles (recently detected)
+	 * @param people a set of people (recently detected)
+	 * @param person_model_radius
+	 * @param min_containment_rate when **this** percentage of obstacle's points are located within the radius of
+	 * @ref person_model_radius from any person, the obstacle is treated as a person and extracted from initial set
+	 * of obstacles
+	 * @return ObstContainer possibly trimmed input container @ref obstacles
+	 */
+	static ObstContainer extractNonPeopleObstacles(
+		const ObstContainer& obstacles,
+		const People& people,
+		double person_model_radius,
+		double min_containment_rate
 	);
 
 protected:
