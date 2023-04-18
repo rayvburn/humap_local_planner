@@ -191,6 +191,11 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	path_costs_.setTargetPoses(global_plan_);
 	// costs for not going towards the local goal as much as possible
 	goal_costs_.setTargetPoses(global_plan_);
+
+	/*
+	 * NOTE: dwa_local_planner source code mentions that alignment_costs_ should have variable scales assigned, as in:
+	 * https://github.com/ros-planning/navigation/blob/noetic-devel/dwa_local_planner/src/dwa_planner.cpp#L282
+	 */
 	// costs for robot being aligned with path (nose on path)
 	alignment_costs_.setTargetPoses(global_plan_);
 
