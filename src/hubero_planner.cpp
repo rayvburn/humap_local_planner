@@ -494,7 +494,7 @@ bool HuberoPlanner::enlargeObstacle(
 	double extension_distance,
 	double distance_collision_imminent
 ) {
-	// first, check if any action will be valid (distance vector will really be extended)
+	// first, check if any action will be valid (whether distance vector could be extended)
 	if (extension_distance <= 0.0) {
 		return false;
 	}
@@ -505,6 +505,14 @@ bool HuberoPlanner::enlargeObstacle(
 		return false;
 	}
 
+	/*
+	 * Main stage
+	 *
+	 * Move the initial `obstacle_closest_to_robot_pose` by the distance given by `extension_distance`.
+	 *
+	 * It is expected that resultant vector connecting closest points of the obstacle and the robot will have the same
+	 * direction as the original one.
+	 */
 	// create unit vector with direction equal to `dist_init`
 	Angle dist_init_dir(dist_init);
 	Vector obstacle_extension_v(dist_init_dir);
@@ -526,6 +534,16 @@ bool HuberoPlanner::enlargeObstacle(
 		return true;
 	}
 
+	/*
+	 * Fallback stage
+	 *
+	 * Executed only when the resultant vector from the main stage changes direction (i.e. robot is very close
+	 * to the obstacle and shifting causes a 'flip'). Therefore, try to shift the obstacle's edge point (closest
+	 * to the robot) just a little.
+	 *
+	 * Again, it is expected that the new resultant vector connecting closest points of the obstacle and the robot will
+	 * have the same direction as the original one.
+	 */
 	// try to keep the obstacle point close to the robot (few cm) but do not allow it to be placed within footprint
 	obstacle_extension_v = Vector(dist_init_dir);
 	obstacle_pose_hypothesis = Pose(
@@ -538,6 +556,7 @@ bool HuberoPlanner::enlargeObstacle(
 	dist_modded_dir = Angle(dist_modded);
 	dist_angle_diff = std::abs(dist_modded_dir.getRadian() - dist_init_dir.getRadian());
 
+	// evaluate direction of the new vector with the tolerance of 1 degree compared to the original one
 	if (dist_angle_diff <= IGN_DTOR(1.0)) {
 		obstacle_closest_to_robot_pose = obstacle_pose_hypothesis;
 		return true;

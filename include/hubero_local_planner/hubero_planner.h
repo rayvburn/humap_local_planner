@@ -301,7 +301,7 @@ public:
 	/**
 	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
 	 *
-	 * The edge point is moved according to `obstacle_extension_multiplier` from parameters and robot inscribed radius
+	 * The edge point is moved according to `obstacle_extension_multiplier` from parameters and robot's inscribed radius
 	 */
 	static bool enlargeObstacle(
 		const Pose& robot_closest_to_obstacle_pose,
