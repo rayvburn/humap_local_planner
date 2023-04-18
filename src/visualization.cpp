@@ -13,6 +13,7 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 	: marker_stack_height_(marker_stack_height) {
 	marker_force_.init(frame);
 	marker_behaviour_.init(frame);
+	marker_state_.init(frame);
 	marker_closest_pts_static_.init(frame);
 	marker_closest_pts_dynamic_.init(frame);
 	marker_path_.header.frame_id = frame;
@@ -24,11 +25,13 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 
 	// const parameters
 	marker_behaviour_.setParameters(0.25f);
+	marker_state_.setParameters(0.2f);
 	marker_footprint_.setHeight(1.2f);
 	marker_point_.setSize(0.25f);
 
 	// colors
 	marker_behaviour_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
+	marker_state_.setColor(0.0f, 0.0f, 0.0f, 1.0f);
 	marker_closest_pts_static_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
 	marker_closest_pts_dynamic_.setColor(1.0f, 0.3f, 0.0f, 0.7f);
 	marker_force_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
@@ -307,5 +310,16 @@ bool Visualization::publishGoal(const Vector& pos) {
 	return true;
 }
 
+bool Visualization::publishPlannerState(const Vector& pos, const std::string& state) {
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_state_.setNamespace("planner_state");
+	// arbitrary height but above the ground
+	auto marker = marker_state_.create(Vector(pos.getX(), pos.getY(), 0.15), state);
+	pub_marker_.publish(marker);
+	return true;
+}
 
 } /* namespace hubero_local_planner */

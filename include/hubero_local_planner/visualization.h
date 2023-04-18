@@ -71,6 +71,7 @@ public:
 
 	bool publishGoalLocal(const Vector& pos);
 	bool publishGoal(const Vector& pos);
+	bool publishPlannerState(const Vector& pos, const std::string& state);
 	virtual ~Visualization() = default;
 
 private:
@@ -98,6 +99,7 @@ private:
 
 	vis::Footprint marker_footprint_;
 	vis::Point marker_point_;
+	vis::Text marker_state_;
 };
 
 } /* namespace hubero_local_planner */
