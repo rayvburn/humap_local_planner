@@ -386,8 +386,6 @@ bool HuberoPlanner::computeCellCost(
 }
 
 bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan) {
-	printf("[HuberoPlanner::setPlan] length %lu \r\n", orig_global_plan.size());
-
 	// when we get a new plan, we also want to clear any latch we may have on goal tolerances
 	stop_rotate_controller_.resetLatching();
 
@@ -425,6 +423,13 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 		|| std::abs(goal_yaw_diff) >= cfg_->getLimits()->yaw_goal_tolerance
 		|| std::isnan(goal_yaw_diff)
 	) {
+		ROS_INFO_NAMED(
+			"HuberoPlanner",
+			"Got a new goal at (x %6.3f, y %6.3f, th %6.3f)",
+			goal_new.pose.position.x,
+			goal_new.pose.position.y,
+			tf2::getYaw(goal_new.pose.orientation)
+		);
 		// update both goals (global and local, see call below)
 		goal_ = Pose(goal_new);
 		// this is not perfectly accurate - we use the last pose instead of the first from the global plan (which must

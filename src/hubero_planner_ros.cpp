@@ -149,7 +149,7 @@ bool HuberoPlannerROS::setPlan(const std::vector<geometry_msgs::PoseStamped>& or
 	  ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
 	  return false;
 	}
-	ROS_INFO("Got a new plan");
+	ROS_INFO("Got a new plan with %3lu poses", orig_global_plan.size());
 
 	// reset executed path only when goal changes
 	if (!global_plan_.empty() && orig_global_plan.back().pose != global_plan_.back().pose) {
