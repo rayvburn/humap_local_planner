@@ -235,12 +235,11 @@ bool adjustTwistWithAccLimits(
 	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel_backup.getY()), vel_max_y_acc));
 	cmd_vel.setZ(std::min(std::max(vel_min_th_acc, cmd_vel_backup.getZ()), vel_max_th_acc));
 
-	std::vector<double> vel_multipliers;
-	vel_multipliers.push_back(std::abs(cmd_vel.getX() / cmd_vel_backup.getX()));
-	vel_multipliers.push_back(std::abs(cmd_vel.getY() / cmd_vel_backup.getY()));
-	vel_multipliers.push_back(std::abs(cmd_vel.getZ() / cmd_vel_backup.getZ()));
-
-	double vel_multiplier = *std::min_element(vel_multipliers.cbegin(), vel_multipliers.cend());
+	double vel_multiplier = std::min({
+		std::abs(cmd_vel.getX() / cmd_vel_backup.getX()),
+		std::abs(cmd_vel.getY() / cmd_vel_backup.getY()),
+		std::abs(cmd_vel.getZ() / cmd_vel_backup.getZ())
+	});
 	// check if any component was modified
 	if (vel_multiplier >= 1.0) {
 		// no action required - acceleration within bounds
