@@ -233,6 +233,8 @@ namespace hubero_local_planner {
 		bool log_trajectory_generation_details = false;
 		/// Whether to print info on unsuccessful attempt to trajectory generation
 		bool log_trajectory_generation_fails = false;
+		/// Whether to print info on force amplitudes for given set of parameter amplifiers
+		bool log_trajectory_generation_forces = false;
 		/// Whether to print info on explored trajectories
 		bool log_explored_trajectories = false;
 		/// Whether to print info on points of explored trajectories

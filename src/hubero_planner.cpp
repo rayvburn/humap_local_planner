@@ -134,7 +134,8 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 		cfg->getGeneral()->sim_period,
 		cfg->getDiagnostics()->log_trajectory_generation_samples,
 		cfg->getDiagnostics()->log_trajectory_generation_details,
-		cfg->getDiagnostics()->log_trajectory_generation_fails
+		cfg->getDiagnostics()->log_trajectory_generation_fails,
+		cfg->getDiagnostics()->log_trajectory_generation_forces
 	);
 
 	generator_vel_space_.setParameters(

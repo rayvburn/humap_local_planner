@@ -212,6 +212,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;
 	diagnostics_->log_trajectory_generation_details = cfg.log_trajectory_generation_details;
 	diagnostics_->log_trajectory_generation_fails = cfg.log_trajectory_generation_fails;
+	diagnostics_->log_trajectory_generation_forces = cfg.log_trajectory_generation_forces;
 	diagnostics_->log_explored_trajectories = cfg.log_explored_trajectories;
 	diagnostics_->log_pts_of_explored_trajectories = cfg.log_pts_of_explored_trajectories;
 	diagnostics_->log_trajectory_cost_details = cfg.log_trajectory_cost_details;

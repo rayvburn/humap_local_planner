@@ -72,7 +72,8 @@ public:
 		double sim_period,
 		bool log_generation_samples,
 		bool log_generation_details,
-		bool log_generation_fails
+		bool log_generation_fails,
+		bool log_generation_forces
 	);
 
 	inline bool isConfigured() const {
@@ -295,6 +296,7 @@ protected:
 	bool log_generation_samples_;
 	bool log_generation_details_;
 	bool log_generation_fails_;
+	bool log_generation_forces_;
 
 	/// True if number of points in the trajectory only depends on simulation granularity and not depends on distance
 	bool discretize_by_time_;

@@ -15,7 +15,8 @@ SocialTrajectoryGenerator::SocialTrajectoryGenerator():
 	vels_max_(Eigen::Vector3f::Zero()),
 	log_generation_samples_(false),
 	log_generation_details_(false),
-	log_generation_fails_(false) {
+	log_generation_fails_(false),
+	log_generation_forces_(false) {
 }
 
 void SocialTrajectoryGenerator::setParameters(
@@ -27,7 +28,8 @@ void SocialTrajectoryGenerator::setParameters(
 	double sim_period,
 	bool log_generation_samples,
 	bool log_generation_details,
-	bool log_generation_fails
+	bool log_generation_fails,
+	bool log_generation_forces
 ) {
 	sfm_.init(sfm_params_ptr);
 	social_conductor_.initialize(fis_params_ptr);
@@ -39,6 +41,7 @@ void SocialTrajectoryGenerator::setParameters(
 	log_generation_samples_ = log_generation_samples;
 	log_generation_details_ = log_generation_details;
 	log_generation_fails_ = log_generation_fails;
+	log_generation_forces_ = log_generation_forces;
 
 	params_set_ = true;
 }
@@ -717,6 +720,27 @@ void SocialTrajectoryGenerator::computeForces(
 			diag_closest_points_dynamic_.push_back(dist_dynamic.robot);
 		}
 	}
+
+	ROS_INFO_COND_NAMED(
+		log_generation_forces_,
+		"SocTrajGen",
+		"Trajectory forces: "
+		"|f_i0| %5.1f, |f_ik| %5.1f, |f_ij| %5.1f, |f_is| %5.1f; Amps: (An %4.1f Bn %4.1f Cn %4.1f Ap %4.1f Bp %4.1f Cp %4.1f Aw %4.1f Bw %4.1f Spd %4.1f), (As %4.1f)",
+		force_internal.calculateLength(),
+		force_interaction_static.calculateLength(),
+		force_interaction_dynamic.calculateLength(),
+		force_human_action.calculateLength(),
+		sample_amplifiers.sfm_an_amplifier,
+		sample_amplifiers.sfm_bn_amplifier,
+		sample_amplifiers.sfm_cn_amplifier,
+		sample_amplifiers.sfm_ap_amplifier,
+		sample_amplifiers.sfm_bp_amplifier,
+		sample_amplifiers.sfm_cp_amplifier,
+		sample_amplifiers.sfm_aw_amplifier,
+		sample_amplifiers.sfm_bw_amplifier,
+		sample_amplifiers.sfm_speed_desired_amplifier,
+		sample_amplifiers.fis_as_amplifier
+	);
 }
 
 } // namespace hubero_local_planner
