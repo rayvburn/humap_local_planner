@@ -94,7 +94,7 @@ double TTCCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {
 
 	/* Starting simulation further beyond */
 	// predict further beyond trajectory simulation time, velocity doesn't change here
-	for (double t = 0; t <= max_sim_time_; t += dt) {
+	for (double t = 0; t < max_sim_time_; t += dt) {
 		auto world_model_pred = world_sequence.back();
 
 		// save state for a specific timestamp
