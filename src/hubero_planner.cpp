@@ -186,6 +186,9 @@ bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 }
 
 void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec) {
+	// some cost functions require variable scales based on the distance to the goal
+	double dist_to_goal = (goal_.getPosition() - pose_.getPosition()).calculateLength();
+
 	// update robot footprint so it won't crash with anything
 	obstacle_costs_.setFootprint(footprint_spec);
 	// costs for going away from path
@@ -193,10 +196,6 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 	// costs for not going towards the local goal as much as possible
 	goal_costs_.setTargetPoses(global_plan_);
 
-	/*
-	 * NOTE: dwa_local_planner source code mentions that alignment_costs_ should have variable scales assigned, as in:
-	 * https://github.com/ros-planning/navigation/blob/noetic-devel/dwa_local_planner/src/dwa_planner.cpp#L282
-	 */
 	// costs for robot being aligned with path (nose on path)
 	alignment_costs_.setTargetPoses(global_plan_);
 
@@ -218,6 +217,17 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 		front_global_plan.push_back(plan_pose);
 	}
 	goal_front_costs_.setTargetPoses(front_global_plan);
+
+	/*
+	 * Reduce scales of MapGridCostFunction-based cost functions when the robot is close to the goal
+	 *
+	 * NOTE: dwa_local_planner source code also mentions that alignment_costs_ should have variable scales assigned,
+	 * as in: https://github.com/ros-planning/navigation/blob/noetic-devel/dwa_local_planner/src/dwa_planner.cpp#L282
+	 */
+	if (dist_to_goal <= cfg_->getCost()->forward_point_distance) {
+		goal_front_costs_.setScale(0.0);
+		alignment_costs_.setScale(0.0);
+	}
 
 	// reset TTC datasets collected during previous iteration
 	ttc_costs_.reset();
