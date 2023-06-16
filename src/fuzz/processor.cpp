@@ -181,14 +181,18 @@ Processor::Processor():
 
 void Processor::printFisConfiguration() const {
 	// system basic information
+	std::cout << std::endl;
 	std::cout << "Fuzzy Inference System configuration" << std::endl;
-	std::cout << "\tinputs: " << engine_ptr_->numberOfInputVariables() <<
-		", outputs: " << engine_ptr_->numberOfOutputVariables() <<
-		", rule_blocks: " << engine_ptr_->numberOfRuleBlocks() << std::endl;
+	std::cout <<
+		"  inputs: " << engine_ptr_->numberOfInputVariables() << std::endl <<
+		"  outputs: " << engine_ptr_->numberOfOutputVariables() << std::endl <<
+		"  rule_blocks: " << engine_ptr_->numberOfRuleBlocks()
+	<< std::endl;
 	std::string status;
-	std::cout << "\tFIS engine ready flag: " << engine_ptr_->isReady(&status) << " (" << status << ")" << std::endl;
+	std::cout << "  FIS engine ready flag: " << engine_ptr_->isReady(&status) << " (" << status << ")" << std::endl;
 	// print rules
 	std::cout << "FIS 'Processor' class rule block" << std::endl << rule_block_ptr_->toString() << std::endl;
+	std::cout << std::endl;
 }
 
 // ------------------------------------------------------------------- //
