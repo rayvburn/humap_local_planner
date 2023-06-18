@@ -475,7 +475,10 @@ protected:
 	base_local_planner::SimpleTrajectoryGenerator generator_vel_space_;
 	base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
 
-	/// Cost function that discards trajectories that move into obstacles
+	/**
+	 * Cost function that discards trajectories that move into obstacles or other high-cost areas
+	 * Investigates different contexts that can be embedded into a layered costmap, e.g. social layers
+	 */
 	base_local_planner::ObstacleCostFunction obstacle_costs_;
 	/// Cost function that discards oscillating motions (assisgns cost -1)
 	base_local_planner::OscillationCostFunction oscillation_costs_;
@@ -497,8 +500,6 @@ protected:
 	SpeedyGoalCostFunction speedy_goal_costs_;
 	/// Advantages trajectories that maintain velocities similar to the current one
 	VelocitySmoothnessCostFunction velocity_smoothness_costs_;
-	/// Takes into account various contexts included in layered costmap (includes obstacle inflation too)
-	ContextualizedCostFunction contextualized_costs_;
 	/// Penalizes robot trajectories that drive it towards the center of any person
 	HeadingDisturbanceCostFunction heading_disturbance_costs_;
 	// Penalizes robot intrusions into people's personal spaces

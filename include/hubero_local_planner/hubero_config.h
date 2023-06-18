@@ -196,8 +196,6 @@ namespace hubero_local_planner {
 		double speedy_goal_scale = 12.0;
 		/// The weight for the cost function that penalizes velocity changes along trajectory
 		double velocity_smoothness_scale = 13.0;
-		/// The weight for the cost function that penalizes trajectories based on contexts embedded into costmap
-		double contextualized_costs_scale = 0.13;
 		/// The weight for the cost function that penalizes trajectories that leading towards human center
 		double heading_dir_scale = 7.0;
 		/// The weight for the cost function that penalizes trajectories that intrude human personal space

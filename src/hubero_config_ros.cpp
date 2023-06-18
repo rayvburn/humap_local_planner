@@ -194,7 +194,6 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->heading_change_smoothness_scale = cfg.heading_change_smoothness_scale;
 	costs_->speedy_goal_scale = cfg.speedy_goal_scale;
 	costs_->velocity_smoothness_scale = cfg.velocity_smoothness_scale;
-	costs_->contextualized_costs_scale = cfg.contextualized_costs_scale;
 	costs_->heading_dir_scale = cfg.heading_dir_scale;
 	costs_->personal_space_scale = cfg.personal_space_scale;
 	costs_->fformation_space_scale = cfg.fformation_space_scale;
