@@ -480,7 +480,7 @@ protected:
 	 * Investigates different contexts that can be embedded into a layered costmap, e.g. social layers
 	 */
 	base_local_planner::ObstacleCostFunction obstacle_costs_;
-	/// Cost function that discards oscillating motions (assisgns cost -1)
+	/// Cost function that discards oscillating motions (assigns cost -1)
 	base_local_planner::OscillationCostFunction oscillation_costs_;
 	/// Cost function that prefers trajectories on global path
 	base_local_planner::MapGridCostFunction path_costs_;
