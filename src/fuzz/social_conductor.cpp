@@ -11,6 +11,12 @@
 namespace hubero_local_planner {
 namespace fuzz {
 
+SocialConductor::SocialConductor():
+	cfg_(nullptr),
+	As_(0.0),
+	use_exponential_formulation_(true)
+{}
+
 void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg) {
 	cfg_ = cfg;
 }
@@ -49,25 +55,40 @@ bool SocialConductor::computeBehaviourForce(
 			continue;
 		}
 
-		// create a temporary unit vector pointing to direction determined by FIS output
+		// create a temporary unit vector pointing to direction determined by FIS output (in a local coordinate system)
 		Vector v_temp(Angle(fis_outputs_v.at(i).value));
 
 		// scale force vector with relevant factors
 		double membership_factor = fis_outputs_v.at(i).membership;
-		double geom_factor = computeBehaviourStrength(cfg_->human_action_range, dist_v.at(i), speed_agent, speeds_v.at(i));
-		behaviour_force_ += v_temp * As_ * membership_factor * geom_factor * INTERACTION_STRENGTH_LEVELLING_FACTOR;
+		// 2 formulations of force strength (arising from spatiotemporal aspects) calculation are available
+		double spatiotemporal_factor = 0.0;
+		if (use_exponential_formulation_) {
+			spatiotemporal_factor = computeBehaviourStrengthExponential(
+				cfg_->human_action_range,
+				dist_v.at(i),
+				speed_agent,
+				speeds_v.at(i)
+			);
+		} else {
+			spatiotemporal_factor = computeBehaviourStrengthLinear(
+				cfg_->human_action_range,
+				dist_v.at(i),
+				speed_agent,
+				speeds_v.at(i)
+			);
+		}
+
+		// total magnitude
+		double force_magnitude = As_ * membership_factor * spatiotemporal_factor;
+
+		// force - multiplied unit vector created based on a given direction
+		behaviour_force_ += (v_temp * force_magnitude);
 
 		updateActiveBehaviour(fis_outputs_v.at(i).term_name);
 	}
 
-	// convert into global coordinates
+	// convert resultant vector into global coordinates
 	behaviour_force_.rotate(pose_agent.getYaw());
-
-	// normalize vector if required to not exceed unit length - we only want to compute a proper direction
-	// of the human action force
-	if (behaviour_force_.calculateLength() > 1.0) {
-		behaviour_force_.normalize();
-	}
 
 	// multiply times behaviour force factor
 	behaviour_force_ *= cfg_->force_factor;
@@ -85,28 +106,23 @@ Vector SocialConductor::getSocialVector() const {
 }
 
 std::string SocialConductor::getBehaviourActive() const {
-
-	// NOTE: rViz goes mad when tries to publish
-	// an empty string (application crashes)
+	// NOTE: rViz goes mad when tries to publish an empty string (application crashes)
 	if ( behaviour_active_str_.empty() ) {
 		return ("none");
 	}
 	return (behaviour_active_str_);
-
 }
 
 void SocialConductor::updateActiveBehaviour(const std::string& beh_name) {
-
 	if ( behaviour_active_str_.empty() ) {
 		behaviour_active_str_ = beh_name;
 	} else {
 		behaviour_active_str_.append("\n");
 		behaviour_active_str_.append(beh_name);
 	}
-
 }
 
-double SocialConductor::computeBehaviourStrength(
+double SocialConductor::computeBehaviourStrengthLinear(
 	const double& action_range,
 	const double& dist_to_agent,
 	const double& speed_agent,
@@ -133,6 +149,25 @@ double SocialConductor::computeBehaviourStrength(
 	double speed_factor = a_speed * speed_arg;
 
 	return dist_factor * speed_factor;
+}
+
+double SocialConductor::computeBehaviourStrengthExponential(
+	const double& action_range,
+	const double& dist_to_agent,
+	const double& speed_agent,
+	const double& speed_obstacle
+) {
+	// check if the social agent is too far away
+	if (dist_to_agent > action_range) {
+		return (0.0);
+	}
+
+	double mutual_speed = speed_agent + speed_obstacle;
+	// subtracted 1 so the factor becomes 0 for stationary objects
+	double speed_factor = std::exp(+mutual_speed) - 1.0;
+	double dist_factor = std::exp(-dist_to_agent);
+
+	return speed_factor * dist_factor;
 }
 
 } /* namespace fuzz */

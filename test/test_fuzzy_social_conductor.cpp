@@ -12,28 +12,59 @@ using namespace hubero_local_planner::geometry;
 using namespace hubero_local_planner::fuzz;
 
 // Test cases
-TEST(FuzzySocialConductor, behaviourStrength) {
+TEST(FuzzySocialConductor, behaviourStrengthExponential) {
     SocialConductor sc;
     auto params_ptr = std::make_shared<hubero_local_planner::FisParams>();
     sc.initialize(params_ptr);
 
     // params to check against
-    double dist_max = params_ptr->human_action_range;
-    double speed_max_single = SocialConductor::RELATIVE_SPEED_MAX / 2.0;
+    double dist_max = 4.0;;
 
     // speeds does not matter when distance is too big
-    EXPECT_DOUBLE_EQ(SocialConductor::computeBehaviourStrength(dist_max, 2.00 * dist_max, 1e06, 1e06), 0.00);
-    EXPECT_DOUBLE_EQ(SocialConductor::computeBehaviourStrength(dist_max, 1.01 * dist_max, 1e06, 1e06), 0.00);
-    EXPECT_FALSE(    SocialConductor::computeBehaviourStrength(dist_max, 0.99 * dist_max, 1e06, 1e06) == 0.00);
+    double speed_robot = 1e06;
+    double speed_human = 1e06;
+    double s_dinf1 = SocialConductor::computeBehaviourStrengthExponential(
+        dist_max,
+        2.00 * dist_max,
+        speed_robot,
+        speed_human
+    );
+    EXPECT_DOUBLE_EQ(s_dinf1, 0.00);
+    double s_dinf2 = SocialConductor::computeBehaviourStrengthExponential(
+        dist_max,
+        1.01 * dist_max,
+        speed_robot,
+        speed_human
+    );
+    EXPECT_DOUBLE_EQ(s_dinf2, 0.00);
+    double s_dinf3 = SocialConductor::computeBehaviourStrengthExponential(
+        dist_max,
+        0.99 * dist_max,
+        speed_robot,
+        speed_human
+    );
+    // evaluated with Matlab implementation: computeBehaviourStrengthExp(4.0, -1, 0.99 * 4.0, 1, 1)
+    EXPECT_NE(s_dinf3, 0.00);
+    EXPECT_EQ(s_dinf3, std::numeric_limits<double>::infinity());
 
-    // no effect when obstacles are not moving
-    EXPECT_DOUBLE_EQ(SocialConductor::computeBehaviourStrength(dist_max, 0.50 * dist_max, 0.0, 0.0), 0.00);
+    double human_robot_dist = 2.0;
+    speed_robot = 0.0;
+    // no effect when the human is not moving
+    speed_human = 0.0;
+    EXPECT_DOUBLE_EQ(SocialConductor::computeBehaviourStrengthExponential(dist_max, human_robot_dist, speed_robot, speed_human), 0.00);
 
     // one b.strength is greater than another due to higher speeds
-    auto s1 = SocialConductor::computeBehaviourStrength(dist_max, 0.50 * dist_max, speed_max_single / 2.0, speed_max_single / 2.0);
-    EXPECT_GT(s1, 0.00);
-    auto s2 = SocialConductor::computeBehaviourStrength(dist_max, 0.50 * dist_max, speed_max_single, speed_max_single);
-    EXPECT_GT(s2, s1);
+    speed_robot = 1.0;
+    speed_human = 1.0;
+    auto s1 = SocialConductor::computeBehaviourStrengthExponential(dist_max, human_robot_dist, speed_robot, speed_human);
+    // evaluated with Matlab implementation: computeBehaviourStrengthExp(4.0, -1, 2.0, 1.0, 1.0)
+    EXPECT_NEAR(s1, 0.8647, 1e-03);
+
+    speed_robot = 2.0;
+    speed_human = 2.0;
+    auto s2 = SocialConductor::computeBehaviourStrengthExponential(dist_max, human_robot_dist, speed_robot, speed_human);
+    // evaluated with Matlab implementation: computeBehaviourStrengthExp(4.0, -1, 2.0, 2.0, 2.0)
+    EXPECT_NEAR(s2, 7.2537, 1e-03);
 }
 
 TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
@@ -75,6 +106,8 @@ TEST(FuzzySocialConductor, behaviourForceOrientationAdditivity) {
     std::shared_ptr<const hubero_local_planner::FisParams> cfg =
         std::make_shared<hubero_local_planner::FisParams>(params);
     sc.initialize(cfg);
+    // the param. must be set, otherwise output will always be zeroed
+    sc.setEquationParameters(1.0);
 
     Pose robot1(0.0, 0.0, 0.0);
     Vector robot1_vel(0.5, 0.0, 0.0);
@@ -102,7 +135,7 @@ TEST(FuzzySocialConductor, behaviourForceOrientationAdditivity) {
     std::vector<double> speeds_v {robot1_speed, robot1_speed};
     std::vector<double> dist_v {DIST, DIST};
 
-    sc.computeBehaviourForce(robot1, robot1_speed, fis_outputs_v, speeds_v, dist_v);
+    ASSERT_TRUE(sc.computeBehaviourForce(robot1, robot1_speed, fis_outputs_v, speeds_v, dist_v));
     Vector sc_vector = sc.getSocialVector();
     EXPECT_DOUBLE_EQ(sc_vector.calculateDirection().getRadian(), v_result.calculateDirection().getRadian());
 }

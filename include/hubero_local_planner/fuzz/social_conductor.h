@@ -30,11 +30,8 @@ public:
 	/// Maximum human walk speed (based on SFM-related experiments) multiplied by 2 (relative robot-human speed)
 	static constexpr double RELATIVE_SPEED_MAX = 2.0 * 1.54;
 
-	/// Introduced to square maximum magnitude of 'human behaviour force' with other types of interactions
-	static constexpr double INTERACTION_STRENGTH_LEVELLING_FACTOR = 1.1865;
-
-	/// \brief Default constructor
-	SocialConductor() = default;
+	/// \brief Constructor
+	SocialConductor();
 
 	/// \brief Updates internal state according to a given structure's content
 	void initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg);
@@ -79,7 +76,15 @@ public:
 	}
 
 	/// \brief Defines strength of the behaviour, based on distance to agent and relative speed between agent and human
-	static double computeBehaviourStrength(
+	static double computeBehaviourStrengthLinear(
+		const double& action_range,
+		const double& dist_to_agent,
+		const double& speed_agent,
+		const double& speed_obstacle
+	);
+
+	/// \brief Defines strength of the behaviour, based on distance to agent and relative speed between agent and human
+	static double computeBehaviourStrengthExponential(
 		const double& action_range,
 		const double& dist_to_agent,
 		const double& speed_agent,
@@ -107,6 +112,9 @@ private:
 
 	/// \brief Levelling factor
 	double As_;
+
+	/// Flag used for selecting between linear and exponential formulations
+	bool use_exponential_formulation_;
 };
 
 } /* namespace fuzz */
