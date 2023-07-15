@@ -225,7 +225,7 @@ bool Processor::process(
 		updateRegions(dir_alpha, dir_beta_v.at(i), dist_vector_angle_v.at(i), rel_loc_v.at(i));
 
 		// calculate the gamma angle for the current alpha-beta configuration
-		Angle gamma(dist_vector_angle_v.at(i) - dir_alpha - dir_beta_v.at(i));
+		Angle gamma = Angle(dir_beta_v.at(i));
 		direction_ptr_->setValue(fl::scalar(gamma.getRadian()));
 
 		// execute fuzzy calculations
@@ -342,9 +342,9 @@ void Processor::computeDirCrossBorderValues(
 	RelativeLocation& side
 ) {
 	// calculate threshold angle values, normalize
-	gamma_eq = Angle(dist_angle - 2 * alpha_dir);
-	gamma_opp = Angle(gamma_eq.getRadian() - IGN_PI);
-	gamma_cc = Angle(IGN_PI - alpha_dir);
+	gamma_eq = Angle(alpha_dir);
+	gamma_opp = Angle(gamma_eq.getRadian() + IGN_PI);
+	gamma_cc = Angle(dist_angle + IGN_PI);
 	side = Processor::decodeRelativeLocation(rel_loc_angle);
 }
 
@@ -364,11 +364,11 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 
 	/* - - - - - Terms sensitive to side changes - - - - - */
 	// `outwards`
-	trapezoid_out_.update(side, gamma_eq, gamma_opp);
+	trapezoid_out_.update(side, gamma_opp, gamma_eq);
 	// `cross_front`
-	trapezoid_cf_.update(side, gamma_cc, gamma_eq);
+	trapezoid_cf_.update(side, gamma_eq, gamma_cc);
 	// `cross_behind`
-	trapezoid_cb_.update(side, gamma_opp, gamma_cc);
+	trapezoid_cb_.update(side, gamma_cc, gamma_opp);
 
 	/* - - - - - Terms insensitive to side changes - - - - - */
 	// `equal`
