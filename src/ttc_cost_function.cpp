@@ -183,8 +183,8 @@ double TTCCostFunction::computeCost(double ttc, double total_prediction_time) co
 	if (ttc <= 0.0) {
 		ttc = 1e-04;
 	}
-	// only TTCs < max_sim_time will be bigger than 0
-	return 1.0 / (ttc / total_prediction_time);
+	// see `ttc_cost_fun_score.m` script for details
+	return total_prediction_time / ttc;
 }
 
 } // namespace humap_local_planner
