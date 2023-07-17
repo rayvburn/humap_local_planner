@@ -387,9 +387,16 @@ protected:
 	 *
 	 * Current pose is the first pose of the global plan.
 	 * If plan length is shorter than @ref dist_from_current_pose, the goal pose (last pose of the global plan)
-	 * is used instead.
+	 * is used instead (when @ref allow_exceeding_plan is set to false).
+	 *
+	 * When @ref allow_exceeding_plan is set to true, the last and second to last poses will be used
+	 * to approximate the goal lying at the requested distance (beyond the plan bounds)
+	 *
+	 * @ref allow_exceeding_plan was introduced since the planner utils transforms and trims the plan to the costmap
+	 * bounds. Reimplementing its @ref transformGlobalPlan is problematic; therefore, introduced flag aims to allow
+	 * approximating the poses beyond the plan
 	 */
-	Pose getPoseFromPlan(const double& dist_from_current_pose) const;
+	Pose getPoseFromPlan(const double& dist_from_current_pose, bool allow_exceeding_plan = false) const;
 
 	/**
 	 * @brief Retrieves goal pose from the global plan
