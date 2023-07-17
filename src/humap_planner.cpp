@@ -840,6 +840,9 @@ Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose) const {
 		return Pose();
 	}
 
+	// for faster computation - power once instead of square in each iteration
+	double dist_target_sq = dist_from_current_pose * dist_from_current_pose;
+
 	// find a point far enough so the social force can drive the robot towards instead of produce oscillations
 	for (
 		std::vector<geometry_msgs::PoseStamped>::const_iterator it = global_plan_.begin();
@@ -849,7 +852,7 @@ Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose) const {
 		double dist_x = it->pose.position.x - pose_.getX();
 		double dist_y = it->pose.position.y - pose_.getY();
 		double dist_sq = dist_x * dist_x + dist_y * dist_y;
-		if (dist_sq > dist_from_current_pose) {
+		if (dist_sq > dist_target_sq) {
 			// global path does not account orientation - interpolate
 			auto it_prev = std::prev(it);
 			// make sure that iterator is valid (within vector range)
