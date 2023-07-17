@@ -223,6 +223,174 @@ TEST(HuberoVelocityConversions, DISABLED_computeVelocityLocalHolonomic) {
 	);
 }
 
+TEST(HuberoVelocityConversions, adjustTwistWithAccLimits) {
+	geometry::Vector vel_init(0.27, 0.0, 0.102);
+	double acc_lim_x = 1.0;
+	double acc_lim_y = 0.0;
+	double acc_lim_th = 1.05;
+	double vel_min_x = -0.1;
+	double vel_min_y = 0.0;
+	double vel_min_th = -1.05;
+	double vel_max_x = 0.50;
+	double vel_max_y = 0.00;
+	double vel_max_th = +1.05;
+	double sim_granularity = 0.25;
+
+	// velocity setpoints
+	std::vector<geometry::Vector> cmd_vel_loop{
+		{0.00, 0.0, 0.40}, //
+		{0.35, 0.0, 0.40}, //
+		{0.35, 0.0, 0.40}, //
+		{0.35, 0.0, 0.40}, //
+		{0.00, 0.0, 0.00}, // % stop
+		{0.00, 0.0, 0.00}, //
+		{0.00, 0.0, 0.00}, //
+		{0.50, 0.0, 0.00}, // % start
+		{0.50, 0.0, 0.50}, // % turn
+		{0.50, 0.0, 0.50}, //
+		{0.50, 0.0, 0.50}, //
+		{0.60, 0.0, 0.00}, //
+		{0.60, 0.0, 0.00}, //
+		{0.60, 0.0, 0.00}, //
+		{0.00, 0.0, 0.00}, // % stop
+		{0.00, 0.0, 0.00}, //
+		{-0.1, 0.0, 1.00}, // % backward
+		{-0.1, 0.0, 1.00}, //
+		{-0.1, 0.0, 1.00}, //
+		{-0.1, 0.0, 1.00}, //
+		{0.00, 0.0, 0.00}, // % stop
+		{0.00, 0.0, 0.00}, //
+		{0.00, 0.0, 0.00}, //
+		{0.00, 0.0, 0.00}, //
+		{0.00, 0.0, 0.00}  //
+	};
+
+	std::vector<geometry::Vector> cmd_vel_loop_adjusted_maintain;
+	cmd_vel_loop_adjusted_maintain.push_back(vel_init);
+
+	for (const auto& cmd_vel: cmd_vel_loop) {
+		geometry::Vector vel_curr = cmd_vel_loop_adjusted_maintain.back();
+		geometry::Vector cmd_vel_mod = cmd_vel;
+		adjustTwistWithAccLimits(
+			vel_curr,
+			acc_lim_x,
+			acc_lim_y,
+			acc_lim_th,
+			vel_min_x,
+			vel_min_y,
+			vel_min_th,
+			vel_max_x,
+			vel_max_y,
+			vel_max_th,
+			sim_granularity,
+			cmd_vel_mod,
+			true // maintain
+		);
+		cmd_vel_loop_adjusted_maintain.push_back(cmd_vel_mod);
+	}
+
+	// verified with results from Matlab implementation placed at scripts/adjust_twist_with_acc_limits_test.m
+	// `vel_loop` matrix is shown below
+	std::vector<geometry::Vector> cmd_vel_results_maintain{
+		{    0.2700,         0,    0.1020},
+		{    0.0322,         0,    0.3645},
+		{    0.2822,         0,    0.3924},
+		{    0.3500,         0,    0.4000},
+		{    0.3500,         0,    0.4000},
+		{    0.1203,         0,    0.1375},
+		{         0,         0,         0},
+		{         0,         0,         0},
+		{    0.2500,         0,         0},
+		{    0.3812,         0,    0.2625},
+		{    0.5000,         0,    0.5000},
+		{    0.5000,         0,    0.5000},
+		{    0.5000,         0,    0.5000},
+		{    0.5000,         0,    0.5000},
+		{    0.5000,         0,    0.5000},
+		{    0.2500,         0,    0.2500},
+		{         0,         0,         0},
+		{   -0.0263,         0,    0.2625},
+		{   -0.0525,         0,    0.5250},
+		{   -0.0788,         0,    0.7875},
+		{   -0.1000,         0,    1.0000},
+		{   -0.0738,         0,    0.7375},
+		{   -0.0475,         0,    0.4750},
+		{   -0.0213,         0,    0.2125},
+		{         0,         0,         0},
+		{         0,         0,         0}
+	};
+
+	ASSERT_EQ(cmd_vel_loop_adjusted_maintain.size(), cmd_vel_results_maintain.size());
+	for (unsigned int i = 0; i < cmd_vel_loop_adjusted_maintain.size(); i++) {
+		EXPECT_NEAR(cmd_vel_loop_adjusted_maintain.at(i).getX(), cmd_vel_results_maintain.at(i).getX(), 1e-04);
+		EXPECT_NEAR(cmd_vel_loop_adjusted_maintain.at(i).getY(), cmd_vel_results_maintain.at(i).getY(), 1e-04);
+		EXPECT_NEAR(cmd_vel_loop_adjusted_maintain.at(i).getZ(), cmd_vel_results_maintain.at(i).getZ(), 1e-04);
+	}
+
+	// 2nd case
+	std::vector<geometry::Vector> cmd_vel_loop_adjusted_trim;
+	cmd_vel_loop_adjusted_trim.push_back(vel_init);
+
+	for (const auto& cmd_vel: cmd_vel_loop) {
+		geometry::Vector vel_curr = cmd_vel_loop_adjusted_trim.back();
+		geometry::Vector cmd_vel_mod = cmd_vel;
+		adjustTwistWithAccLimits(
+			vel_curr,
+			acc_lim_x,
+			acc_lim_y,
+			acc_lim_th,
+			vel_min_x,
+			vel_min_y,
+			vel_min_th,
+			vel_max_x,
+			vel_max_y,
+			vel_max_th,
+			sim_granularity,
+			cmd_vel_mod,
+			false // trim
+		);
+		cmd_vel_loop_adjusted_trim.push_back(cmd_vel_mod);
+	}
+
+	// verified with results from Matlab implementation placed at scripts/adjust_twist_with_acc_limits_test.m
+	// `vel_loop` matrix is shown below
+	std::vector<geometry::Vector> cmd_vel_results_trim{
+		{    0.2700,         0,    0.1020},
+		{    0.0200,         0,    0.3645},
+		{    0.2700,         0,    0.4000},
+		{    0.3500,         0,    0.4000},
+		{    0.3500,         0,    0.4000},
+		{    0.1000,         0,    0.1375},
+		{         0,         0,         0},
+		{         0,         0,         0},
+		{    0.2500,         0,         0},
+		{    0.5000,         0,    0.2625},
+		{    0.5000,         0,    0.5000},
+		{    0.5000,         0,    0.5000},
+		{    0.5000,         0,    0.2375},
+		{    0.5000,         0,         0},
+		{    0.5000,         0,         0},
+		{    0.2500,         0,         0},
+		{         0,         0,         0},
+		{   -0.1000,         0,    0.2625},
+		{   -0.1000,         0,    0.5250},
+		{   -0.1000,         0,    0.7875},
+		{   -0.1000,         0,    1.0000},
+		{         0,         0,    0.7375},
+		{         0,         0,    0.4750},
+		{         0,         0,    0.2125},
+		{         0,         0,         0},
+		{         0,         0,         0}
+	};
+
+	ASSERT_EQ(cmd_vel_loop_adjusted_trim.size(), cmd_vel_results_trim.size());
+	for (unsigned int i = 0; i < cmd_vel_loop_adjusted_trim.size(); i++) {
+		EXPECT_NEAR(cmd_vel_loop_adjusted_trim.at(i).getX(), cmd_vel_results_trim.at(i).getX(), 1e-04);
+		EXPECT_NEAR(cmd_vel_loop_adjusted_trim.at(i).getY(), cmd_vel_results_trim.at(i).getY(), 1e-04);
+		EXPECT_NEAR(cmd_vel_loop_adjusted_trim.at(i).getZ(), cmd_vel_results_trim.at(i).getZ(), 1e-04);
+	}
+}
+
 int main(int argc, char** argv) {
 	testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();

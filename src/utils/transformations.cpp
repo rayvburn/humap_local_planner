@@ -219,7 +219,8 @@ bool adjustTwistWithAccLimits(
 	const double& vel_max_y,
 	const double& vel_max_th,
 	const double& sim_period,
-	geometry::Vector& cmd_vel
+	geometry::Vector& cmd_vel,
+	bool maintain_vel_components_rate
 ) {
 	double vel_min_x_acc = std::max(vel_min_x, vel.getX() - acc_lim_x * sim_period);
 	double vel_min_y_acc = std::max(vel_min_y, vel.getY() - acc_lim_y * sim_period);
@@ -235,27 +236,64 @@ bool adjustTwistWithAccLimits(
 	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel_backup.getY()), vel_max_y_acc));
 	cmd_vel.setZ(std::min(std::max(vel_min_th_acc, cmd_vel_backup.getZ()), vel_max_th_acc));
 
-	double vel_multiplier = std::min({
-		std::abs(cmd_vel.getX() / cmd_vel_backup.getX()),
-		std::abs(cmd_vel.getY() / cmd_vel_backup.getY()),
-		std::abs(cmd_vel.getZ() / cmd_vel_backup.getZ())
-	});
-	// check if any component was modified
-	if (vel_multiplier >= 1.0) {
-		// no action required - acceleration within bounds
-		return false;
+	auto isOrigCmdVelModified = [=]() -> bool {
+		return cmd_vel_backup.getX() != cmd_vel.getX()
+			|| cmd_vel_backup.getY() != cmd_vel.getY()
+			|| cmd_vel_backup.getZ() != cmd_vel.getZ();
+	};
+
+	if (!maintain_vel_components_rate) {
+		return isOrigCmdVelModified();
 	}
 
-	// proportionally modify intial cmd_vel to command that is achievable within `dt`
-	cmd_vel.setX(vel_multiplier * cmd_vel_backup.getX());
-	cmd_vel.setY(vel_multiplier * cmd_vel_backup.getY());
-	cmd_vel.setZ(vel_multiplier * cmd_vel_backup.getZ());
+	// find feasibility factor of the velocity component, i.e., which part of the commanded velocity can be achieved
+	auto findFeasVelComponent = [&](
+			double vel_curr,
+			double vel_cmd,
+			double vel_lim_min_acc,
+			double vel_lim_max_acc)
+			-> std::pair<double, double>
+	{
+		double vel_cmd_diff = vel_cmd - vel_curr;
+		if (vel_cmd >= vel_curr) {
+			// CASE1 - speeding up along <SOME> direction
+			double vel_lim_diff = vel_lim_max_acc - vel_curr; // ??
+			// defines part of the velocity delta that is feasible
+			double vel_feas_factor = vel_lim_diff / vel_cmd_diff;
+			return std::make_pair(vel_feas_factor, vel_cmd_diff);
+		}
+		// CASE2 - slowing down along <SOME> direction
+		double vel_lim_diff = vel_lim_min_acc - vel_curr;
+		// defines part of the velocity delta that is feasible
+		double vel_feas_factor = vel_lim_diff / vel_cmd_diff;
+		return std::make_pair(vel_feas_factor, vel_cmd_diff);
+	};
 
-	// makes sure that any not investigated 'sign changes' are included and acceleration limits are satisfied
-	cmd_vel.setX(std::min(std::max(vel_min_x_acc, cmd_vel.getX()), vel_max_x_acc));
-	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel.getY()), vel_max_y_acc));
-	cmd_vel.setZ(std::min(std::max(vel_min_th_acc, cmd_vel.getZ()), vel_max_th_acc));
-	return true;
+	auto vel_cmd_feas_x = findFeasVelComponent(vel.getX(), cmd_vel_backup.getX(), vel_min_x_acc, vel_max_x_acc);
+	auto vel_cmd_feas_y = findFeasVelComponent(vel.getY(), cmd_vel_backup.getY(), vel_min_y_acc, vel_max_y_acc);
+	auto vel_cmd_feas_th = findFeasVelComponent(vel.getZ(), cmd_vel_backup.getZ(), vel_min_th_acc, vel_max_th_acc);
+
+	std::vector<double> vel_feasibility_factors = {vel_cmd_feas_x.first, vel_cmd_feas_y.first, vel_cmd_feas_th.first};
+	auto feas_factor_min = *std::min_element(vel_feasibility_factors.begin(), vel_feasibility_factors.end());
+
+	// evaluate if trimming 2/3 of components is needed (it is when feas_factor_min < 1.0 since one component cannot
+	// be set to the requested value)
+	if (std::isnan(feas_factor_min) || feas_factor_min >= 1.0) {
+		cmd_vel.setX(vel.getX() + vel_cmd_feas_x.second);
+		cmd_vel.setY(vel.getY() + vel_cmd_feas_y.second);
+		cmd_vel.setZ(vel.getZ() + vel_cmd_feas_th.second);
+		// correction not required - velocities within acceleration limits
+		return isOrigCmdVelModified();
+	}
+
+	// correction required - velocities outside acceleration limits
+	cmd_vel.setX(vel.getX() + vel_cmd_feas_x.second * feas_factor_min);
+	cmd_vel.setY(vel.getY() + vel_cmd_feas_y.second * feas_factor_min);
+	cmd_vel.setZ(vel.getZ() + vel_cmd_feas_th.second * feas_factor_min);
+
+	// NOTE: trimming to velocity limits is not required here as the factors from findFeasVelComponent already account
+	// for feasible velocity bounds
+	return isOrigCmdVelModified();
 }
 
 geometry::Pose subtractPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other) {
