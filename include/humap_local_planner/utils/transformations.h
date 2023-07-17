@@ -92,10 +92,14 @@ void computeVelocityLocal(
 );
 
 /**
- * @brief Adjusts velocity command with acceleration limits
+ * @brief Adjusts velocity command to the acceleration limits
  *
  * Based on the current velocity @ref vel, acceleration limits and @ref sim_period, recomputes @ref cmd_vel.
  * Continuous acceleration assumption is used here.
+ * @param maintain_vel_components_rate when set to true and any velocity component is not within the limits,
+ * others will be modified according to the one that cannot be changed as requested; others will be proportionally
+ * scaled; setting this to true loosely corresponds to agreeing with dynamics violation but keeping the path
+ * as intended
  *
  * @return True if @ref cmd_vel was modified to comply with acceleration limits
  */
@@ -111,7 +115,8 @@ bool adjustTwistWithAccLimits(
 	const double& vel_max_y,
 	const double& vel_max_th,
 	const double& sim_period,
-	geometry::Vector& cmd_vel
+	geometry::Vector& cmd_vel,
+	bool maintain_vel_components_rate = true
 );
 
 /**
