@@ -34,8 +34,9 @@ namespace humap_local_planner {
 		double angular_sim_granularity = 0.1;
 		/// How often planning executes
 		double sim_period = 0.2;
-		/// The distance from the center point of the robot to place a local goal
-		double local_goal_distance = 1.0;
+		/// The multiplier of the distance from the center point of the robot to place the local goal for self-driven
+		/// force calculation
+		double local_goal_distance_multiplier = 1.1;
 		/// The radius of the circular representation of person-obstacle used by the sparse environment model
 		double person_model_radius = 0.4;
 		/// Half of the field of view of a detected person

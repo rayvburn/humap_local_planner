@@ -178,8 +178,25 @@ bool HumapPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	// update movement initiation pose - located slightly further than xy_goal_tolerance
 	goal_initiation_ = getPoseFromPlan(1.1 * cfg_->getLimits()->xy_goal_tolerance);
 
-	// update local goal pose - located at parameterized distance from the current pose
-	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance);
+	// update local goal pose - located at parameterized distance from the current pose;
+	// compute local goal distance according to the distance achievable within the planning horizon;
+	// the local goal is placed at the maximum distance the robot can travel within the planning horizon
+	double dist_achievable = computeDistanceLimits(
+		pose_,
+		vel_,
+		cfg_->getGeneral()->sim_time,
+		cfg_->getGeneral()->sim_period,
+		cfg_->getLimits()->acc_lim_x,
+		cfg_->getLimits()->acc_lim_y,
+		cfg_->getLimits()->acc_lim_theta,
+		cfg_->getLimits()->min_vel_x,
+		cfg_->getLimits()->min_vel_y,
+		-cfg_->getLimits()->max_vel_theta,
+		cfg_->getLimits()->max_vel_x,
+		cfg_->getLimits()->max_vel_y,
+		cfg_->getLimits()->max_vel_theta
+	);
+	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance_multiplier * dist_achievable);
 	return true;
 }
 
@@ -617,6 +634,71 @@ ObstContainer HumapPlanner::extractNonPeopleObstacles(
 		obstacles_only.push_back(obstacle);
 	}
 	return obstacles_only;
+}
+
+// static
+double HumapPlanner::computeDistanceLimits(
+	const geometry::Pose& pos_init,
+	const geometry::Vector& vel_init,
+	const double& sim_period,
+	const double& sim_granularity,
+	const double& acc_lim_x,
+	const double& acc_lim_y,
+	const double& acc_lim_th,
+	const double& vel_min_x,
+	const double& vel_min_y,
+	const double& vel_min_th,
+	const double& vel_max_x,
+	const double& vel_max_y,
+	const double& vel_max_th
+) {
+	// compute number of iterations for the full rollout
+	unsigned int iter_num = std::ceil(sim_period / sim_granularity);
+
+	std::vector<geometry::Vector> velocities;
+	velocities.push_back(vel_init);
+
+	// the longest distance between the first and the last position will be achieved when the linear velocities
+	// are maxed out and angular rotation is ignored
+	const geometry::Vector CMD_VEL_LIM(vel_max_x, vel_max_y, 0.0);
+
+	// compute maximum velocities that are achievable within the sim_period
+	for (unsigned int i = 0; i < iter_num; i++) {
+		auto vel = velocities.back();
+
+		// this is forward-focused check, backward motions are not investigated
+		auto cmd_vel = CMD_VEL_LIM;
+		// modifies `cmd_vel` so it conforms to acceleration limits
+		adjustTwistWithAccLimits(
+			vel,
+			acc_lim_x,
+			acc_lim_y,
+			acc_lim_th,
+			vel_min_x,
+			vel_min_y,
+			vel_min_th,
+			vel_max_x,
+			vel_max_y,
+			vel_max_th,
+			sim_granularity,
+			cmd_vel,
+			false
+		);
+
+		velocities.push_back(cmd_vel);
+	}
+
+	// predict poses
+	std::vector<geometry::Pose> poses;
+	poses.push_back(pos_init);
+	for (const auto& vel: velocities) {
+		auto pose = computeNextPoseBaseVel(poses.back(), vel, sim_granularity);
+		poses.push_back(pose);
+	}
+
+	// distance between first and last pose
+	double dist_pts = Vector(poses.back().getRawPosition() - poses.front().getRawPosition()).calculateLength();
+	return dist_pts;
 }
 
 void HumapPlanner::updateCostParameters() {

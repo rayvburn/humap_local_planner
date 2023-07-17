@@ -81,7 +81,7 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	general_->angular_sim_granularity = cfg.angular_sim_granularity;
 	general_->sim_granularity = cfg.sim_granularity;
 	general_->sim_time = cfg.sim_time;
-	general_->local_goal_distance = cfg.local_goal_distance;
+	general_->local_goal_distance_multiplier = cfg.local_goal_distance_multiplier;
 	general_->person_model_radius = cfg.person_model_radius;
 	general_->person_fov = cfg.person_fov;
 	general_->obstacle_extension_multiplier = cfg.obstacle_extension_multiplier;
