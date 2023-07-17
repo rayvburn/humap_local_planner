@@ -51,11 +51,16 @@ void PlannerState::update(bool new_goal_received) {
 		case MOVE: {
 			bool pos_reached = pos_reached_fun_();
 
+			// angle towards the local goal (when the robot has the goal behind, it switches to INITIATE_EXECUTION)
+			auto dir_to_local_goal = Angle(std::abs(computeDirectionToPose(goal_local_).getRadian())).getRadian();
+			// more strict threshold than in 'initiation' case
+			bool local_goal_behind_robot = dir_to_local_goal >= (IGN_PI - initiation_yaw_threshold_ / 2.0);
+
 			// check if any state transition got activated
 			if (new_goal_received && pointing_towards_goal) {
 				// already pointing towards the local goal -> let's skip INITIATE_EXECUTION
 				state_ = MOVE;
-			} else if (new_goal_received && !pointing_towards_goal) {
+			} else if ((new_goal_received && !pointing_towards_goal) || local_goal_behind_robot) {
 				// initial adjustment of the orientation is required
 				state_ = INITIATE_EXECUTION;
 			} else if (!new_goal_received && pos_reached) {
