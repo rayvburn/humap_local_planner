@@ -345,6 +345,28 @@ public:
 		double min_containment_rate
 	);
 
+	/**
+	 * Computes maximum distance that can be traversed during the @ref sim_period, given the kinodynamic limits
+	 * and initial velocity @ref vel_init
+	 *
+	 * The distance is computed as Euclidean distance between first and last predicted pose
+	 */
+	static double computeDistanceLimits(
+		const geometry::Pose& pos_init,
+		const geometry::Vector& vel_init,
+		const double& sim_period,
+		const double& sim_granularity,
+		const double& acc_lim_x,
+		const double& acc_lim_y,
+		const double& acc_lim_th,
+		const double& vel_min_x,
+		const double& vel_min_y,
+		const double& vel_min_th,
+		const double& vel_max_x,
+		const double& vel_max_y,
+		const double& vel_max_th
+	);
+
 protected:
 	/**
 	 * @brief Updates cost functions with the contents of the @ref HuberoConfig
