@@ -62,6 +62,7 @@ public:
 	 * @param sim_granularity The granularity with which to check for collisions along each trajectory in meters
 	 * @param angular_sim_granularity The granularity with which to check for collisions for rotations in radians
 	 * @param sim_period How often planning executes
+	 * @param maintain_vel_components_rate selects behaviour when adjusting velocity command to feasible velocities
 	 */
 	void setParameters(
 		std::shared_ptr<const hubero_local_planner::SfmParams> sfm_params_ptr,
@@ -70,6 +71,7 @@ public:
 		double sim_granularity,
 		double angular_sim_granularity,
 		double sim_period,
+		bool maintain_vel_components_rate,
 		bool log_generation_samples,
 		bool log_generation_details,
 		bool log_generation_fails,
@@ -291,6 +293,8 @@ protected:
 	/// How far in the future the local plan will be generated
 	double sim_time_;
 	double sim_period_;
+	/// Selects behaviour when adjusting velocity command to feasible velocities
+	bool maintain_vel_components_rate_;
 
 	/// Flags that enable logging
 	bool log_generation_samples_;

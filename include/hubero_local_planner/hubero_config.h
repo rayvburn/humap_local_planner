@@ -16,6 +16,11 @@ namespace hubero_local_planner {
 		 * velocity
 		 */
 		double twist_rotation_compensation = 0.25;
+		/**
+		 * Whether to maintain the mutual rate of velocity components when transforming requested velocity
+		 * to the actual command
+		 */
+		bool maintain_vel_components_rate = true;
 	};
 
 	struct GeneralParams {

@@ -146,6 +146,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	limits_->xy_goal_tolerance = cfg.xy_goal_tolerance;
 	limits_->yaw_goal_tolerance = cfg.yaw_goal_tolerance;
 	limits_->twist_rotation_compensation = cfg.twist_rotation_compensation;
+	limits_->maintain_vel_components_rate = cfg.maintain_vel_components_rate;
 
 	traj_gen_->use_equisampled_velocities_generator = cfg.use_equisampled_velocities_generator;
 	traj_gen_->equisampled_vx = cfg.equisampled_vx;

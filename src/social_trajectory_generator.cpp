@@ -26,6 +26,7 @@ void SocialTrajectoryGenerator::setParameters(
 	double sim_granularity,
 	double angular_sim_granularity,
 	double sim_period,
+	bool maintain_vel_components_rate,
 	bool log_generation_samples,
 	bool log_generation_details,
 	bool log_generation_fails,
@@ -38,6 +39,7 @@ void SocialTrajectoryGenerator::setParameters(
 	sim_granularity_ = sim_granularity;
 	angular_sim_granularity_ = angular_sim_granularity;
 	sim_period_ = sim_period;
+	maintain_vel_components_rate_ = maintain_vel_components_rate;
 	log_generation_samples_ = log_generation_samples;
 	log_generation_details_ = log_generation_details;
 	log_generation_fails_ = log_generation_fails;
@@ -377,7 +379,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			limits_planner_ptr_->max_vel_y,
 			limits_planner_ptr_->max_vel_theta,
 			dt,
-			twist_cmd
+			twist_cmd,
+			maintain_vel_components_rate_
 		);
 
 		// evaluate effect if the computed forces would be applied -
