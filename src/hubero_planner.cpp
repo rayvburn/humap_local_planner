@@ -196,7 +196,7 @@ bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 		cfg_->getLimits()->max_vel_y,
 		cfg_->getLimits()->max_vel_theta
 	);
-	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance_multiplier * dist_achievable);
+	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance_multiplier * dist_achievable, true);
 	return true;
 }
 
@@ -834,11 +834,27 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 	);
 }
 
-Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const {
+Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose, bool allow_exceeding_plan) const {
 	if (global_plan_.empty()) {
-		ROS_ERROR_NAMED("HuberoPlanner", "Cannot choose local goal because global plan is empty");
+		ROS_ERROR_NAMED("HuberoPlanner", "Cannot choose pose from the plan because global plan is empty");
 		return Pose();
 	}
+
+	// helper function that computes squared distance between poses given by {x1, y1} and {x2, y2}
+	auto computeSqDist = [](double x1, double y1, double x2, double y2) {
+		double dist_x = x2 - x1;
+		double dist_y = y2 - y1;
+		double dist_sq = dist_x * dist_x + dist_y * dist_y;
+		return dist_sq;
+	};
+
+	// helper function that computes direction of a line constructed from subsequent poses {x1, y1} and {x2, y2}
+	auto computeDirFromPositions = [](double x1, double y1, double x2, double y2) {
+		Vector p1(x1, y1, 0.0);
+		Vector p2(x2, y2, 0.0);
+		Angle dir_v = (p2 - p1).calculateDirection();
+		return dir_v.getRadian();
+	};
 
 	// for faster computation - power once instead of square in each iteration
 	double dist_target_sq = dist_from_current_pose * dist_from_current_pose;
@@ -849,9 +865,7 @@ Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const 
 		it != global_plan_.end();
 		++it
 	) {
-		double dist_x = it->pose.position.x - pose_.getX();
-		double dist_y = it->pose.position.y - pose_.getY();
-		double dist_sq = dist_x * dist_x + dist_y * dist_y;
+		double dist_sq = computeSqDist(pose_.getX(), pose_.getY(), it->pose.position.x, it->pose.position.y);
 		if (dist_sq > dist_target_sq) {
 			// global path does not account orientation - interpolate
 			auto it_prev = std::prev(it);
@@ -859,12 +873,15 @@ Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const 
 			if (it_prev >= global_plan_.begin()) {
 				// orientation of the local goal is determined based on direction that allows to pass
 				// through 2 consecutive path points (local goal and the previous one)
-				Vector p0(it_prev->pose.position.x, it_prev->pose.position.y, it_prev->pose.position.z);
-				Vector p1(it->pose.position.x, it->pose.position.y, it->pose.position.z);
-				Angle dir_v = (p1 - p0).calculateDirection();
+				double dir_v_angle = computeDirFromPositions(
+					it_prev->pose.position.x,
+					it_prev->pose.position.y,
+					it->pose.position.x,
+					it->pose.position.y
+				);
 				return Pose(
 					Vector(it->pose.position.x, it->pose.position.y, it->pose.position.z),
-					Quaternion(dir_v.getRadian())
+					Quaternion(dir_v_angle)
 				);
 			}
 			// fallback - cannot determine orientation, global goal orientation is assumed
@@ -883,20 +900,66 @@ Pose HuberoPlanner::getPoseFromPlan(const double& dist_from_current_pose) const 
 			);
 		}
 	}
-	// cannot determine orientation, global goal orientation is assumed
-	return Pose(
-		Vector(
+	// description of the conditions used below:
+	// (1) do not proceed with plan extrapolation when it is not necessary
+	// (2) even if `allow_exceeding_plan` is set to true, when the plan is too short, the procedure cannot be executed
+	// (3) if the plan ends at the global goal, do not try to extend (here, distance to the global goal is compared
+	//     with the requested distance from the robot)
+	double dist_to_global_goal = std::sqrt(
+		computeSqDist(
+			goal_.getX(),
+			goal_.getY(),
 			global_plan_.back().pose.position.x,
-			global_plan_.back().pose.position.y,
-			global_plan_.back().pose.position.z
-		),
-		Quaternion(
-			global_plan_.back().pose.orientation.x,
-			global_plan_.back().pose.orientation.y,
-			global_plan_.back().pose.orientation.z,
-			global_plan_.back().pose.orientation.w
+			global_plan_.back().pose.position.y
 		)
 	);
+	if (!allow_exceeding_plan || global_plan_.size() < 2 || dist_to_global_goal <= dist_from_current_pose) {
+		// cannot determine orientation, global goal orientation is assumed
+		return Pose(
+			Vector(
+				global_plan_.back().pose.position.x,
+				global_plan_.back().pose.position.y,
+				global_plan_.back().pose.position.z
+			),
+			Quaternion(
+				global_plan_.back().pose.orientation.x,
+				global_plan_.back().pose.orientation.y,
+				global_plan_.back().pose.orientation.z,
+				global_plan_.back().pose.orientation.w
+			)
+		);
+	}
+
+	// let's try to approximate poses beyond the plan -
+	// at this point we are sure that the global plan consists of at least 2 poses;
+	//
+	// firstly, find out how far the requested pose should be from the last pose in the plan
+	double dist_to_plan_end = std::sqrt(
+		computeSqDist(
+			pose_.getX(), pose_.getY(),
+			global_plan_.back().pose.position.x, global_plan_.back().pose.position.y
+		)
+	);
+	double dist_beyond_plan = dist_from_current_pose - dist_to_plan_end;
+
+	// secondly, extrapolate plan, maintaining the direction of its end;
+	// retrieve the second to last and the last elements of the plan, ref: https://stackoverflow.com/a/18540244
+	double dir_v = computeDirFromPositions(
+		global_plan_.end()[-2].pose.position.x, global_plan_.end()[-2].pose.position.y,
+		global_plan_.end()[-1].pose.position.x, global_plan_.end()[-1].pose.position.y
+	);
+	// compute vector directed along the direction of the end of the plan
+	Angle dir_v_angle(dir_v);
+	Vector v_extension(dir_v_angle);
+	// let the vector length and distance to the last achievable plan pose be equal to @ref dist_from_current_pose
+	v_extension = v_extension * dist_beyond_plan;
+	// find the target pose
+	Pose pose_extrapolate_target(
+		global_plan_.back().pose.position.x + v_extension.getX(),
+		global_plan_.back().pose.position.y + v_extension.getY(),
+		dir_v_angle.getRadian()
+	);
+	return pose_extrapolate_target;
 }
 
 bool HuberoPlanner::planMovingRobot() {
