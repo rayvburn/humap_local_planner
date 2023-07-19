@@ -70,16 +70,18 @@ void PlannerState::update(bool new_goal_received) {
 		}
 
 		case ADJUST_ORIENTATION: {
+			bool pos_reached = pos_reached_fun_();
 			bool goal_reached = goal_reached_fun_();
 
 			// check if any state transition got activated
-			if (new_goal_received && pointing_towards_goal) {
-				// already pointing towards the local goal -> let's skip INITIATE_EXECUTION
+			if ((new_goal_received && pointing_towards_goal) || !pos_reached) {
+				// 1) already pointing towards the local goal -> let's skip INITIATE_EXECUTION
+				// 2) somehow the goal has been relocated (target position is not reached anymore)
 				state_ = MOVE;
-			} else if (new_goal_received && !pointing_towards_goal) {
+			} else if ((new_goal_received || !pos_reached) && !pointing_towards_goal) {
 				// initial adjustment of the orientation is required
 				state_ = INITIATE_EXECUTION;
-			} else if (!new_goal_received && goal_reached) {
+			} else if (!new_goal_received && pos_reached && goal_reached) {
 				state_ = STOPPED;
 			}
 			break;
