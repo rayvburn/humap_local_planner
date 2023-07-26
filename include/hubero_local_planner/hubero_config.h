@@ -112,6 +112,12 @@ namespace hubero_local_planner {
 		double force_factor = 1.0;
 		/// Distance at which any created human action force fade completely
 		double human_action_range = 4.0;
+		/// Full field of view of a controlled agent (NOTE: inherits the value from @ref GeneralParams to obtain
+		/// the human-like behaviour)
+		double fov = 3.31613;
+		/// Method used for FOV factor calculation; 0: Gaussian, 1: Linear, 2: Do not include FOV,
+		/// see fuzz::FovCalculationMethod for details
+		unsigned int fov_factor_method = 0;
 		/// Levelling factor that also directly affects amplitude of the resultant force
 		double as = 1.1865;
 	};
