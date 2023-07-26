@@ -304,6 +304,11 @@ public:
 		return ttc_costs_.getPredictionDynamicObjects();
 	}
 
+	/// Retrieves pruned path plan received from the global planner
+	inline const std::vector<geometry_msgs::PoseStamped>& getGlobalPlanPruned() const {
+		return global_plan_;
+	}
+
 	/**
 	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
 	 *

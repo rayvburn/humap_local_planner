@@ -53,6 +53,7 @@ void HumapPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, c
 		// create Node Handle with name of plugin (as used in move_base for loading)
 		ros::NodeHandle private_nh("~/" + name);
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
+		g_plan_pruned_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan_pruned", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
 		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
 		ttc_markers_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("ttc_prediction", 1);
@@ -270,6 +271,15 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	base_local_planner::publishPlan(createLocalPlan(trajectory), l_plan_pub_);
 	base_local_planner::publishPlan(global_plan_, g_plan_pub_);
+
+	// global path plan that was pruned by the local trajectory planner
+	if (g_plan_pruned_pub_.getNumSubscribers()) {
+		nav_msgs::Path pruned_plan;
+		pruned_plan.header.frame_id = costmap_ros_->getGlobalFrameID();
+		pruned_plan.header.stamp = ros::Time::now();
+		pruned_plan.poses = planner_->getGlobalPlanPruned();
+		g_plan_pruned_pub_.publish(pruned_plan);
+	}
 
 	// publish point cloud with explored trajectories only if the topic is subscribed as parameter set accordingly
 	if (traj_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_traj_pcl) {
