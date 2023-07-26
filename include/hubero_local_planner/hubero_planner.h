@@ -196,28 +196,21 @@ public:
 	}
 
 	/**
-	 * @brief Computes cost function for a given cell in the costmap
+	 * @brief Computes the scalarized multi objective cost function for a given cell in the costmap
 	 *
 	 * Compute the components and total cost for a map grid cell
 	 *
 	 * @param cx The x coordinate of the cell in the map grid
 	 * @param cy The y coordinate of the cell in the map grid
-	 * @param path_cost Will be set to the path distance component of the cost function
-	 * @param goal_cost Will be set to the goal distance component of the cost function
-	 * @param occ_cost Will be set to the costmap value of the cell
-	 * @param total_cost Will be set to the value of the overall cost function, taking into account the scaling parameters
-	 * @return True if the cell is traversible and therefore a legal location for the robot to move to
+	 * @param costs Map that will be extended according to all spatial components of the cost function, taking into
+	 * account the scaling parameters.
+
+	 * @return True if the cell is traversible and therefore a legal location for the robot to move to.
+	 * If true is returned, map keys are: "path", "goal", "layered", "alignment", "goal_front", "total"
 	 *
-	 * @note Based on Based on dwa_local_planner::DWAPlanner::getCellCosts authored by Eitan Marder-Eppstein
+	 * @note Partially based on dwa_local_planner::DWAPlanner::getCellCosts authored by Eitan Marder-Eppstein
 	 */
-	bool computeCellCost(
-		int cx,
-		int cy,
-		float& path_cost,
-		float& goal_cost,
-		float& occ_cost,
-		float& total_cost
-	);
+	bool computeCellCost(int cx, int cy, std::map<std::string, float>& costs);
 
 	/**
 	 * @brief Sets new plan and resets state
