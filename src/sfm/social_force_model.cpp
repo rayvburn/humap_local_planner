@@ -15,6 +15,8 @@
 #include <random>           // std::normal_distribution
 #include <stdexcept>
 
+#include <social_nav_utils/gaussians.h>
+
 // ----------------------------------------
 
 // debugging
@@ -196,6 +198,26 @@ bool SocialForceModel::computeSocialForce(
 }
 
 // ------------------------------------------------------------------- //
+
+// static
+double SocialForceModel::computeFactorFOV(double angle_relative, double fov, bool gaussian) {
+	if (!gaussian) {
+		double fov_half = fov / 2.0;
+		// outside FOV - linear decrease, minimum of 0.0
+		if (angle_relative < -fov_half) {
+			return (IGN_PI + angle_relative) / (IGN_PI - fov_half);
+		} else if (angle_relative > fov_half) {
+			return (IGN_PI - angle_relative) / (IGN_PI - fov_half);
+		}
+		// within FOV - perfectly OK
+		return 1.0;
+	}
+
+	// 2 sigma rule applied
+	double fov_variance = std::pow(fov / 2.0, 2.0);
+	// 0.0 - axis of sight in the center of the span of FOV angles
+	return social_nav_utils::calculateGaussianAngle(angle_relative, 0.0, fov_variance);
+}
 
 // **********************************************************************
 // **********************************************************************
@@ -696,17 +718,12 @@ inline bool SocialForceModel::isOutOfFOV(const Angle& angle_relative) {
 // ------------------------------------------------------------------- //
 
 double SocialForceModel::computeFactorFOV(const Angle& angle_relative) {
-	double ang = angle_relative.getRadian();
-
-	// outside FOV - linear decrease, minimum of 0.0
-	if (ang < -cfg_->fov) {
-		return (IGN_PI + ang) / (IGN_PI - cfg_->fov);
-	} else if (ang > cfg_->fov) {
-		return (IGN_PI - ang) / (IGN_PI - cfg_->fov);
-	} else {
-		// within FOV - perfectly OK
-		return 1.0;
-	}
+	// full FOV is passed to the static method
+	return SocialForceModel::computeFactorFOV(
+		angle_relative.getRadian(),
+		2.0 * cfg_->fov,
+		cfg_->fov_factor_method == sfm::FovCalculationMethod::GAUSSIAN
+	);
 }
 
 // ------------------------------------------------------------------- //
