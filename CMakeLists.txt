@@ -163,18 +163,18 @@ set_target_properties(transformations PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAK
 add_library(config ${HEADERS_CONFIG})
 target_link_libraries(config ${catkin_LIBRARIES})
 set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
+### SFM
+add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
+target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES} ${social_nav_utils_LIBRARIES})
+set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Fuzzy
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
-target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry sfm ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### World - ontology
 add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
 target_link_libraries(world geometry transformations ${IGNITION-MATH_LIBRARIES})
 set_target_properties(world PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-### SFM
-add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
-target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES} ${social_nav_utils_LIBRARIES})
-set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization - Helper library
 add_library(vis_helper ${HEADERS_VIS} ${SOURCES_VIS})
 target_link_libraries(vis_helper ${IGNITION-MATH_LIBRARIES})

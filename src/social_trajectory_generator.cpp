@@ -678,7 +678,8 @@ void SocialTrajectoryGenerator::computeForces(
 			world_model.getRobotData().speed,
 			fuzzy_processor_.getOutput(),
 			speed_dynamic,
-			dist_dynamic
+			dist_dynamic,
+			rel_loc_dynamic // to obtain FOV factors
 		);
 
 		// assign `social` vector
