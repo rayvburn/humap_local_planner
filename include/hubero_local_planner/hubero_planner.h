@@ -304,6 +304,23 @@ public:
 		return ttc_costs_.getPredictionDynamicObjects();
 	}
 
+	/// Retrieves pruned path plan received from the global planner
+	inline const std::vector<geometry_msgs::PoseStamped>& getGlobalPlanPruned() const {
+		return global_plan_;
+	}
+
+	/// Retrieves path that is taken into consideration by @ref goal_front_costs_ cost function
+	/// The path is typically formed as a part of the global plan received from the global path planner
+	inline const std::vector<geometry_msgs::PoseStamped> getPathGoalFrontCosts() const {
+		return goal_front_costs_.getTargetPoses();
+	}
+
+	/// Retrieves path that is taken into consideration by @ref alignment_costs_ cost function
+	/// The path is typically formed as a part of the global plan received from the global path planner
+	inline const std::vector<geometry_msgs::PoseStamped> getPathAlignmentCosts() const {
+		return alignment_costs_.getTargetPoses();
+	}
+
 	/**
 	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
 	 *

@@ -153,8 +153,14 @@ protected:
 	/// @section Publishers
 	/// @brief Global plan publisher (for visualisation)
 	ros::Publisher g_plan_pub_;
+	/// @brief Pruned global plan publisher (for visualisation)
+	ros::Publisher g_plan_pruned_pub_;
 	/// @brief Local plan publisher (for visualisation)
 	ros::Publisher l_plan_pub_;
+	/// Retrieves path that is taken into consideration by 'goal_front' cost function
+	ros::Publisher path_goal_front_costs_pub_;
+	/// Retrieves path that is taken into consideration by 'alignment' cost function
+	ros::Publisher path_alignment_costs_pub_;
 	/// @brief Explored trajectories PCL publisher (for visualisation)
 	ros::Publisher traj_pcl_pub_;
 	/// @brief TTC trajectories publisher (for visualisation)
