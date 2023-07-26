@@ -8,6 +8,8 @@
 #include <humap_local_planner/fuzz/regions.h>
 #include <humap_local_planner/fuzz/social_conductor.h>
 
+#include <humap_local_planner/sfm/social_force_model.h>
+
 namespace humap_local_planner {
 namespace fuzz {
 
@@ -37,13 +39,17 @@ bool SocialConductor::computeBehaviourForce(
 	const double& speed_agent,
 	const std::vector<Processor::FisOutput>& fis_outputs_v,
 	const std::vector<double>& speeds_v,
-	const std::vector<double>& dist_v
+	const std::vector<double>& dist_v,
+	const std::vector<double>& rel_loc_v
 ) {
 	// clear out behaviour force and active behavior names
 	reset();
 
 	// forces can be determined only if both FIS output and distance vector are defined (related to a single person)
-	if (dist_v.size() != fis_outputs_v.size() || dist_v.size() != speeds_v.size()) {
+	if (dist_v.size() != fis_outputs_v.size()
+		|| dist_v.size() != speeds_v.size()
+		|| dist_v.size() != rel_loc_v.size()
+	) {
 		return false;
 	}
 
@@ -77,9 +83,11 @@ bool SocialConductor::computeBehaviourForce(
 				speeds_v.at(i)
 			);
 		}
+		// include the FOV factor (in fact, it is one of spatiotemporal factors)
+		double fov_factor = computeFovFactor(rel_loc_v.at(i));
 
 		// total magnitude
-		double force_magnitude = As_ * membership_factor * spatiotemporal_factor;
+		double force_magnitude = As_ * membership_factor * spatiotemporal_factor * fov_factor;
 
 		// force - multiplied unit vector created based on a given direction
 		behaviour_force_ += (v_temp * force_magnitude);
@@ -168,6 +176,17 @@ double SocialConductor::computeBehaviourStrengthExponential(
 	double dist_factor = std::exp(-dist_to_agent);
 
 	return speed_factor * dist_factor;
+}
+
+double SocialConductor::computeFovFactor(double rel_loc_angle) {
+	switch (cfg_->fov_factor_method) {
+		case(FovCalculationMethod::GAUSSIAN):
+			return sfm::SocialForceModel::computeFactorFOV(rel_loc_angle, cfg_->fov, true);
+		case(FovCalculationMethod::LINEAR):
+			return sfm::SocialForceModel::computeFactorFOV(rel_loc_angle, cfg_->fov, false);
+	}
+	// otherwise, do not let FOV impact the resultant vector
+	return 1.0;
 }
 
 } /* namespace fuzz */

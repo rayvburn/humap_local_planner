@@ -21,6 +21,12 @@ namespace fuzz {
 
 using namespace geometry;
 
+typedef enum {
+	GAUSSIAN = 0,
+	LINEAR = 1,
+	NONE = 2
+} FovCalculationMethod;
+
 /**
  * Aggregates @ref Processor outputs (force directions) to create a resultant force vector
  * that represents behaviour force. Uses additivity rule of vectors.
@@ -50,13 +56,15 @@ public:
 	 * @param dist_v: vector of distances between ego agent and each dynamic object;
 	 * must be the same size as fis_outputs_v vector - assuming certain `dist` corresponds to `fis_output`
 	 * with the same vector index
+	 * @param rel_loc_v vector of relative locations (of humans relative to the robot) to compute FOV factors (if required)
 	 */
 	bool computeBehaviourForce(
 		const Pose& pose_agent,
 		const double& speed_agent,
 		const std::vector<Processor::FisOutput>& fis_outputs_v,
 		const std::vector<double>& speeds_v,
-		const std::vector<double>& dist_v
+		const std::vector<double>& dist_v,
+		const std::vector<double>& rel_loc_v
 	);
 
 	/// \brief Sets social vector and active behaviour to default values
@@ -109,6 +117,9 @@ private:
 	/// \brief Updates `behaviour_active_str_` according to its length
 	/// and given behaviour name (method argument)
 	void updateActiveBehaviour(const std::string& beh_name);
+
+	/// \brief Helper method that calculates FOV factor
+	double computeFovFactor(double rel_loc_angle);
 
 	/// \brief Levelling factor
 	double As_;

@@ -72,6 +72,7 @@ TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
 
     humap_local_planner::FisParams params {};
     params.force_factor = 1.0;
+    params.fov_factor_method = FovCalculationMethod::NONE; // not checking FOV here
     std::shared_ptr<const humap_local_planner::FisParams> cfg =
         std::make_shared<humap_local_planner::FisParams>(params);
     sc.initialize(cfg);
@@ -90,9 +91,10 @@ TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
     std::vector<Processor::FisOutput> fis_outputs_v {fis_output};
     std::vector<double> speed_v {robot1_speed};
     std::vector<double> dist_v {DIST1};
+    std::vector<double> rel_loc_v {0.0}; // dummy, we are not checking for FOV here
 
     // direction of the vector will be the sum of robot's current yaw angle and the FIS behaviour's vector direction
-    sc.computeBehaviourForce(robot1, robot1_speed, fis_outputs_v, speed_v, dist_v);
+    sc.computeBehaviourForce(robot1, robot1_speed, fis_outputs_v, speed_v, dist_v, rel_loc_v);
     Vector sc_vector = sc.getSocialVector();
     EXPECT_NEAR(sc_vector.calculateDirection().getRadian(), robot1.getYaw() + fis_output.value, 1e-06);
 }
@@ -103,6 +105,7 @@ TEST(FuzzySocialConductor, behaviourForceOrientationAdditivity) {
 
     humap_local_planner::FisParams params {};
     params.force_factor = 1.0;
+    params.fov_factor_method = FovCalculationMethod::NONE; // not checking FOV here
     std::shared_ptr<const humap_local_planner::FisParams> cfg =
         std::make_shared<humap_local_planner::FisParams>(params);
     sc.initialize(cfg);
@@ -134,8 +137,9 @@ TEST(FuzzySocialConductor, behaviourForceOrientationAdditivity) {
     std::vector<Processor::FisOutput> fis_outputs_v {fis_output1, fis_output2};
     std::vector<double> speeds_v {robot1_speed, robot1_speed};
     std::vector<double> dist_v {DIST, DIST};
+    std::vector<double> rel_loc_v {0.0, 0.0}; // dummy, we are not checking for FOV here
 
-    ASSERT_TRUE(sc.computeBehaviourForce(robot1, robot1_speed, fis_outputs_v, speeds_v, dist_v));
+    ASSERT_TRUE(sc.computeBehaviourForce(robot1, robot1_speed, fis_outputs_v, speeds_v, dist_v, rel_loc_v));
     Vector sc_vector = sc.getSocialVector();
     EXPECT_DOUBLE_EQ(sc_vector.calculateDirection().getRadian(), v_result.calculateDirection().getRadian());
 }
