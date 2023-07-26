@@ -91,6 +91,7 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	general_->obstacles_closest_polygons_num = cfg.obstacles_closest_polygons_num;
 
 	sfm_->fov = cfg.fov;
+	sfm_->fov_factor_method = cfg.sfm_fov_factor_method;
 	sfm_->mass = cfg.mass;
 	sfm_->internal_force_factor = cfg.internal_force_factor;
 	sfm_->static_interaction_force_factor = cfg.static_interaction_force_factor;

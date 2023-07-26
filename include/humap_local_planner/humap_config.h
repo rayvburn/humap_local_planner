@@ -56,6 +56,7 @@ namespace humap_local_planner {
 	/// default values are provided
 	struct SfmParams {
 		double fov = 2.00;
+		unsigned int fov_factor_method = 0; // 0: Gaussian, 1: Linear, see sfm::FovCalculationMethod enum
 		double mass = 80.0;
 		double internal_force_factor = 100.0;
 		double static_interaction_force_factor = 100.0;
