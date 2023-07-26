@@ -380,34 +380,45 @@ base_local_planner::Trajectory HumapPlanner::findTrajectory(
 	return traj;
 }
 
-bool HumapPlanner::computeCellCost(
-	int cx,
-	int cy,
-	float& path_cost,
-	float& goal_cost,
-	float& occ_cost,
-	float& total_cost
-) {
+bool HumapPlanner::computeCellCost(int cx, int cy, std::map<std::string, float>& costs) {
 	// initial checks if cell is traversible
-	path_cost = path_costs_.getCellCosts(cx, cy);
-	goal_cost = goal_costs_.getCellCosts(cx, cy);
-	occ_cost = planner_util_->getCostmap()->getCost(cx, cy);
+	float path_cost = path_costs_.getCellCosts(cx, cy);
+	float goal_cost = goal_costs_.getCellCosts(cx, cy);
+	float occ_cost = planner_util_->getCostmap()->getCost(cx, cy);
+	float align_cost = alignment_costs_.getCellCosts(cx, cy);
+	float goal_front_cost = goal_front_costs_.getCellCosts(cx, cy);
 
 	// evaluate if any component's cost is critical
 	bool cell_unreachable =
 		path_cost == path_costs_.obstacleCosts()
 		|| path_cost == path_costs_.unreachableCellCosts()
-		|| occ_cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE;
+		|| goal_cost == goal_costs_.obstacleCosts()
+		|| goal_cost == goal_costs_.unreachableCellCosts()
+		|| occ_cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE
+		|| align_cost == alignment_costs_.obstacleCosts()
+		|| align_cost == alignment_costs_.unreachableCellCosts()
+		|| goal_front_cost == goal_front_costs_.obstacleCosts()
+		|| goal_front_cost == goal_front_costs_.unreachableCellCosts();
 
 	if (cell_unreachable) {
 		return false;
 	}
 
 	// scale and sum retrieved costs
-	path_cost *= cfg_->getCost()->path_distance_scale;
-	goal_cost *= cfg_->getCost()->goal_distance_scale;
-	occ_cost *= cfg_->getCost()->occdist_scale;
-	total_cost = path_cost + goal_cost + occ_cost;
+	path_cost *= path_costs_.getScale();
+	goal_cost *= goal_costs_.getScale();
+	occ_cost *= obstacle_costs_.getScale();
+	align_cost *= alignment_costs_.getScale();
+	goal_front_cost *= goal_front_costs_.getScale();
+	float total_cost = path_cost + goal_cost + occ_cost + align_cost + goal_front_cost;
+
+	// assign costs to the hashmap
+	costs["path"] = path_cost;
+	costs["goal"] = goal_cost;
+	costs["layered"] = occ_cost;
+	costs["alignment"] = align_cost;
+	costs["goal_front"] = goal_front_cost;
+	costs["total"] = total_cost;
 	return true;
 }
 
