@@ -173,7 +173,7 @@ target_link_libraries(world geometry transformations ${IGNITION-MATH_LIBRARIES})
 set_target_properties(world PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### SFM
 add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
-target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES} ${social_nav_utils_LIBRARIES})
 set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization - Helper library
 add_library(vis_helper ${HEADERS_VIS} ${SOURCES_VIS})

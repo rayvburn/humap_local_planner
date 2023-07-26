@@ -52,6 +52,12 @@ typedef enum {
 
 } StaticObjectInteraction;
 
+// Which method will be used for FOV calculation
+typedef enum : unsigned int {
+	GAUSSIAN = 0,
+	LINEAR = 1
+} FovCalculationMethod;
+
 // ---------------------------------
 
 /** 	φ_αβ issue
@@ -252,6 +258,9 @@ public:
 		return relaxation_time_;
 	};
 	/// @} // end of eqnparams
+
+	/// Given the @ref angle_relative and full FOV @ref fov, computes FOV factor applicable for interactions
+	static double computeFactorFOV(double angle_relative, double fov, bool gaussian = true);
 
 	/// \brief Default destructor
 	virtual ~SocialForceModel() = default;
