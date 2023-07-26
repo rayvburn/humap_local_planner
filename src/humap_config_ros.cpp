@@ -126,6 +126,8 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 
 	fis_->force_factor = cfg.force_factor;
 	fis_->human_action_range = cfg.human_action_range;
+	fis_->fov = general_->person_fov; // NOTE: value shared with the general_'s
+	fis_->fov_factor_method = cfg.fis_fov_factor_method;
 	fis_->as = cfg.as;
 
 	limits_->acc_lim_theta = cfg.acc_lim_theta;
