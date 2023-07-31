@@ -17,6 +17,13 @@ traj_thetav = 1.00;
 init_dir = atan2(traj_yv, traj_xv);
 pose = [0; 0; init_dir];
 
+% select whether formulation for a holonomic drive should be used or not
+if abs(traj_yv) > 1e-03
+    holonomic = true;
+else
+    holonomic = false;
+end
+
 vel_local = [traj_xv; traj_yv; traj_thetav];
 % global velocities differ over time when local velocity is constant
 vels_global = [];
@@ -36,7 +43,7 @@ for i=1:ITER_NUM
     
     % compare initially computed local velocity with the inverse transformation
     % from the global vector
-    if vel_local ~= computeVelocityLocal(vel_global, poses_local(:, end))
+    if vel_local ~= computeVelocityLocal(vel_global, poses_local(:, end), holonomic)
         error("Inverse transformation of velocity vector (into local c.s.) is invalid");
     end
     

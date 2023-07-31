@@ -84,12 +84,34 @@ void computeVelocityGlobal(
  * @param vel_global input
  * @param pose input
  * @param vel_local output, x, y and theta velocities
+ * @param holonomic set to true when nonzero v_y velocity is properly handled by the drive of the mobile base
  */
 void computeVelocityLocal(
 	const geometry::Vector& vel_global,
 	const geometry::Pose& pose,
-	geometry::Vector& vel_local
+	geometry::Vector& vel_local,
+	bool holonomic = false
 );
+
+/**
+ * @brief Computes global velocity from subsequent poses, namely @ref pose1 and @ref pose2
+ *
+ * @param pose1 first pose
+ * @param pose2 second pose
+ * @param dt time delta between poses
+ * @return geometry::Vector global velocity vector
+ */
+geometry::Vector computeVelocityFromPoses(const geometry::Pose& pose1, const geometry::Pose& pose2, double dt);
+
+/**
+ * @brief Computes local velocity from subsequent poses, namely @ref pose1 and @ref pose2
+ *
+ * @param pose1 first pose
+ * @param pose2 second pose
+ * @param dt time delta between poses
+ * @return geometry::Vector local velocity vector
+ */
+geometry::Vector computeBaseVelocityFromPoses(const geometry::Pose& pose1, const geometry::Pose& pose2, double dt);
 
 /**
  * @brief Adjusts velocity command to the acceleration limits

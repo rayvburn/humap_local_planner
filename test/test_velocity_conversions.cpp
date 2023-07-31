@@ -9,61 +9,52 @@
 using namespace humap_local_planner;
 using namespace humap_local_planner::geometry;
 
+auto DIFF_STRICT = 1e-09;
+
 // local -> global velocity conversion does not change Z component of the vector
 TEST(HumapVelocityConversions, computeVelocityGlobal) {
 	Vector vel_local(0.15, 0.0, 0.25);
 	Angle yaw(0.0);
-	Angle expected_global_dir;
+	Vector vel_global;
 
 	// 1st case, robot orientation Euler Z 0 deg
 	Pose pose(0.0, 0.0, yaw.getRadian());
-
-	Vector vel_global;
 	computeVelocityGlobal(vel_local, pose, vel_global);
-	// GTEST_COUT << "1)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
-	// GTEST_COUT << "1) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " yaw " << vel_local.getZ()  << std::endl;
-	// GTEST_COUT << "1) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " yaw " << vel_global.getZ() << std::endl;
 	// provides the next ASSERT to make any sense
-	ASSERT_DOUBLE_EQ(pose.getYaw(), yaw.getRadian());
-	expected_global_dir = Angle(vel_local.calculateDirection() + yaw);
-	ASSERT_DOUBLE_EQ(vel_global.calculateDirection().getRadian(), expected_global_dir.getRadian());
+	ASSERT_NEAR(pose.getYaw(), yaw.getRadian(), DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getX(), 0.1500, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getY(), 0.0000, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getZ(), 0.2500, DIFF_STRICT);
 
 	// 2nd case: robot orientation Euler, Z 45 deg
 	yaw = Angle(IGN_PI_4);
 	pose.setOrientation(0.0, 0.0, yaw.getRadian());
 	computeVelocityGlobal(vel_local, pose, vel_global);
-	// GTEST_COUT << "2)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
-	// GTEST_COUT << "2) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " yaw " << vel_local.getZ()  << std::endl;
-	// GTEST_COUT << "2) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " yaw " << vel_global.getZ() << std::endl;
 	// provides the next ASSERT to make any sense
-	ASSERT_DOUBLE_EQ(pose.getYaw(), yaw.getRadian());
-	expected_global_dir = Angle(vel_local.calculateDirection() + yaw);
-	ASSERT_DOUBLE_EQ(vel_global.calculateDirection().getRadian(), expected_global_dir.getRadian());
-	// TODO: extra check
+	ASSERT_NEAR(pose.getYaw(), yaw.getRadian(), DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getX(), 0.106066017177982, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getY(), 0.106066017177982, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getZ(), 0.250000000000000, DIFF_STRICT);
 
 	// 3rd case: robot orientation Euler, Z -90 deg
 	yaw = Angle(-IGN_PI_2);
 	pose.setOrientation(0.0, 0.0, yaw.getRadian());
 	computeVelocityGlobal(vel_local, pose, vel_global);
-	// GTEST_COUT << "3)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
-	// GTEST_COUT << "3) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " yaw " << vel_local.getZ()  << std::endl;
-	// GTEST_COUT << "3) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " yaw " << vel_global.getZ() << std::endl;
 	// provides the next ASSERT to make any sense
-	ASSERT_DOUBLE_EQ(pose.getYaw(), yaw.getRadian());
-	expected_global_dir = Angle(vel_local.calculateDirection() + yaw);
-	ASSERT_DOUBLE_EQ(vel_global.calculateDirection().getRadian(), expected_global_dir.getRadian());
+	ASSERT_NEAR(pose.getYaw(), yaw.getRadian(), DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getX(), 9.18485099360515e-18, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getY(), -0.150000000000000, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getZ(), 0.250000000000000, DIFF_STRICT);
 
 	// 4th case: robot orientation Euler, Z +90, local.angular.z negative
 	yaw = Angle(IGN_PI_2);
 	pose.setOrientation(0.0, 0.0, yaw.getRadian());
 	computeVelocityGlobal(vel_local, pose, vel_global);
-	// GTEST_COUT << "4)          Pose2D: x " << pose.getX()  		<< " y " << pose.getY() 	  << " yaw " << pose.getYaw() << " pitch " << pose.getPitch() << " roll " << pose.getRoll() << std::endl;
-	// GTEST_COUT << "4) Local  Velocity: x " << vel_local.getX()  << " y " << vel_local.getY()  << " z " << vel_local.getZ()  << std::endl;
-	// GTEST_COUT << "4) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
 	// provides the next ASSERT to make any sense
-	ASSERT_DOUBLE_EQ(pose.getYaw(), yaw.getRadian());
-	expected_global_dir = Angle(vel_local.calculateDirection() + yaw);
-	ASSERT_DOUBLE_EQ(vel_global.calculateDirection().getRadian(), expected_global_dir.getRadian());
+	ASSERT_NEAR(pose.getYaw(), yaw.getRadian(), DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getX(), 9.184850993605149e-18, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getY(), 0.150000000000000, DIFF_STRICT);
+	ASSERT_NEAR(vel_global.getZ(), 0.250000000000000, DIFF_STRICT);
 }
 
 TEST(HumapVelocityConversions, computeTwist) {
@@ -88,8 +79,6 @@ TEST(HumapVelocityConversions, computeTwist) {
 
 	computeVelocityGlobal(vel_local, pose, vel_global);
 	computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
-	// GTEST_COUT << "1) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
-	// GTEST_COUT << "1) Local  Velocity: x " << cmd_vel.getX()    << " y " << cmd_vel.getY()    << " z " << cmd_vel.getZ()    << std::endl;
 	// force made robot maintain its speed
 	EXPECT_DOUBLE_EQ(cmd_vel.getX(), 0.0);
 	EXPECT_DOUBLE_EQ(cmd_vel.getY(), 0.0);
@@ -101,8 +90,6 @@ TEST(HumapVelocityConversions, computeTwist) {
 
 	computeVelocityGlobal(vel_local, pose, vel_global);
 	computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
-	// GTEST_COUT << "2) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
-	// GTEST_COUT << "2) Local  Velocity: x " << cmd_vel.getX()  << " y " << cmd_vel.getY()  << " z " << cmd_vel.getZ()  << std::endl;
 	EXPECT_DOUBLE_EQ(cmd_vel.getX(), (force.getX() / ROBOT_MASS) / SIM_PERIOD);
 	EXPECT_DOUBLE_EQ(cmd_vel.getY(), 0.0);
 	EXPECT_DOUBLE_EQ(cmd_vel.getZ(), 0.0);
@@ -113,8 +100,6 @@ TEST(HumapVelocityConversions, computeTwist) {
 
 	computeVelocityGlobal(vel_local, pose, vel_global);
 	computeTwist(pose, force, vel_global, SIM_PERIOD, ROBOT_MASS, MIN_VEL_X, MAX_VEL_X, MAX_ROT_VEL, TWIST_ROT_COMPENSATION, cmd_vel);
-	// GTEST_COUT << "3) Global Velocity: x " << vel_global.getX() << " y " << vel_global.getY() << " z " << vel_global.getZ() << std::endl;
-	// GTEST_COUT << "3) Local  Velocity: x " << cmd_vel.getX()  << " y " << cmd_vel.getY()  << " z " << cmd_vel.getZ()  << std::endl;
 	// force made robot turn in place
 	EXPECT_DOUBLE_EQ(cmd_vel.getX(), 0.0);
 	EXPECT_DOUBLE_EQ(cmd_vel.getY(), 0.0);
@@ -132,9 +117,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN,  0.0      ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), 1.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 2) going straight ahead along Y axis
 	computeVelocityLocal(
@@ -142,9 +127,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN,  IGN_PI_2 ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), 1.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 3) going straight aback Y axis
 	computeVelocityLocal(
@@ -152,9 +137,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN, -IGN_PI_2 ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), 1.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 4) going straight aback X axis
 	computeVelocityLocal(
@@ -162,9 +147,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN,  IGN_PI   ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), 1.0);
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), 1.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 5) backwards aback X axis
 	computeVelocityLocal(
@@ -172,9 +157,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN,  0.0      ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), -1.0);
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), -1.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 6) going with sqrt(2) at 45 degrees globally
 	computeVelocityLocal(
@@ -182,9 +167,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN,  IGN_PI_4 ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), std::sqrt(1.0 + 1.0));
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), 1.414213562373095, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 7) fully backwards
 	computeVelocityLocal(
@@ -192,9 +177,9 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN,  IGN_PI_4 ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), -std::sqrt(1.0 + 1.0));
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), 0.0);
+	EXPECT_NEAR(vel_local.getX(), -1.414213562373095, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.0, DIFF_STRICT);
 
 	// 8)
 	computeVelocityLocal(
@@ -202,25 +187,53 @@ TEST(HumapVelocityConversions, computeVelocityLocal) {
 		Pose  ( NAN,  NAN, -3.0 * IGN_PI_4 ), // pose
 		vel_local
 	);
-	EXPECT_DOUBLE_EQ(vel_local.getX(), std::sqrt(1.0 + 1.0));
-	EXPECT_DOUBLE_EQ(vel_local.getY(), 0.0);
-	EXPECT_DOUBLE_EQ(vel_local.getZ(), -IGN_PI_2);
+	EXPECT_NEAR(vel_local.getX(), 1.414213562373095, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.0, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), -IGN_PI_2, DIFF_STRICT);
 }
 
-TEST(HumapVelocityConversions, DISABLED_computeVelocityLocalHolonomic) {
+TEST(HumapVelocityConversions, computeVelocityLocalHolonomic) {
 	Vector vel_local;
 
-	// TODO: formulation for a holonomic-drives is needed
 	computeVelocityLocal(
 		Vector( 1.0,  1.0,  IGN_PI_2 ), // vel_global
 		Pose  ( NAN,  NAN,  0.0      ), // pose
-		vel_local
+		vel_local,
+		true // holonomic drive
 	);
+	EXPECT_NEAR(vel_local.getX(), 1.00, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 1.00, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 1.570796326794897, DIFF_STRICT);
+
 	computeVelocityLocal(
 		Vector(-1.0, -1.0,  IGN_PI_2 ), // vel_global
 		Pose  ( NAN,  NAN,  0.0      ), // pose
-		vel_local
+		vel_local,
+		true // holonomic drive
 	);
+	EXPECT_NEAR(vel_local.getX(), -1.00, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), -1.00, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 1.570796326794897, DIFF_STRICT);
+
+	computeVelocityLocal(
+		Vector( 0.5,  0.6,  IGN_PI_4 ), // vel_global
+		Pose  ( NAN,  NAN,  IGN_PI_4 ), // pose
+		vel_local,
+		true  // holonomic drive
+	);
+	EXPECT_NEAR(vel_local.getX(), 0.777817459305202, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.070710678118655, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.785398163397448, DIFF_STRICT);
+
+	computeVelocityLocal(
+		Vector( 0.7,  0.5,  IGN_PI_4 ), // vel_global
+		Pose  ( NAN,  NAN, -IGN_PI_4 ), // pose
+		vel_local,
+		true // holonomic drive
+	);
+	EXPECT_NEAR(vel_local.getX(), 0.141421356237310, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getY(), 0.848528137423857, DIFF_STRICT);
+	EXPECT_NEAR(vel_local.getZ(), 0.785398163397448, DIFF_STRICT);
 }
 
 TEST(HumapVelocityConversions, adjustTwistWithAccLimits) {
