@@ -156,55 +156,70 @@ void computeVelocityGlobal(
 	const Pose& pose,
 	Vector& vel_global
 ) {
-	// slide 38 at https://www.cs.princeton.edu/courses/archive/fall11/cos495/COS495-Lecture3-RobotMotion.pdf
 	double yaw = pose.getYaw();
-	/* Previously, Eigen Matrix was used, but switched to simplier approach for optimization:
-	 *
-	 * Eigen::Matrix3d rotation_yaw_inv;
-	 * // create a rotation matrix
-	 * rotation_yaw_inv <<
-	 * 	cos(yaw), 0, 0,
-	 * 	sin(yaw), 0, 0,
-	 * 	0, 0, 1;
-	 * // compute global velocity vector
-	 * Eigen::Vector3d vel_global_eigen = rotation_yaw_inv * vel_local.getAsEigen<Eigen::Vector3d>();
-	 * vel_global = Vector(vel_global_eigen);
-	 *
-	 */
+
+	// A single approach that handles both holonomic and nonholonomic drives
+	// Ref: 2nd to last equation in https://automaticaddison.com/how-to-describe-the-rotation-of-a-robot-in-2d/
+	//
 	// prepare twist expressed in global coordinates
 	vel_global = Vector(
-		std::cos(yaw) * vel_local.getX(),
-		std::sin(yaw) * vel_local.getX(),
-		vel_local.getZ()
+		+vel_local.getX() * std::cos(yaw) - vel_local.getY() * std::sin(yaw),
+		+vel_local.getX() * std::sin(yaw) + vel_local.getY() * std::cos(yaw),
+		+vel_local.getZ()
 	);
 }
 
 void computeVelocityLocal(
 	const Vector& vel_global,
 	const Pose& pose,
-	Vector& vel_local
+	Vector& vel_local,
+	bool holonomic
 ) {
 	double yaw = pose.getYaw();
-	/* Previously, Eigen Matrix was used, but switched to simplier approach for optimization:
-	 *
-	 * Eigen::Matrix3d rotation_yaw;
-	 * // create a rotation matrix for nonholonomic, https://www.cs.cmu.edu/~rasc/Download/AMRobots3.pdf (3.2)
-	 * // pseudoinverted matrix above
-	 * rotation_yaw <<
-	 * 	cos(yaw), sin(yaw), 0,
-	 * 	0, 0, 0,
-	 * 	0, 0, 1;
-	 * // compute local velocity vector
-	 * Eigen::Vector3d vel_local_eigen = rotation_yaw * vel_global.getAsEigen<Eigen::Vector3d>();
-	 * // prepare twist expressed in local coordinates
-	 * vel_local = Vector(vel_local_eigen);
-	 *
-	 */
-	vel_local = Vector(
-		std::cos(yaw) * vel_global.getX() + std::sin(yaw) * vel_global.getY(),
-		0.0,
-		vel_global.getZ()
+
+	if (holonomic) {
+		// The approach below handles both holonomic and nonholonomic drives; however, with this applied to global velocity,
+		// vy is often non-zero, e.g., consider that case
+		//     computeVelocityLocal([0.165,0.360,0.1],[0.141,0.306,1.220])
+		// which results in
+		//     [0.3948, -0.0312, 0.1000]
+		//
+		// Ref: last equation in https://automaticaddison.com/how-to-describe-the-rotation-of-a-robot-in-2d/
+		vel_local = Vector(
+			+vel_global.getX() * std::cos(yaw) + vel_global.getY() * std::sin(yaw),
+			-vel_global.getX() * std::sin(yaw) + vel_global.getY() * std::cos(yaw),
+			+vel_global.getZ()
+		);
+	} else {
+		// simplified version that ignores v_y; see note above for details why calc. methods were divided
+		vel_local = Vector(
+			+vel_global.getX() * std::cos(yaw) + vel_global.getY() * std::sin(yaw),
+			0.0,
+			vel_global.getZ()
+		);
+	}
+}
+
+geometry::Vector computeVelocityFromPoses(const geometry::Pose& pose1, const geometry::Pose& pose2, double dt) {
+	auto displacement = subtractPoses(pose2, pose1);
+	// compute vel from pose difference
+	auto vel = geometry::Vector(
+		displacement.getX() / dt,
+		displacement.getY() / dt,
+		displacement.getYaw() / dt
 	);
+	return vel;
+}
+
+geometry::Vector computeBaseVelocityFromPoses(const geometry::Pose& pose1, const geometry::Pose& pose2, double dt) {
+	auto displacement = subtractPoses(pose2, pose1);
+	double theta = pose1.getYaw();
+	auto vel = geometry::Vector(
+		+displacement.getX() / dt * cos(theta) + displacement.getY() / dt * sin(theta),
+		-displacement.getX() / dt * sin(theta) + displacement.getY() / dt * cos(theta),
+		+displacement.getYaw() / dt
+	);
+	return vel;
 }
 
 bool adjustTwistWithAccLimits(
