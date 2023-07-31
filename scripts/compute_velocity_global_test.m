@@ -16,5 +16,4 @@ for i=1:50
     drawVelocity(pose_2d, vel_global, [], 0)
 end
 
-xlim([0 10]);
-ylim([0 10]);
+axis equal
