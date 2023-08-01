@@ -8,6 +8,8 @@
 using namespace hubero_local_planner;
 using namespace hubero_local_planner::geometry;
 
+const auto DIFF_STRICT = 1e-09;
+
 // parts of these tests are used in `test_sfm.cpp`
 
 // to make sure that distance to goal is computed from robot's center to the goal
@@ -88,33 +90,47 @@ TEST(HuberoWorldGeneration, predictSequence) {
     traj_orig.xv_ = ROBOT_VEL.getX() + 0.1;
     traj_orig.yv_ = ROBOT_VEL.getY() - 0.1;
     traj_orig.thetav_ = ROBOT_VEL.getZ();
+
+    const geometry::Vector VEL_LOCAL(traj_orig.xv_, traj_orig.yv_, traj_orig.thetav_);
+
     // initial point - should be the same as the one passed to the World ctor
     traj_orig.addPoint(ROBOT_POSE.getX(), ROBOT_POSE.getY(), ROBOT_POSE.getYaw());
-    // poses predicted "by hand"
-    const geometry::Pose ROBOT_POSE2(
-        ROBOT_POSE.getX() + traj_orig.time_delta_ * traj_orig.xv_,
-        ROBOT_POSE.getY() + traj_orig.time_delta_ * traj_orig.yv_,
-        ROBOT_POSE.getYaw()
-    );
+    // pose predictions
+    const auto ROBOT_POSE2 = computeNextPoseBaseVel(ROBOT_POSE, VEL_LOCAL, traj_orig.time_delta_);
     traj_orig.addPoint(ROBOT_POSE2.getX(), ROBOT_POSE2.getY(), ROBOT_POSE2.getYaw());
-    const geometry::Pose ROBOT_POSE3(
-        ROBOT_POSE2.getX() + traj_orig.time_delta_ * traj_orig.xv_,
-        ROBOT_POSE2.getY() + traj_orig.time_delta_ * traj_orig.yv_,
-        ROBOT_POSE2.getYaw()
-    );
+
+    const auto ROBOT_POSE3 = computeNextPoseBaseVel(ROBOT_POSE2, VEL_LOCAL, traj_orig.time_delta_);
     traj_orig.addPoint(ROBOT_POSE3.getX(), ROBOT_POSE3.getY(), ROBOT_POSE3.getYaw());
 
     // create a trajectory
     Trajectory traj(traj_orig);
 
     auto world_states = world.predict(traj);
-    ASSERT_EQ(traj.getVelocities().size(), 3);
+    ASSERT_EQ(traj.getVelocities().size(), 2); // 3 points -> 2 velocities
     ASSERT_EQ(world_states.size(), 3);
-    ASSERT_EQ(world_states.at(0).getRobotData().centroid.getX(), ROBOT_POSE.getX());
-    ASSERT_EQ(world_states.at(1).getRobotData().centroid.getX(), ROBOT_POSE2.getX());
-    ASSERT_EQ(world_states.at(1).getRobotData().centroid.getY(), ROBOT_POSE2.getY());
-    ASSERT_EQ(world_states.at(2).getRobotData().centroid.getX(), ROBOT_POSE3.getX());
-    ASSERT_EQ(world_states.at(2).getRobotData().centroid.getY(), ROBOT_POSE3.getY());
+
+    // pose and velocity
+    ASSERT_NEAR(world_states.at(0).getRobotData().centroid.getX(), ROBOT_POSE.getX(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(0).getRobotData().centroid.getY(), ROBOT_POSE.getY(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(0).getRobotData().vel.getX(), ROBOT_VEL.getX(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(0).getRobotData().vel.getY(), ROBOT_VEL.getY(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(0).getRobotData().vel.getZ(), ROBOT_VEL.getZ(), DIFF_STRICT);
+
+    ASSERT_NEAR(world_states.at(1).getRobotData().centroid.getX(), ROBOT_POSE2.getX(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(1).getRobotData().centroid.getY(), ROBOT_POSE2.getY(), DIFF_STRICT);
+    geometry::Vector vel2_global;
+    computeVelocityGlobal(VEL_LOCAL, ROBOT_POSE2, vel2_global);
+    ASSERT_NEAR(world_states.at(1).getRobotData().vel.getX(), vel2_global.getX(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(1).getRobotData().vel.getY(), vel2_global.getY(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(1).getRobotData().vel.getZ(), vel2_global.getZ(), DIFF_STRICT);
+
+    ASSERT_NEAR(world_states.at(2).getRobotData().centroid.getX(), ROBOT_POSE3.getX(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(2).getRobotData().centroid.getY(), ROBOT_POSE3.getY(), DIFF_STRICT);
+    geometry::Vector vel3_global;
+    computeVelocityGlobal(VEL_LOCAL, ROBOT_POSE3, vel3_global);
+    ASSERT_NEAR(world_states.at(2).getRobotData().vel.getX(), vel3_global.getX(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(2).getRobotData().vel.getY(), vel3_global.getY(), DIFF_STRICT);
+    ASSERT_NEAR(world_states.at(2).getRobotData().vel.getZ(), vel3_global.getZ(), DIFF_STRICT);
 }
 
 int main(int argc, char** argv) {
