@@ -34,6 +34,8 @@ double FformationSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner:
 		std::vector<double> group_intrusions;
 
 		// check all robot trajectory points ...
+		// NOTE: velocities are not considered below, therefore getSteps() can be considered instead
+		// of getVelocitiesNum()
 		for (unsigned int i = 0; i < robot_traj.getSteps(); i++) {
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);

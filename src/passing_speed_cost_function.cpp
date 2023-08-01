@@ -32,7 +32,7 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 		std::vector<double> person_comforts;
 
 		// check all robot trajectory points ...
-		for (unsigned int i = 0; i < robot_traj.getSteps(); i++) {
+		for (unsigned int i = 0; i < robot_traj.getVelocitiesNum(); i++) {
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);
 			auto v_robot = robot_traj.getVelocity(i);

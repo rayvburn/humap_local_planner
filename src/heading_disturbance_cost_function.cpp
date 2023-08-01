@@ -37,10 +37,6 @@ double HeadingDisturbanceCostFunction::scoreTrajectory(base_local_planner::Traje
 		return 0.0;
 	}
 
-	// first, create a set of predicted people poses; pose predictions correspond to timestamps of robot trajectory
-	double dt = traj.time_delta_;
-	unsigned int num = traj.getPointsSize();
-
 	// storage for disturbances related to subsequent people
 	std::vector<double> people_disturbances;
 
@@ -51,9 +47,9 @@ double HeadingDisturbanceCostFunction::scoreTrajectory(base_local_planner::Traje
 		// storage for disturbances against person throughout the trajectory
 		std::vector<double> person_disturbances;
 
-		// check all robot trajectory points ...
-		for (unsigned int i = 0; i < robot_traj.getSteps(); i++) {
-			// retrieve poses
+		// check all robot trajectory poses that have matching velocities
+		for (unsigned int i = 0; i < robot_traj.getVelocitiesNum(); i++) {
+			// retrieve poses and velocities
 			auto p_robot = robot_traj.getPose(i);
 			auto v_robot = robot_traj.getVelocity(i);
 			auto p_person = person.getTrajectoryPrediction().getPose(i);
