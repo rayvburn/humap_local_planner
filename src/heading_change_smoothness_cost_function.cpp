@@ -20,13 +20,13 @@ double HeadingChangeSmoothnessCostFunction::scoreTrajectory(base_local_planner::
 
 	// heading change smoothness sum storage
 	double hcs = 0.0;
-	for (size_t i = 1; i < t.getPoses().size(); i++) {
+	for (size_t i = 1; i < t.getVelocitiesNum(); i++) {
 		double domega = t.getVelocity(i).getZ() - t.getVelocity(i - 1).getZ();
-        hcs += (std::abs(domega) / t.getTimeDelta());
+		hcs += (std::abs(domega) / t.getTimeDelta());
 	}
 
 	// mean
-	return hcs / static_cast<double>((t.getPoses().size() - 1));
+	return hcs / static_cast<double>((t.getVelocitiesNum()));
 }
 
 } // namespace hubero_local_planner

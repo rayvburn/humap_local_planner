@@ -117,15 +117,13 @@ std::vector<World> World::predict(const Trajectory& robot_traj) const {
 	std::vector<World> world_predictions;
 	// save current as initial state
 	world_predictions.push_back(*this);
-	// flag to skip first pose-vel pair that duplicates the internals of the world
-	bool first = true;
+
+	// first velocity moves each object from initial pose (p0, saved above) to the next pose (p1, computed in the first
+	// iteration) and so on
 	for (const auto& vel: robot_traj.getVelocities()) {
-		if (first) {
-			first = false;
-			continue;
-		}
 		// copy that since World::predict modifies the object
 		auto world = world_predictions.back();
+
 		world.predict(vel, robot_traj.getTimeDelta());
 		world_predictions.push_back(world);
 	}
