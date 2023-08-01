@@ -15,7 +15,7 @@ function cmd_vel = computeTwist(...
     
     % force calculated in the current step affects robot motion
 	acc_v = force_v / robot_mass;
-	vel_v = acc_v * dt;
+	vel_v = acc_v; % See issue #55
 	dvel_v = vel_v - robot_vel_glob;
     
     fprintf("[     computeTwist    ] force = [%2.4f, %2.4f, %2.4f], vel_prev = [%2.4f, %2.4f, %2.4f]\n",...
@@ -40,7 +40,7 @@ function cmd_vel = computeTwist(...
     ang_z_force_diff = force_dir - pose(3);
     ang_z = ang_z + twist_rotation_compensation * ang_z_force_diff;
 
-    cmd_vel = [lin_x, 0, ang_z];
+    cmd_vel = [lin_x; 0; ang_z];
 
     force_dir = atan2(force(2), force(1));
     fprintf("[     computeTwist    ] force dir %2.3f rad (%2.2f°), x: %2.2f y: %2.2f \n", ...
