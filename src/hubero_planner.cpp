@@ -20,6 +20,10 @@ HuberoPlanner::HuberoPlanner(
 	people_(std::make_shared<const People>()),
 	groups_(std::make_shared<const Groups>()),
 	robot_model_(robot_model),
+	scales_cm_costs_(
+		cfg_ ? *cfg_->getCost() : CostParams{}, // in case of the uninitialized shared pointer, use the default values
+		planner_util_->getCostmap()->getResolution()
+	),
 	obstacle_costs_(planner_util_->getCostmap()),
 	path_costs_(planner_util_->getCostmap()),
 	goal_costs_(planner_util->getCostmap(), 0.0, 0.0, true),
@@ -715,17 +719,13 @@ double HuberoPlanner::computeDistanceLimits(
 void HuberoPlanner::updateCostParameters() {
 	// update cost scales (adjust them with costmap resolution)
 	double cm_resolution = planner_util_->getCostmap()->getResolution();
-	double occdist_scale_adjusted = cfg_->getCost()->occdist_scale * cm_resolution;
-	double path_distance_scale_adjusted = cfg_->getCost()->path_distance_scale * cm_resolution;
-	double goal_distance_scale_adjusted = cfg_->getCost()->goal_distance_scale * cm_resolution;
-	double alignment_scale_adjusted = cfg_->getCost()->alignment_scale * cm_resolution;
-	double goal_front_scale_adjusted = cfg_->getCost()->goal_front_scale * cm_resolution;
+	scales_cm_costs_ = ScalesCmCostFunctions(*cfg_->getCost(), cm_resolution);
+	obstacle_costs_.setScale(scales_cm_costs_.occdist_scale);
+	path_costs_.setScale(scales_cm_costs_.path_distance_scale);
+	goal_costs_.setScale(scales_cm_costs_.goal_distance_scale);
+	goal_front_costs_.setScale(scales_cm_costs_.goal_front_scale);
+	alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
 
-	obstacle_costs_.setScale(occdist_scale_adjusted);
-	path_costs_.setScale(path_distance_scale_adjusted);
-	goal_costs_.setScale(goal_distance_scale_adjusted);
-	goal_front_costs_.setScale(goal_front_scale_adjusted);
-	alignment_costs_.setScale(alignment_scale_adjusted);
 	backward_costs_.setScale(cfg_->getCost()->backward_scale);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	heading_change_smoothness_costs_.setScale(cfg_->getCost()->heading_change_smoothness_scale);
