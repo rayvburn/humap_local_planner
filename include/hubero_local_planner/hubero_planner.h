@@ -382,7 +382,6 @@ protected:
 	struct ScalesCmCostFunctions {
 		/// Default constructor that assigns zeros to all scales
 		ScalesCmCostFunctions():
-			occdist_scale(0.0),
 			path_distance_scale(0.0),
 			goal_distance_scale(0.0),
 			alignment_scale(0.0),
@@ -390,13 +389,11 @@ protected:
 
 		/// Ctor that calculates resolution-corrected scales
 		ScalesCmCostFunctions(const CostParams& cost_params, double costmap_resolution):
-			occdist_scale(cost_params.occdist_scale * costmap_resolution),
 			path_distance_scale(cost_params.path_distance_scale * costmap_resolution),
 			goal_distance_scale(cost_params.goal_distance_scale * costmap_resolution),
 			alignment_scale(cost_params.alignment_scale * costmap_resolution),
 			goal_front_scale(cost_params.goal_front_scale * costmap_resolution) {}
 
-		double occdist_scale;
 		double path_distance_scale;
 		double goal_distance_scale;
 		double alignment_scale;
