@@ -11,7 +11,6 @@
 #include <humap_local_planner/heading_change_smoothness_cost_function.h>
 #include <humap_local_planner/contextualized_cost_function.h>
 #include <humap_local_planner/ttc_cost_function.h>
-#include <humap_local_planner/speedy_goal_cost_function.h>
 #include <humap_local_planner/velocity_smoothness_cost_function.h>
 #include <humap_local_planner/heading_disturbance_cost_function.h>
 #include <humap_local_planner/personal_space_intrusion_cost_function.h>
@@ -552,8 +551,6 @@ protected:
 	TTCCostFunction ttc_costs_;
 	/// Cost function that penalizes robot rotational velocity changes
 	HeadingChangeSmoothnessCostFunction heading_change_smoothness_costs_;
-	/// Prevents overshoot when robot approaches goal position with a high speed
-	SpeedyGoalCostFunction speedy_goal_costs_;
 	/// Advantages trajectories that maintain velocities similar to the current one
 	VelocitySmoothnessCostFunction velocity_smoothness_costs_;
 	/// Penalizes robot trajectories that drive it towards the center of any person

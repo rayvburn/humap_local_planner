@@ -31,7 +31,6 @@ HumapPlanner::HumapPlanner(
 	alignment_costs_(planner_util_->getCostmap()),
 	backward_costs_(0.0),
 	ttc_costs_(world_model_),
-	speedy_goal_costs_(goal_),
 	velocity_smoothness_costs_(vel_)
 {
 	ros::NodeHandle private_nh("~/" + name);
@@ -69,7 +68,6 @@ HumapPlanner::HumapPlanner(
 	critics.push_back(&backward_costs_);
 	critics.push_back(&ttc_costs_);
 	critics.push_back(&heading_change_smoothness_costs_);
-	critics.push_back(&speedy_goal_costs_);
 	critics.push_back(&velocity_smoothness_costs_);
 	critics.push_back(&heading_disturbance_costs_);
 	critics.push_back(&personal_space_costs_);
@@ -725,7 +723,6 @@ void HumapPlanner::updateCostParameters() {
 	backward_costs_.setScale(cfg_->getCost()->backward_scale);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	heading_change_smoothness_costs_.setScale(cfg_->getCost()->heading_change_smoothness_scale);
-	speedy_goal_costs_.setScale(cfg_->getCost()->speedy_goal_scale);
 	velocity_smoothness_costs_.setScale(cfg_->getCost()->velocity_smoothness_scale);
 	heading_disturbance_costs_.setScale(cfg_->getCost()->heading_dir_scale);
 	personal_space_costs_.setScale(cfg_->getCost()->personal_space_scale);
@@ -747,7 +744,6 @@ void HumapPlanner::updateCostParameters() {
 	alignment_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
-	speedy_goal_costs_.setParameters(cfg_->getCost()->speedy_goal_distance, cfg_->getLimits()->min_vel_trans);
 	heading_disturbance_costs_.setParameters(
 		// creates value of the full FOV
 		2.0 * cfg_->getGeneral()->person_fov,
@@ -1132,7 +1128,6 @@ bool HumapPlanner::checkInPlaceTrajectory(
 	critics.push_back(&alignment_costs_);
 	critics.push_back(&goal_front_costs_);
 	critics.push_back(&heading_change_smoothness_costs_);
-	critics.push_back(&speedy_goal_costs_);
 
 	base_local_planner::SimpleScoredSamplingPlanner traj_scorer(traj_gen_list, critics);
 
@@ -1241,7 +1236,7 @@ void HumapPlanner::logTrajectoriesDetails() {
 			"HumapPlanner",
 			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-			"backward %2.2f, TTC %2.2f, HSM %2.2f, speedy_goal %2.2f, vel_smoothness %2.2f, "
+			"backward %2.2f, TTC %2.2f, HSM %2.2f, vel_smoothness %2.2f, "
 			"head_dir %2.2f, PSI %2.2f, FSI %2.2f, PSPD %2.2f%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
 			traj_num,
@@ -1255,7 +1250,6 @@ void HumapPlanner::logTrajectoriesDetails() {
 			backward_costs_.getScale() * backward_costs_.scoreTrajectory(traj_copy),
 			ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(traj_copy),
 			heading_change_smoothness_costs_.getScale() * heading_change_smoothness_costs_.scoreTrajectory(traj_copy),
-			speedy_goal_costs_.getScale() * speedy_goal_costs_.scoreTrajectory(traj_copy),
 			velocity_smoothness_costs_.getScale() * velocity_smoothness_costs_.scoreTrajectory(traj_copy),
 			heading_disturbance_costs_.getScale() * heading_disturbance_costs_.scoreTrajectory(traj_copy),
 			personal_space_costs_.getScale() * personal_space_costs_.scoreTrajectory(traj_copy),

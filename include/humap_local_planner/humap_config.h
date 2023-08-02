@@ -207,8 +207,6 @@ namespace humap_local_planner {
 		double ttc_scale = 3.0;
 		/// The weight for the cost function that penalizes robot rotational velocity changes
 		double heading_change_smoothness_scale = 18.0;
-		/// The weight for the cost function that penalizes high speeds near global goal
-		double speedy_goal_scale = 12.0;
 		/// The weight for the cost function that penalizes velocity changes along trajectory
 		double velocity_smoothness_scale = 13.0;
 		/// The weight for the cost function that penalizes trajectories that leading towards human center
@@ -235,8 +233,6 @@ namespace humap_local_planner {
 		double ttc_collision_distance = 0.05;
 		/// The distance from the center point of the robot to place an additional scoring point, in meters
 		double forward_point_distance = 0.325;
-		/// The distance threshold of penalization of high speeds near global goal
-		double speedy_goal_distance = 0.85;
 	};
 
 	struct DiagnosticsParams {
