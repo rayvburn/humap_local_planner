@@ -69,6 +69,7 @@ public:
 			const RobotFootprintModelConstPtr footprint
 	);
 
+	bool publishGoalInitiation(const Vector& pos);
 	bool publishGoalLocal(const Vector& pos);
 	bool publishGoal(const Vector& pos);
 	bool publishPlannerState(const Vector& pos, const std::string& state);
