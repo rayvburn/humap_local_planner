@@ -237,15 +237,11 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 	}
 	goal_front_costs_.setTargetPoses(front_global_plan);
 
-	/*
-	 * Reduce scales of MapGridCostFunction-based cost functions when the robot is close to the goal
-	 *
-	 * NOTE: dwa_local_planner source code also mentions that alignment_costs_ should have variable scales assigned,
-	 * as in: https://github.com/ros-planning/navigation/blob/noetic-devel/dwa_local_planner/src/dwa_planner.cpp#L282
-	 */
+	// reduce scales of MapGridCostFunction-based cost functions when the robot is close to the goal
 	if (dist_to_goal <= cfg_->getCost()->forward_point_distance) {
-		goal_front_costs_.setScale(0.0);
 		alignment_costs_.setScale(0.0);
+	} else {
+		alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
 	}
 
 	// reset TTC datasets collected during previous iteration
