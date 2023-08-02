@@ -142,7 +142,8 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 		cfg->getGeneral()->sim_time,
 		cfg->getGeneral()->sim_granularity,
 		cfg->getGeneral()->angular_sim_granularity,
-		true, // DO NOT limit the velocities to those that do not overshoot goal in sim_time
+		// whether to limit the velocities to those that do not overshoot goal in sim_time; inverted logic here
+		!cfg->getTrajectoryGeneration()->equisampled_continued_acceleration,
 		cfg->getGeneral()->sim_period
 	);
 
