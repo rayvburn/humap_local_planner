@@ -263,6 +263,10 @@ public:
 		return goal_local_;
 	}
 
+	Pose getGoalInitiation() const {
+		return goal_initiation_;
+	}
+
 	/**
 	 * @brief Returns planning state according to the internal finite state machine
 	 */
