@@ -152,6 +152,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	limits_->maintain_vel_components_rate = cfg.maintain_vel_components_rate;
 
 	traj_gen_->use_equisampled_velocities_generator = cfg.use_equisampled_velocities_generator;
+	traj_gen_->equisampled_continued_acceleration = cfg.equisampled_continued_acceleration;
 	traj_gen_->equisampled_vx = cfg.equisampled_vx;
 	traj_gen_->equisampled_vy = cfg.equisampled_vy;
 	traj_gen_->equisampled_vth = cfg.equisampled_vth;
