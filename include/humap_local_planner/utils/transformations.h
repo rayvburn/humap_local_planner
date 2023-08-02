@@ -142,6 +142,29 @@ bool adjustTwistWithAccLimits(
 );
 
 /**
+ * Same as @ref adjustTwistWithAccLimits but also avoids overshooting the goal pose (limits velocity near the goal)
+ *
+ * @param dist_to_goal passing a valid distance to the goal will assure that the accelerations will be set
+ * as not to overshoot the goal position
+ */
+bool adjustTwistWithAccAndGoalLimits(
+	const geometry::Vector& vel,
+	const double& acc_lim_x,
+	const double& acc_lim_y,
+	const double& acc_lim_th,
+	const double& vel_min_x,
+	const double& vel_min_y,
+	const double& vel_min_th,
+	const double& vel_max_x,
+	const double& vel_max_y,
+	const double& vel_max_th,
+	const double& sim_period,
+	geometry::Vector& cmd_vel,
+	bool maintain_vel_components_rate,
+	double dist_to_goal
+);
+
+/**
  * @brief Computes pure difference between all pose components
  *
  * `pose_ref` element is used as a reference (e.g. as new pose, whereas `pose_other` is the previous one).

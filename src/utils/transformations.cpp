@@ -311,6 +311,57 @@ bool adjustTwistWithAccLimits(
 	return isOrigCmdVelModified();
 }
 
+bool adjustTwistWithAccAndGoalLimits(
+	const geometry::Vector& vel,
+	const double& acc_lim_x,
+	const double& acc_lim_y,
+	const double& acc_lim_th,
+	const double& vel_min_x,
+	const double& vel_min_y,
+	const double& vel_min_th,
+	const double& vel_max_x,
+	const double& vel_max_y,
+	const double& vel_max_th,
+	const double& sim_period,
+	geometry::Vector& cmd_vel,
+	bool maintain_vel_components_rate,
+	double dist_to_goal
+) {
+	// maximum velocities kinematic limits that may be straitened to avoid overshooting the goal pose
+	double vel_max_x_corrected = vel_max_x;
+	double vel_max_y_corrected = vel_max_y;
+
+
+	// Modified version of code from base_local_planner::SimpleTrajectoryGenerator::initialise
+	// authored by Thibault Kruse
+	// https://github.com/ros-planning/navigation/blob/noetic-devel/base_local_planner/src/simple_trajectory_generator.cpp#L94
+	// "we limit the velocities to those that do not overshoot the goal in **sim_time**"
+	//
+	// formulation below is a transformed equation of a 'constantly accelerated motion' - we know the distance
+	// within which the robot must be stopped so we compute the maximum velocity that allows to do so; time is
+	// computed under constant velocity assumption t = s/v
+	double vx_safe = 2.0 * dist_to_goal / acc_lim_x;
+	double vy_safe = 2.0 * dist_to_goal / acc_lim_y;
+	vel_max_x_corrected = std::max(std::min(vel_max_x, vx_safe), vel_min_x);
+	vel_max_y_corrected = std::max(std::min(vel_max_y, vy_safe), vel_min_y);
+
+	return adjustTwistWithAccLimits(
+		vel,
+		acc_lim_x,
+		acc_lim_y,
+		acc_lim_th,
+		vel_min_x,
+		vel_min_y,
+		vel_min_th,
+		vel_max_x_corrected,
+		vel_max_y_corrected,
+		vel_max_th,
+		sim_period,
+		cmd_vel,
+		maintain_vel_components_rate
+	);
+}
+
 geometry::Pose subtractPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other) {
 	return Pose(
 		pose_ref.getX() - pose_other.getX(),
