@@ -195,6 +195,8 @@ namespace humap_local_planner {
 		double goal_distance_scale = 0.8;
 		/// The weight for the obstacle distance part of the cost function
 		double occdist_scale = 0.01;
+		/// Whether to sum up the scores along the path or use the maximum one (default)
+		bool occdist_sum_scores = false;
 		/// The weight for the alignment with the global plan
 		double alignment_scale = 0.6;
 		/// The weight for the achievement of the additional goal point placed in front of the mobile base

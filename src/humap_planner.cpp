@@ -742,6 +742,7 @@ void HumapPlanner::updateCostParameters() {
 		cfg_->getCost()->max_scaling_factor,
 		cfg_->getCost()->scaling_speed
 	);
+	obstacle_costs_.setSumScores(cfg_->getCost()->occdist_sum_scores);
 	goal_front_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	alignment_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
