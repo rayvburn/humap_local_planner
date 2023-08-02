@@ -366,8 +366,9 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			vel_local_plan
 		);
 
-		// make sure acceleration limits are not violated with the computed twist command
-		adjustTwistWithAccLimits(
+		// make sure acceleration limits are not violated with the computed twist command; also let's avoid
+		// overshooting the goal pose
+		adjustTwistWithAccAndGoalLimits(
 			vel_local_plan,
 			limits_planner_ptr_->acc_lim_x,
 			limits_planner_ptr_->acc_lim_y,
@@ -380,7 +381,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 			limits_planner_ptr_->max_vel_theta,
 			dt,
 			twist_cmd,
-			maintain_vel_components_rate_
+			maintain_vel_components_rate_,
+			world_model_plan.getRobotData().goal.dist
 		);
 
 		// evaluate effect if the computed forces would be applied -
