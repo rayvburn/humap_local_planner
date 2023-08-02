@@ -286,6 +286,18 @@ bool Visualization::publishRobotFootprint(
 	return true;
 }
 
+bool Visualization::publishGoalInitiation(const Vector& pos) {
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_init");
+	marker_point_.setColor(0.25f, 0.25f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
 bool Visualization::publishGoalLocal(const Vector& pos) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
