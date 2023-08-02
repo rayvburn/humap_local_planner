@@ -129,6 +129,11 @@ namespace humap_local_planner {
 		/// True enables generator that produces evenly spaced elements from a list of feasible velocities.
 		/// If set to false only social trajectory generator is used
 		bool use_equisampled_velocities_generator = true;
+		/// If set to true, the generator will recompute feasible velocities in each step and will restrict the
+		/// velocities to those that do not overshoot the goal in sim_time. Otherwise, when false, the generator will
+		/// sample velocities during the first iteration and will not take the goal into account (as in DWA approach)
+		/// Legacy parameter name (nav. stack) `use_dwa`
+		bool equisampled_continued_acceleration = true;
 		/// How many velocity samples along platform's X axis will be checked
 		unsigned int equisampled_vx = 5;
 		/// How many velocity samples along platform's Y axis will be checked
