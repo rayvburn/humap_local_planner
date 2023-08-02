@@ -366,6 +366,31 @@ public:
 	);
 
 protected:
+	/// Storage for the cost scales that need to be weighed according to the raw scale and the costmap resolution
+	struct ScalesCmCostFunctions {
+		/// Default constructor that assigns zeros to all scales
+		ScalesCmCostFunctions():
+			occdist_scale(0.0),
+			path_distance_scale(0.0),
+			goal_distance_scale(0.0),
+			alignment_scale(0.0),
+			goal_front_scale(0.0) {}
+
+		/// Ctor that calculates resolution-corrected scales
+		ScalesCmCostFunctions(const CostParams& cost_params, double costmap_resolution):
+			occdist_scale(cost_params.occdist_scale * costmap_resolution),
+			path_distance_scale(cost_params.path_distance_scale * costmap_resolution),
+			goal_distance_scale(cost_params.goal_distance_scale * costmap_resolution),
+			alignment_scale(cost_params.alignment_scale * costmap_resolution),
+			goal_front_scale(cost_params.goal_front_scale * costmap_resolution) {}
+
+		double occdist_scale;
+		double path_distance_scale;
+		double goal_distance_scale;
+		double alignment_scale;
+		double goal_front_scale;
+	};
+
 	/**
 	 * @brief Updates cost functions with the contents of the @ref HumapConfig
 	 * @note Should be called once dynamic reconfigure event occurred
@@ -501,6 +526,9 @@ protected:
 	SocialTrajectoryGenerator generator_social_;
 	base_local_planner::SimpleTrajectoryGenerator generator_vel_space_;
 	base_local_planner::SimpleScoredSamplingPlanner scored_sampling_planner_;
+
+	// Stores original cost scales adjusted for the costmap resolution
+	ScalesCmCostFunctions scales_cm_costs_;
 
 	/**
 	 * Cost function that discards trajectories that move into obstacles or other high-cost areas
