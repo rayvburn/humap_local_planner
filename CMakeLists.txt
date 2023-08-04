@@ -204,7 +204,6 @@ add_library(humap_local_planner
     src/ttc_cost_function.cpp
     src/heading_change_smoothness_cost_function.cpp
     src/velocity_smoothness_cost_function.cpp
-    src/contextualized_cost_function.cpp
     src/personal_space_intrusion_cost_function.cpp
     src/fformation_space_intrusion_cost_function.cpp
     src/heading_disturbance_cost_function.cpp
