@@ -31,6 +31,7 @@ HumapPlanner::HumapPlanner(
 	alignment_costs_(planner_util_->getCostmap()),
 	backward_costs_(0.0),
 	ttc_costs_(world_model_),
+	heading_change_smoothness_costs_(vel_),
 	velocity_smoothness_costs_(vel_)
 {
 	ros::NodeHandle private_nh("~/" + name);
