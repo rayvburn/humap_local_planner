@@ -9,7 +9,6 @@
 #include <hubero_local_planner/social_trajectory_generator.h>
 #include <hubero_local_planner/latched_stop_rotate_controller.h>
 #include <hubero_local_planner/heading_change_smoothness_cost_function.h>
-#include <hubero_local_planner/contextualized_cost_function.h>
 #include <hubero_local_planner/ttc_cost_function.h>
 #include <hubero_local_planner/velocity_smoothness_cost_function.h>
 #include <hubero_local_planner/heading_disturbance_cost_function.h>
