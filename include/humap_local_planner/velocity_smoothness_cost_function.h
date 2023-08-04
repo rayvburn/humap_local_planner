@@ -8,7 +8,7 @@ namespace humap_local_planner {
 /**
  * @brief Trajectory Velocity Smoothnesss cost function
  *
- * Penalizes robot velocity changes throughout trajectory (current velocity inclusive)
+ * Penalizes robot's linear velocity changes throughout trajectory (current velocity inclusive)
  */
 class VelocitySmoothnessCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
