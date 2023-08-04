@@ -57,9 +57,23 @@ public:
 			// omitting vel. calc. here provides that first velocity will not be repeated in the vels_ vector
 			if (i == 0) {
 				poses_.push_back(pose_curr);
+				// NOTE: it's safer to use seed velocity as the first one; in most cases, using constant velocity
+				// assumption and differentiating 2nd and 1st poses will yield the same results as using seed vel.
+				geometry::Vector velocity(traj.xv_, traj.yv_, traj.thetav_);
+				if (convert_to_global_velocities) {
+					computeVelocityGlobal(velocity, pose_curr, velocity);
+				}
+				vels_.push_back(velocity);
+				continue;
+			}
+			// pose1 - pose0 yields the same (or close) velocity as using the seed of the trajectory
+			if (i == 1) {
+				poses_.push_back(pose_curr);
+				// velocity will be differentiated during the next iteration
 				continue;
 			}
 
+			// for i >= 2, differentiate subsequent poses to obtain a velocity
 			// store robot velocity
 			double vx = 0.0;
 			double vy = 0.0;
