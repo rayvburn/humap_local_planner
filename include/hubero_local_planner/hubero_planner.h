@@ -429,8 +429,15 @@ protected:
 	 * @ref allow_exceeding_plan was introduced since the planner utils transforms and trims the plan to the costmap
 	 * bounds. Reimplementing its @ref transformGlobalPlan is problematic; therefore, introduced flag aims to allow
 	 * approximating the poses beyond the plan
+	 *
+	 * @ref allow_poses_behind simply allows selecting a pose behind a robot (useful for choosing the motion
+	 * initiation goal)
 	 */
-	Pose getPoseFromPlan(const double& dist_from_current_pose, bool allow_exceeding_plan = false) const;
+	Pose getPoseFromPlan(
+		const double& dist_from_current_pose,
+		bool allow_exceeding_plan = false,
+		bool allow_poses_behind = false
+	) const;
 
 	/**
 	 * @brief Retrieves goal pose from the global plan
