@@ -180,7 +180,7 @@ bool HumapPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	std::copy(plan_local_pruned.cbegin(), plan_local_pruned.cend(), global_plan_.begin());
 
 	// update movement initiation pose - located slightly further than xy_goal_tolerance
-	goal_initiation_ = getPoseFromPlan(1.1 * cfg_->getLimits()->xy_goal_tolerance);
+	goal_initiation_ = getPoseFromPlan(1.1 * cfg_->getLimits()->xy_goal_tolerance, false, true);
 
 	// update local goal pose - located at parameterized distance from the current pose;
 	// compute local goal distance according to the distance achievable within the planning horizon;
@@ -200,7 +200,9 @@ bool HumapPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 		cfg_->getLimits()->max_vel_y,
 		cfg_->getLimits()->max_vel_theta
 	);
-	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance_multiplier * dist_achievable, true);
+	// local goal should be in front of the robot (after rotating according to the motion initiation goal it will
+	// always be), therefore last arg. is false
+	goal_local_ = getPoseFromPlan(cfg_->getGeneral()->local_goal_distance_multiplier * dist_achievable, true, false);
 	return true;
 }
 
@@ -840,7 +842,11 @@ void HumapPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mod
 	);
 }
 
-Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose, bool allow_exceeding_plan) const {
+Pose HumapPlanner::getPoseFromPlan(
+	const double& dist_from_current_pose,
+	bool allow_exceeding_plan,
+	bool allow_poses_behind
+) const {
 	if (global_plan_.empty()) {
 		ROS_ERROR_NAMED("HumapPlanner", "Cannot choose pose from the plan because global plan is empty");
 		return Pose();
@@ -854,6 +860,11 @@ Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose, bool al
 		return dist_sq;
 	};
 
+	// computes Euclidean distance between 2 points
+	auto computeDist = [computeSqDist](double x1, double y1, double x2, double y2) {
+		return std::sqrt(computeSqDist(x1, y1, x2, y2));
+	};
+
 	// helper function that computes direction of a line constructed from subsequent poses {x1, y1} and {x2, y2}
 	auto computeDirFromPositions = [](double x1, double y1, double x2, double y2) {
 		Vector p1(x1, y1, 0.0);
@@ -862,47 +873,65 @@ Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose, bool al
 		return dir_v.getRadian();
 	};
 
-	// for faster computation - power once instead of square in each iteration
-	double dist_target_sq = dist_from_current_pose * dist_from_current_pose;
+	// how far we should land from the current pose
+	double dist_target = dist_from_current_pose;
+	// stores sum of distances between path poses
+	double dist_sum_along_path = 0.0;
+
+	// flag indicating that the global plan's poses that require pruning are not considered (skipped, not deleted);
+	// typically, the global plan is not updated as frequently as the pose, so there will be an offset at the start
+	bool pruned = allow_poses_behind; // typically initiates to false, but this prevents an extra 'if'
 
 	// find a point far enough so the social force can drive the robot towards instead of produce oscillations
 	for (
-		std::vector<geometry_msgs::PoseStamped>::const_iterator it = global_plan_.begin();
+		// NOTE: starting from the [1] instead of [0]
+		std::vector<geometry_msgs::PoseStamped>::const_iterator it = std::next(global_plan_.begin());
 		it != global_plan_.end();
 		++it
 	) {
-		double dist_sq = computeSqDist(pose_.getX(), pose_.getY(), it->pose.position.x, it->pose.position.y);
-		if (dist_sq > dist_target_sq) {
-			// global path does not account orientation - interpolate
-			auto it_prev = std::prev(it);
-			// make sure that iterator is valid (within vector range)
-			if (it_prev >= global_plan_.begin()) {
-				// orientation of the local goal is determined based on direction that allows to pass
-				// through 2 consecutive path points (local goal and the previous one)
-				double dir_v_angle = computeDirFromPositions(
-					it_prev->pose.position.x,
-					it_prev->pose.position.y,
-					it->pose.position.x,
-					it->pose.position.y
-				);
-				return Pose(
-					Vector(it->pose.position.x, it->pose.position.y, it->pose.position.z),
-					Quaternion(dir_v_angle)
-				);
+		// the iterator is always valid as we start from the second element
+		auto it_prev = std::prev(it);
+
+		// skip some poses if necessary
+		if (!pruned) {
+			// perform local 'pruning' - procedure below makes sure that the plan point lays in front of the robot;
+			// position of the robot and its orientation is compared to the position of a plan point
+			auto dir_to_plan_pos = computeDirFromPositions(
+				pose_.getX(),
+				pose_.getY(),
+				it_prev->pose.position.x,
+				it_prev->pose.position.y
+			);
+			// defines angle between the robot's heading and the location of the evaluated position
+			double relative_loc_of_plan_pos = Angle(dir_to_plan_pos - pose_.getYaw()).getRadian();
+			// turns true when the it->pose is not located behind the robot
+			pruned = std::abs(relative_loc_of_plan_pos) <= IGN_PI_2;
+			if (!pruned) {
+				continue;
 			}
-			// fallback - cannot determine orientation, global goal orientation is assumed
+		}
+
+		// accumulate distances
+		double dist = computeDist(
+			it_prev->pose.position.x,
+			it_prev->pose.position.y,
+			it->pose.position.x,
+			it->pose.position.y
+		);
+		dist_sum_along_path += dist;
+		if (dist_sum_along_path > dist_target) {
+			// global path does not account orientation - interpolate
+			// orientation of the local goal is determined based on direction that allows to pass
+			// through 2 consecutive path points (local goal and the previous one)
+			double dir_v_angle = computeDirFromPositions(
+				it_prev->pose.position.x,
+				it_prev->pose.position.y,
+				it->pose.position.x,
+				it->pose.position.y
+			);
 			return Pose(
-				Vector(
-					it->pose.position.x,
-					it->pose.position.y,
-					it->pose.position.z
-				),
-				Quaternion(
-					global_plan_.back().pose.orientation.x,
-					global_plan_.back().pose.orientation.y,
-					global_plan_.back().pose.orientation.z,
-					global_plan_.back().pose.orientation.w
-				)
+				Vector(it->pose.position.x, it->pose.position.y, it->pose.position.z),
+				Quaternion(dir_v_angle)
 			);
 		}
 	}
@@ -911,13 +940,11 @@ Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose, bool al
 	// (2) even if `allow_exceeding_plan` is set to true, when the plan is too short, the procedure cannot be executed
 	// (3) if the plan ends at the global goal, do not try to extend (here, distance to the global goal is compared
 	//     with the requested distance from the robot)
-	double dist_to_global_goal = std::sqrt(
-		computeSqDist(
-			goal_.getX(),
-			goal_.getY(),
-			global_plan_.back().pose.position.x,
-			global_plan_.back().pose.position.y
-		)
+	double dist_to_global_goal = computeDist(
+		goal_.getX(),
+		goal_.getY(),
+		global_plan_.back().pose.position.x,
+		global_plan_.back().pose.position.y
 	);
 	if (!allow_exceeding_plan || global_plan_.size() < 2 || dist_to_global_goal <= dist_from_current_pose) {
 		// cannot determine orientation, global goal orientation is assumed
@@ -940,11 +967,9 @@ Pose HumapPlanner::getPoseFromPlan(const double& dist_from_current_pose, bool al
 	// at this point we are sure that the global plan consists of at least 2 poses;
 	//
 	// firstly, find out how far the requested pose should be from the last pose in the plan
-	double dist_to_plan_end = std::sqrt(
-		computeSqDist(
-			pose_.getX(), pose_.getY(),
-			global_plan_.back().pose.position.x, global_plan_.back().pose.position.y
-		)
+	double dist_to_plan_end = computeDist(
+		pose_.getX(), pose_.getY(),
+		global_plan_.back().pose.position.x, global_plan_.back().pose.position.y
 	);
 	double dist_beyond_plan = dist_from_current_pose - dist_to_plan_end;
 
