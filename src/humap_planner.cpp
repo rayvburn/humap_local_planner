@@ -225,17 +225,17 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 	 * We want the robot nose to be drawn to its final position before robot turns towards goal orientation
 	 * Also, `goal_front_costs_` uses `Last` as `CostAggregationType`
 	 */
-	static constexpr double FRONT_PLAN_POSES_NUM = 10;
+	auto plan_fwd_pose = getPoseFromPlan(cfg_->getCost()->forward_point_distance, false, false);
 	std::vector<geometry_msgs::PoseStamped> front_global_plan;
-	for (
-		double dist = 0.0;
-		dist <= cfg_->getCost()->forward_point_distance;
-		dist += cfg_->getCost()->forward_point_distance / FRONT_PLAN_POSES_NUM
-	) {
-		geometry_msgs::PoseStamped plan_pose;
-		plan_pose.header.frame_id = planner_util_->getGlobalFrame();
-		plan_pose.pose = getPoseFromPlan(dist).getAsMsgPose();
-		front_global_plan.push_back(plan_pose);
+	for (const auto& pose: global_plan_) {
+		double diff_x = std::abs(pose.pose.position.x - plan_fwd_pose.getX());
+		double diff_y = std::abs(pose.pose.position.y - plan_fwd_pose.getY());
+		// target position tolerance
+		static constexpr double POS_TOLERANCE = 1e-03;
+		if (diff_x <= POS_TOLERANCE && diff_y <= POS_TOLERANCE) {
+			break;
+		}
+		front_global_plan.push_back(pose);
 	}
 	goal_front_costs_.setTargetPoses(front_global_plan);
 
