@@ -440,11 +440,6 @@ protected:
 	) const;
 
 	/**
-	 * @brief Retrieves goal pose from the global plan
-	 */
-	Pose getGoalFromPlan() const;
-
-	/**
 	 * @brief Performs planning specific when a robot moves with significant translational velocity
 	 */
 	bool planMovingRobot();
