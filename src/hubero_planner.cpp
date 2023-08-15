@@ -453,9 +453,6 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 	double goal_xy_diff = (goal_global_prev.getPosition() - goal_global_new.getPosition()).calculateLength();
 	double goal_yaw_diff = angles::shortest_angular_distance(goal_global_prev.getYaw(), goal_global_new.getYaw());
 
-	// update for further comparisons
-	goal_global_frame_ = orig_global_plan.back();
-
 	// use goal tolerances to detect goal pose relocation
 	if (goal_xy_diff >= cfg_->getLimits()->xy_goal_tolerance
 		|| std::isnan(goal_xy_diff)
@@ -469,6 +466,8 @@ bool HuberoPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_
 			goal_new.pose.position.y,
 			tf2::getYaw(goal_new.pose.orientation)
 		);
+		// update for further comparisons
+		goal_global_frame_ = orig_global_plan.back();
 		// update both goals (global and local, see call below)
 		goal_ = Pose(goal_new);
 		// this is not perfectly accurate - we use the last pose instead of the first from the global plan (which must
