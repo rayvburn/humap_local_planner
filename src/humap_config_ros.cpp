@@ -193,6 +193,7 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	costs_->goal_distance_scale = cfg.goal_distance_scale;
 	costs_->occdist_scale = cfg.occdist_scale;
 	costs_->occdist_sum_scores = cfg.occdist_sum_scores;
+	costs_->occdist_separation = cfg.occdist_separation;
 	costs_->alignment_scale = cfg.alignment_scale;
 	costs_->goal_front_scale = cfg.goal_front_scale;
 	costs_->backward_scale = cfg.backward_scale;
