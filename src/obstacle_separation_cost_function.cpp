@@ -63,12 +63,13 @@ ObstacleSeparationCostFunction::~ObstacleSeparationCostFunction() {
 void ObstacleSeparationCostFunction::setParams(
 	double max_trans_vel,
 	double max_scaling_factor,
-	double scaling_speed
+	double scaling_speed,
+	double min_separation_dist
 ) {
-	// TODO: move this to prepare if possible
 	max_trans_vel_ = max_trans_vel;
 	max_scaling_factor_ = max_scaling_factor;
 	scaling_speed_ = scaling_speed;
+	min_separation_dist_ = min_separation_dist;
 }
 
 void ObstacleSeparationCostFunction::setFootprint(std::vector<geometry_msgs::Point> footprint_spec) {
@@ -93,7 +94,7 @@ double ObstacleSeparationCostFunction::scoreTrajectory(base_local_planner::Traje
 		traj.getPoint(i, px, py, pth);
 		double f_cost = footprintCost(
 			px, py, pth,
-			scale, footprint_spec_,
+			scale, min_separation_dist_, footprint_spec_,
 			costmap_, world_model_
 		);
 
@@ -129,18 +130,62 @@ double ObstacleSeparationCostFunction::getScalingFactor(
 	return scale;
 }
 
+double ObstacleSeparationCostFunction::getFootprintCost(unsigned int px, unsigned int py) {
+	// convert inputs (map cells) to world coordinates
+	double x, y = 0.0;
+	costmap_->mapToWorld(px, py, x, y);
+
+	double f_cost = footprintCost(
+		x, y, 0.0,
+		1.0, min_separation_dist_, footprint_spec_,
+		costmap_, world_model_
+	);
+	return f_cost;
+}
+
 double ObstacleSeparationCostFunction::footprintCost(
 	const double& x,
 	const double& y,
 	const double& th,
 	double scale,
+	double separation_dist,
 	std::vector<geometry_msgs::Point> footprint_spec,
 	costmap_2d::Costmap2D* costmap,
 	base_local_planner::WorldModel* world_model
 ) {
 	//check if the footprint is legal
 	// TODO: Cache inscribed radius
+	// TODO: Resize footprint according to @ref scale
 	double footprint_cost = world_model->footprintCost(x, y, th, footprint_spec);
+
+	bool compute_without_separation_dist = std::abs(separation_dist) < 1e-03;
+	if (!compute_without_separation_dist) {
+		// helper lambda to check footprint cost around the robot center
+		auto footprintCostKernel = [=](double offset, double angle) -> double {
+			// based on MapGridCostFunction
+			double xk = x + offset * cos(th + angle);
+			double yk = y + offset * sin(th + angle);
+			return world_model->footprintCost(xk, yk, th, footprint_spec);
+		};
+
+		// check 4 surrounding points
+		double f_sep_cost_left = footprintCostKernel(separation_dist, +M_PI_2);
+		double f_sep_cost_behind = footprintCostKernel(separation_dist, +M_PI);
+		double f_sep_cost_right = footprintCostKernel(separation_dist, -M_PI_2);
+		double f_sep_cost_front = footprintCostKernel(separation_dist, 0.0);
+
+		std::vector<double> costs = {
+			footprint_cost,
+			f_sep_cost_left,
+			f_sep_cost_behind,
+			f_sep_cost_right,
+			f_sep_cost_front
+		};
+		double max_cost = *std::max_element(costs.cbegin(), costs.cend());
+		double min_cost = *std::min_element(costs.cbegin(), costs.cend());
+		// choosing min negative or max positive
+		(min_cost < 0.0) ? (footprint_cost = min_cost) : (footprint_cost = max_cost);
+	}
 
 	if (footprint_cost < 0) {
 		return -6.0;
