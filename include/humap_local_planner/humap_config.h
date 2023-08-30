@@ -216,6 +216,8 @@ namespace humap_local_planner {
 		double alignment_scale = 0.6;
 		/// The weight for the achievement of the additional goal point placed in front of the mobile base
 		double goal_front_scale = 0.8;
+		/// The weight for deviating from the maximum allowable translational velocities
+		double unsaturated_translation_scale = 0.0;
 		/// The weight for the backward motion penalisation
 		double backward_scale = 0.5;
 		/// The weight for the time to collision (TTC) cost function
@@ -256,6 +258,8 @@ namespace humap_local_planner {
 		bool fformation_space_compute_whole_horizon = true;
 		/// Whether to compute the cost fun. for the whole horizon or only for the first step of each traj. candidate
 		bool passing_speed_compute_whole_horizon = true;
+		/// Whether to compute the cost fun. for the whole horizon or only for the first step of each traj. candidate
+		bool unsaturated_translation_compute_whole_horizon = true;
 	};
 
 	struct DiagnosticsParams {
