@@ -201,6 +201,7 @@ add_library(humap_local_planner
     # class definition in the header, see doc in the file for details
     include/humap_local_planner/trajectory.h
     src/social_trajectory_generator.cpp
+    src/obstacle_separation_cost_function.cpp
     src/ttc_cost_function.cpp
     src/heading_change_smoothness_cost_function.cpp
     src/velocity_smoothness_cost_function.cpp
