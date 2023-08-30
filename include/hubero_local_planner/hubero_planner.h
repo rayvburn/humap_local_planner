@@ -15,6 +15,7 @@
 #include <hubero_local_planner/personal_space_intrusion_cost_function.h>
 #include <hubero_local_planner/fformation_space_intrusion_cost_function.h>
 #include <hubero_local_planner/passing_speed_cost_function.h>
+#include <hubero_local_planner/slow_translation_cost_function.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -558,6 +559,8 @@ protected:
 	base_local_planner::MapGridCostFunction alignment_costs_;
 	/// Cost function that prefers trajectories that make the nose go towards (local) nose goal
 	base_local_planner::MapGridCostFunction goal_front_costs_;
+	// Penalizes robot for moving slower than the maximum speed allows
+	SlowTranslationCostFunction slow_translation_costs_;
 	/// Cost function that prefers forward trajectories instead of those that consist of backward motions
 	base_local_planner::PreferForwardCostFunction backward_costs_;
 	/// Cost function that penalizes trajectories that can cause collision in a longer horizon

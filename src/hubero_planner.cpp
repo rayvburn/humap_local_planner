@@ -66,6 +66,7 @@ HuberoPlanner::HuberoPlanner(
 	critics.push_back(&goal_costs_);
 	critics.push_back(&alignment_costs_);
 	critics.push_back(&goal_front_costs_);
+	critics.push_back(&slow_translation_costs_);
 	critics.push_back(&backward_costs_);
 	critics.push_back(&ttc_costs_);
 	critics.push_back(&heading_change_smoothness_costs_);
@@ -723,6 +724,7 @@ void HuberoPlanner::updateCostParameters() {
 	alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
 
 	obstacle_costs_.setScale(cfg_->getCost()->occdist_scale);
+	slow_translation_costs_.setScale(cfg_->getCost()->slow_translation_scale);
 	backward_costs_.setScale(cfg_->getCost()->backward_scale);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	heading_change_smoothness_costs_.setScale(cfg_->getCost()->heading_change_smoothness_scale);
@@ -745,6 +747,11 @@ void HuberoPlanner::updateCostParameters() {
 	obstacle_costs_.setSumScores(cfg_->getCost()->occdist_sum_scores);
 	goal_front_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	alignment_costs_.setXShift(cfg_->getCost()->forward_point_distance);
+	slow_translation_costs_.setParameters(
+		cfg_->getLimits()->max_vel_trans,
+		cfg_->getLimits()->max_vel_x,
+		cfg_->getLimits()->max_vel_y
+	);
 	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	heading_disturbance_costs_.setParameters(
@@ -1261,7 +1268,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			cfg_->getDiagnostics()->log_trajectory_cost_details,
 			"HuberoPlanner",
 			"%sExplored trajectory %3d / %3lu cost details: "
-			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
+			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, slow %2.2f, "
 			"backward %2.2f, TTC %2.2f, HSM %2.2f, vel_smoothness %2.2f, "
 			"head_dir %2.2f, PSI %2.2f, FSI %2.2f, PSPD %2.2f%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
@@ -1273,6 +1280,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			goal_costs_.getScale() * goal_costs_.scoreTrajectory(traj_copy),
 			goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(traj_copy),
 			alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(traj_copy),
+			slow_translation_costs_.getScale() * slow_translation_costs_.scoreTrajectory(traj_copy),
 			backward_costs_.getScale() * backward_costs_.scoreTrajectory(traj_copy),
 			ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(traj_copy),
 			heading_change_smoothness_costs_.getScale() * heading_change_smoothness_costs_.scoreTrajectory(traj_copy),

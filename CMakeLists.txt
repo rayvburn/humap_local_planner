@@ -208,6 +208,7 @@ add_library(hubero_local_planner
     src/fformation_space_intrusion_cost_function.cpp
     src/heading_disturbance_cost_function.cpp
     src/passing_speed_cost_function.cpp
+    src/slow_translation_cost_function.cpp
     src/latched_stop_rotate_controller.cpp
     src/planner_state.cpp
 )
