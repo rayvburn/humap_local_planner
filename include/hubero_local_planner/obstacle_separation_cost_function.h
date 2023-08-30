@@ -67,7 +67,8 @@ public:
 	void setParams(
 		double max_trans_vel,
 		double max_scaling_factor,
-		double scaling_speed
+		double scaling_speed,
+		double min_separation_dist
 	);
 
 	void setFootprint(std::vector<geometry_msgs::Point> footprint_spec);
@@ -80,11 +81,15 @@ public:
 		double max_scaling_factor
 	);
 
+	// Calls footprintCost using class members
+	double getFootprintCost(unsigned int px, unsigned int py);
+
 	static double footprintCost(
 		const double& x,
 		const double& y,
 		const double& th,
 		double scale,
+		double separation_dist,
 		std::vector<geometry_msgs::Point> footprint_spec,
 		costmap_2d::Costmap2D* costmap,
 		base_local_planner::WorldModel* world_model
@@ -98,6 +103,8 @@ private:
 	bool sum_scores_;
 	//footprint scaling with velocity;
 	double max_scaling_factor_, scaling_speed_;
+	// required extra keepout distance (beyond the footprint)
+	double min_separation_dist_;
 };
 
 } // namespace hubero_local_planner
