@@ -71,6 +71,7 @@ HumapPlanner::HumapPlanner(
 	critics.push_back(&goal_costs_);
 	critics.push_back(&alignment_costs_);
 	critics.push_back(&goal_front_costs_);
+	critics.push_back(&unsaturated_trans_costs_);
 	critics.push_back(&backward_costs_);
 	critics.push_back(&ttc_costs_);
 	critics.push_back(&heading_change_smoothness_costs_);
@@ -728,6 +729,7 @@ void HumapPlanner::updateCostParameters() {
 	alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
 
 	obstacle_costs_.setScale(cfg_->getCost()->occdist_scale);
+	unsaturated_trans_costs_.setScale(cfg_->getCost()->unsaturated_translation_scale);
 	backward_costs_.setScale(cfg_->getCost()->backward_scale);
 	ttc_costs_.setScale(cfg_->getCost()->ttc_scale);
 	heading_change_smoothness_costs_.setScale(cfg_->getCost()->heading_change_smoothness_scale);
@@ -752,6 +754,12 @@ void HumapPlanner::updateCostParameters() {
 	obstacle_costs_.setSumScores(cfg_->getCost()->occdist_sum_scores);
 	goal_front_costs_.setXShift(cfg_->getCost()->forward_point_distance);
 	alignment_costs_.setXShift(cfg_->getCost()->forward_point_distance);
+	unsaturated_trans_costs_.setParameters(
+		cfg_->getLimits()->max_vel_trans,
+		cfg_->getLimits()->max_vel_x,
+		cfg_->getLimits()->max_vel_y,
+		cfg_->getCost()->unsaturated_translation_compute_whole_horizon
+	);
 	backward_costs_.setPenalty(cfg_->getCost()->backward_penalty);
 	ttc_costs_.setParameters(cfg_->getCost()->ttc_rollout_time, cfg_->getCost()->ttc_collision_distance);
 	heading_disturbance_costs_.setParameters(
@@ -1423,7 +1431,7 @@ void HumapPlanner::logTrajectoriesDetails() {
 			invalid_traj || cfg_->getDiagnostics()->log_trajectory_cost_details,
 			"HumapPlanner",
 			"%sExplored trajectory %3d / %3lu cost details: "
-			"obstacle %5.2f, oscillation %5.2f, path %8.2f, goal %8.2f, goal_front %8.2f, alignment %8.2f, "
+			"obstacle %5.2f, oscillation %5.2f, path %8.2f, goal %8.2f, goal_front %8.2f, alignment %8.2f, utrans. %8.2f, "
 			"backward %5.2f, TTC %5.2f, HSM %5.2f, vel_smoothness %5.2f, "
 			"head_dir %5.2f, PSI %5.2f, FSI %5.2f, PSPD %5.2f%s",
 			// mark the best trajectory green and all non-feasible red
@@ -1436,6 +1444,7 @@ void HumapPlanner::logTrajectoriesDetails() {
 			goal_costs_.getScale() * goal_costs_.scoreTrajectory(traj_copy),
 			goal_front_costs_.getScale() * goal_front_costs_.scoreTrajectory(traj_copy),
 			alignment_costs_.getScale() * alignment_costs_.scoreTrajectory(traj_copy),
+			unsaturated_trans_costs_.getScale() * unsaturated_trans_costs_.scoreTrajectory(traj_copy),
 			backward_costs_.getScale() * backward_costs_.scoreTrajectory(traj_copy),
 			ttc_costs_.getScale() * ttc_costs_.scoreTrajectory(traj_copy),
 			heading_change_smoothness_costs_.getScale() * heading_change_smoothness_costs_.scoreTrajectory(traj_copy),
