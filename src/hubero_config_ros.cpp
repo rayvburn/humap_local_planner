@@ -200,6 +200,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->occdist_separation_kernel = cfg.occdist_separation_kernel;
 	costs_->alignment_scale = cfg.alignment_scale;
 	costs_->goal_front_scale = cfg.goal_front_scale;
+	costs_->unsaturated_translation_scale = cfg.unsaturated_translation_scale;
 	costs_->backward_scale = cfg.backward_scale;
 	costs_->ttc_scale = cfg.ttc_scale;
 	costs_->heading_change_smoothness_scale = cfg.heading_change_smoothness_scale;
@@ -220,6 +221,7 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->personal_space_compute_whole_horizon = cfg.personal_space_compute_whole_horizon;
 	costs_->fformation_space_compute_whole_horizon = cfg.fformation_space_compute_whole_horizon;
 	costs_->passing_speed_compute_whole_horizon = cfg.passing_speed_compute_whole_horizon;
+	costs_->unsaturated_translation_compute_whole_horizon = cfg.unsaturated_translation_compute_whole_horizon;
 
 	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;
 	diagnostics_->log_trajectory_generation_details = cfg.log_trajectory_generation_details;
