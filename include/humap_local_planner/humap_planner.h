@@ -8,6 +8,7 @@
 #include <humap_local_planner/world.h>
 #include <humap_local_planner/social_trajectory_generator.h>
 #include <humap_local_planner/latched_stop_rotate_controller.h>
+#include <humap_local_planner/obstacle_separation_cost_function.h>
 #include <humap_local_planner/heading_change_smoothness_cost_function.h>
 #include <humap_local_planner/ttc_cost_function.h>
 #include <humap_local_planner/velocity_smoothness_cost_function.h>
@@ -29,7 +30,6 @@
 
 #include <base_local_planner/oscillation_cost_function.h>
 #include <base_local_planner/map_grid_cost_function.h>
-#include <base_local_planner/obstacle_cost_function.h>
 #include <base_local_planner/prefer_forward_cost_function.h>
 #include <base_local_planner/twirling_cost_function.h>
 #include <base_local_planner/simple_scored_sampling_planner.h>
@@ -535,7 +535,8 @@ protected:
 	 * Cost function that discards trajectories that move into obstacles or other high-cost areas
 	 * Investigates different contexts that can be embedded into a layered costmap, e.g. social layers
 	 */
-	base_local_planner::ObstacleCostFunction obstacle_costs_;
+	// base_local_planner::ObstacleCostFunction obstacle_costs_;
+	ObstacleSeparationCostFunction obstacle_costs_;
 	/// Cost function that discards oscillating motions (assigns cost -1)
 	base_local_planner::OscillationCostFunction oscillation_costs_;
 	/// Cost function that prefers trajectories on global path

@@ -386,7 +386,7 @@ bool HumapPlanner::computeCellCost(int cx, int cy, std::map<std::string, float>&
 	// initial checks if cell is traversible
 	float path_cost = path_costs_.getCellCosts(cx, cy);
 	float goal_cost = goal_costs_.getCellCosts(cx, cy);
-	float occ_cost = planner_util_->getCostmap()->getCost(cx, cy);
+	float occ_cost = obstacle_costs_.getFootprintCost(cx, cy);
 	float align_cost = alignment_costs_.getCellCosts(cx, cy);
 	float goal_front_cost = goal_front_costs_.getCellCosts(cx, cy);
 
@@ -396,7 +396,8 @@ bool HumapPlanner::computeCellCost(int cx, int cy, std::map<std::string, float>&
 		|| path_cost == path_costs_.unreachableCellCosts()
 		|| goal_cost == goal_costs_.obstacleCosts()
 		|| goal_cost == goal_costs_.unreachableCellCosts()
-		|| occ_cost >= costmap_2d::INSCRIBED_INFLATED_OBSTACLE
+		|| occ_cost >= costmap_2d::LETHAL_OBSTACLE
+		|| occ_cost < costmap_2d::FREE_SPACE
 		|| align_cost == alignment_costs_.obstacleCosts()
 		|| align_cost == alignment_costs_.unreachableCellCosts()
 		|| goal_front_cost == goal_front_costs_.obstacleCosts()
@@ -740,7 +741,8 @@ void HumapPlanner::updateCostParameters() {
 	obstacle_costs_.setParams(
 		cfg_->getLimits()->max_vel_trans,
 		cfg_->getCost()->max_scaling_factor,
-		cfg_->getCost()->scaling_speed
+		cfg_->getCost()->scaling_speed,
+		cfg_->getCost()->occdist_separation
 	);
 	obstacle_costs_.setSumScores(cfg_->getCost()->occdist_sum_scores);
 	goal_front_costs_.setXShift(cfg_->getCost()->forward_point_distance);
