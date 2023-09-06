@@ -204,6 +204,8 @@ namespace humap_local_planner {
 		bool occdist_sum_scores = false;
 		/// The minimum separation that should be kept from obstacles
 		double occdist_separation = 0.05;
+		/// The type of kernel used for applying the separation from environment objects
+		unsigned short int occdist_separation_kernel = 0;
 		/// The weight for the alignment with the global plan
 		double alignment_scale = 0.6;
 		/// The weight for the achievement of the additional goal point placed in front of the mobile base
