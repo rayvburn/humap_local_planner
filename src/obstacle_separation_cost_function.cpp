@@ -64,12 +64,14 @@ void ObstacleSeparationCostFunction::setParams(
 	double max_trans_vel,
 	double max_scaling_factor,
 	double scaling_speed,
-	double min_separation_dist
+	double min_separation_dist,
+	unsigned short int separation_kernel
 ) {
 	max_trans_vel_ = max_trans_vel;
 	max_scaling_factor_ = max_scaling_factor;
 	scaling_speed_ = scaling_speed;
 	min_separation_dist_ = min_separation_dist;
+	separation_kernel_ = static_cast<SeparationKernel>(separation_kernel);
 }
 
 void ObstacleSeparationCostFunction::setFootprint(std::vector<geometry_msgs::Point> footprint_spec) {
@@ -94,7 +96,7 @@ double ObstacleSeparationCostFunction::scoreTrajectory(base_local_planner::Traje
 		traj.getPoint(i, px, py, pth);
 		double f_cost = footprintCost(
 			px, py, pth,
-			scale, min_separation_dist_, footprint_spec_,
+			scale, min_separation_dist_, separation_kernel_, footprint_spec_,
 			costmap_, world_model_
 		);
 
@@ -137,7 +139,7 @@ double ObstacleSeparationCostFunction::getFootprintCost(unsigned int px, unsigne
 
 	double f_cost = footprintCost(
 		x, y, 0.0,
-		1.0, min_separation_dist_, footprint_spec_,
+		1.0, min_separation_dist_, separation_kernel_, footprint_spec_,
 		costmap_, world_model_
 	);
 	return f_cost;
@@ -149,6 +151,7 @@ double ObstacleSeparationCostFunction::footprintCost(
 	const double& th,
 	double scale,
 	double separation_dist,
+	SeparationKernel separation_kernel,
 	std::vector<geometry_msgs::Point> footprint_spec,
 	costmap_2d::Costmap2D* costmap,
 	base_local_planner::WorldModel* world_model
@@ -168,19 +171,34 @@ double ObstacleSeparationCostFunction::footprintCost(
 			return world_model->footprintCost(xk, yk, th, footprint_spec);
 		};
 
-		// check 4 surrounding points
-		double f_sep_cost_left = footprintCostKernel(separation_dist, +M_PI_2);
-		double f_sep_cost_behind = footprintCostKernel(separation_dist, +M_PI);
-		double f_sep_cost_right = footprintCostKernel(separation_dist, -M_PI_2);
-		double f_sep_cost_front = footprintCostKernel(separation_dist, 0.0);
+		std::vector<double> costs;
+		// cost of the footprint at the center
+		costs.push_back(footprint_cost);
 
-		std::vector<double> costs = {
-			footprint_cost,
-			f_sep_cost_left,
-			f_sep_cost_behind,
-			f_sep_cost_right,
-			f_sep_cost_front
-		};
+		switch (separation_kernel) {
+			case (SeparationKernel::CROSS):
+				// check 4 surrounding points
+				costs.push_back(footprintCostKernel(separation_dist, 0.0));
+				costs.push_back(footprintCostKernel(separation_dist, +M_PI_2));
+				costs.push_back(footprintCostKernel(separation_dist, +M_PI));
+				costs.push_back(footprintCostKernel(separation_dist, -M_PI_2));
+				break;
+			case (SeparationKernel::RECTANGLE):
+				// check 8 surrounding points
+				costs.push_back(footprintCostKernel(separation_dist, 0.0));
+				costs.push_back(footprintCostKernel(separation_dist, +M_PI_4));
+				costs.push_back(footprintCostKernel(separation_dist, +M_PI_2));
+				costs.push_back(footprintCostKernel(separation_dist, +3.0 * M_PI_4));
+				costs.push_back(footprintCostKernel(separation_dist, +M_PI));
+				costs.push_back(footprintCostKernel(separation_dist, -3.0 * M_PI_4));
+				costs.push_back(footprintCostKernel(separation_dist, -M_PI_2));
+				costs.push_back(footprintCostKernel(separation_dist, -M_PI_4));
+				break;
+			default:
+				// nothing
+				break;
+		}
+
 		double max_cost = *std::max_element(costs.cbegin(), costs.cend());
 		double min_cost = *std::min_element(costs.cbegin(), costs.cend());
 		// choosing min negative or max positive

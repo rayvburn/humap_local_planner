@@ -52,6 +52,12 @@ namespace hubero_local_planner {
  */
 class ObstacleSeparationCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
+	enum SeparationKernel: unsigned short int {
+		CROSS = 0,
+		RECTANGLE,
+		UNKNOWN
+	};
+
 	ObstacleSeparationCostFunction(costmap_2d::Costmap2D* costmap);
 
 	~ObstacleSeparationCostFunction();
@@ -68,7 +74,8 @@ public:
 		double max_trans_vel,
 		double max_scaling_factor,
 		double scaling_speed,
-		double min_separation_dist
+		double min_separation_dist,
+		unsigned short int separation_kernel
 	);
 
 	void setFootprint(std::vector<geometry_msgs::Point> footprint_spec);
@@ -90,6 +97,7 @@ public:
 		const double& th,
 		double scale,
 		double separation_dist,
+		SeparationKernel separation_kernel,
 		std::vector<geometry_msgs::Point> footprint_spec,
 		costmap_2d::Costmap2D* costmap,
 		base_local_planner::WorldModel* world_model
@@ -105,6 +113,7 @@ private:
 	double max_scaling_factor_, scaling_speed_;
 	// required extra keepout distance (beyond the footprint)
 	double min_separation_dist_;
+	SeparationKernel separation_kernel_;
 };
 
 } // namespace hubero_local_planner
