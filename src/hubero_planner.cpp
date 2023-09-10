@@ -1264,10 +1264,11 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			cfg_->getDiagnostics()->log_trajectory_cost_details,
 			"HuberoPlanner",
 			"%sExplored trajectory %3d / %3lu cost details: "
-			"obstacle %2.2f, oscillation %2.2f, path %2.2f, goal %2.2f, goal_front %2.2f, alignment %2.2f, "
-			"backward %2.2f, TTC %2.2f, HSM %2.2f, vel_smoothness %2.2f, "
-			"head_dir %2.2f, PSI %2.2f, FSI %2.2f, PSPD %2.2f%s",
-			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
+			"obstacle %5.2f, oscillation %5.2f, path %8.2f, goal %8.2f, goal_front %8.2f, alignment %8.2f, "
+			"backward %5.2f, TTC %5.2f, HSM %5.2f, vel_smoothness %5.2f, "
+			"head_dir %5.2f, PSI %5.2f, FSI %5.2f, PSPD %5.2f%s",
+			// mark the best trajectory green and all non-feasible red
+			(result_traj_.cost_ == traj.cost_) ? "\033[32m" : (traj.cost_ < 0.0) ? "\x1B[31m" : "",
 			traj_num,
 			traj_explored_.size(),
 			obstacle_costs_.getScale() * obstacle_costs_.scoreTrajectory(traj_copy),
@@ -1284,7 +1285,7 @@ void HuberoPlanner::logTrajectoriesDetails() {
 			personal_space_costs_.getScale() * personal_space_costs_.scoreTrajectory(traj_copy),
 			fformation_space_costs_.getScale() * fformation_space_costs_.scoreTrajectory(traj_copy),
 			passing_speed_costs_.getScale() * passing_speed_costs_.scoreTrajectory(traj_copy),
-			result_traj_.cost_ == traj.cost_ ? "\033[0m" : "" // reset the output colorized green
+			"\033[0m" // reset the (possibly) colorized output
 		);
 
 		// skip if points of explored trajectories are not needed to be printed
