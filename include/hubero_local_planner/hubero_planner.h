@@ -345,6 +345,47 @@ public:
 		double min_containment_rate
 	);
 
+	/// Among the @ref objects, selects @ref max_object_num with the smallest @ref scalar_objective_fun value
+	/// Objects may be people or obstacles, whereas metric may be, e.g., Euclidean distance.
+	/// The function argument is to provide a lambda that computes the metric.
+	/// Templates must be implemented in headers
+	template<typename T>
+	static std::vector<T> selectRelevant(
+		const std::vector<T>& objects,
+		std::function<double(T)> scalar_objective_fun,
+		size_t max_object_num
+	) {
+		if (objects.size() <= max_object_num) {
+			// no need to select since there are too few objects
+			return objects;
+		}
+
+		// pair with scalar metric and object
+		std::vector<std::pair<double, T>> objects_sort;
+		// save metrics for each object
+		for (size_t i = 0; i < objects.size(); i++) {
+			double metric = scalar_objective_fun(objects.at(i));
+			objects_sort.push_back({metric, objects.at(i)});
+		}
+		std::sort(
+			objects_sort.begin(),
+			objects_sort.end(),
+			[](const auto& left, const auto& right) {
+				return left.first < right.first;
+			}
+		);
+		// create objects set with the N-smallest-metrics
+		std::vector<T> objects_selected;
+		for (const auto& obj_wmetric: objects_sort) {
+			objects_selected.push_back(obj_wmetric.second);
+			// check if enough collected
+			if (objects_selected.size() >= max_object_num) {
+				break;
+			}
+		}
+		return objects_selected;
+	}
+
 	/**
 	 * Computes maximum distance that can be traversed during the @ref sim_period, given the kinodynamic limits
 	 * and initial velocity @ref vel_init
@@ -508,10 +549,16 @@ protected:
 	Pose goal_initiation_;
 	/// @brief The most recent environment (obstacles) model
 	ObstContainerConstPtr obstacles_;
+	/// @brief The most recent observed people that are taken into consideration when creating env. model
+	ObstContainer obstacles_env_model_;
 	/// @brief The most recent information on people in the environment
 	std::shared_ptr<const People> people_;
+	/// @brief The most recent observed people that are taken into consideration when creating env. model
+	People people_env_model_;
 	/// @brief The most recent information on groups (F-formations) in the environment
 	std::shared_ptr<const Groups> groups_;
+	/// @brief The most recent observed groups that are taken into consideration when creating env. model
+	Groups groups_env_model_;
 	/// @brief Robot footprint model
 	RobotFootprintModelPtr robot_model_;
 	/// @brief World model
