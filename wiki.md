@@ -84,3 +84,28 @@ Once you are getting `Off Map` warning messages try to reduce `forward_point_dis
 ```console
 [ WARN] [1648585717.627180821, 106.518000000]: Off Map 2.008240, 0.714039;
 ```
+
+## Discontinued branches
+
+- [`planning/feature-slow-translation-costfun`](https://github.com/rayvburn/hubero_local_planner/tree/planning/feature-slow-translation-costfun) - implements a new cost function that penalizes robot for slow translation movements (this can also be achieved by a more in-depth tuning of other cost functions);
+- [`planning/feature-visualization-map-grid-cost-functions`](https://github.com/rayvburn/hubero_local_planner/tree/planning/feature-visualization-map-grid-cost-functions) - planner class exposes `getPathGoalFrontCosts()` and `getPathAlignmentCosts()` methods that use `base_local_planner::MapGridCostFunction::getTargetPoses` that is not available in the upstream repository. To use that feature, one may implement the following:
+
+  ```diff
+  diff --git a/base_local_planner/include/base_local_planner/map_grid_cost_function.h b/base_local_planner/include/base_local_planner/map_grid_cost_function.h
+  index 421bd005..9196a06f 100644
+  --- a/base_local_planner/include/base_local_planner/map_grid_cost_function.h
+  +++ b/base_local_planner/include/base_local_planner/map_grid_cost_function.h
+  @@ -118,6 +118,10 @@ public:
+     // used for easier debugging
+     double getCellCosts(unsigned int cx, unsigned int cy);
+
+  +  std::vector<geometry_msgs::PoseStamped> getTargetPoses() const {
+  +    return target_poses_;
+  +  }
+  +
+   private:
+     std::vector<geometry_msgs::PoseStamped> target_poses_;
+     costmap_2d::Costmap2D* costmap_;
+  ```
+
+  See [`planner`: extended ROS visualization (pruned global plan, paths regarded in cost functions)](https://github.com/rayvburn/hubero_local_planner/commit/05d26ab131e5de7898658f7b8f4a205d4e9194a0) and [`planner`: extended ROS visualization (pruned global plan)](https://github.com/rayvburn/hubero_local_planner/commit/3a7520c8ee1422c41ecf66a35d665a5b42f422f4) diff for details.
