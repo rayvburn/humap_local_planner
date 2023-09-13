@@ -89,6 +89,8 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	general_->publish_traj_pcl = cfg.publish_traj_pcl;
 	general_->publish_cost_grid_pcl = cfg.publish_cost_grid_pcl;
 	general_->obstacles_closest_polygons_num = cfg.obstacles_closest_polygons_num;
+	general_->people_closest_num = cfg.people_closest_num;
+	general_->groups_closest_num = cfg.groups_closest_num;
 
 	sfm_->fov = cfg.fov;
 	sfm_->fov_factor_method = cfg.sfm_fov_factor_method;

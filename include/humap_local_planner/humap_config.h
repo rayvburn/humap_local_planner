@@ -50,6 +50,10 @@ namespace humap_local_planner {
 		bool publish_cost_grid_pcl = true;
 		/// Number of closest polygons taken into consideration as obstacles; -1 represents all polygons
 		int obstacles_closest_polygons_num = -1;
+		/// Number of closest people taken into consideration during trajectory planning; -1 represents all people
+		int people_closest_num = -1;
+		/// Number of closest groups taken into consideration during trajectory planning; -1 represents all groups
+		int groups_closest_num = -1;
 	};
 
 	/// \brief Declaration of an SfmParams typedef'ed struct;
