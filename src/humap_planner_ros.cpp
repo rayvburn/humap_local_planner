@@ -454,43 +454,6 @@ bool HumapPlannerROS::updateObstacleContainerWithCostmapConverter() {
 			obstacles_->back()->setCentroidVelocity(obstacles->obstacles[i].velocities, obstacles->obstacles[i].orientation);
 		}
 	}
-
-	// compute distance to each obstacle and select only N-closest
-	if (obstacles_->size() <= cfg_->getGeneral()->obstacles_closest_polygons_num) {
-		// no need to select closest since there are too few of them
-		return true;
-	}
-
-	// obstacles are in the same frame since costmap_converter_ shares costmap with the planner -> transform not needed
-	geometry_msgs::PoseStamped robot_pose;
-	costmap_ros_->getRobotPose(robot_pose);
-	// circular robot -> let's simplify to the point representation
-	Eigen::Vector2d robot_pos(robot_pose.pose.position.x, robot_pose.pose.position.y);
-
-	// pair with distance and obstacle pointer
-	std::vector<std::pair<double, ObstaclePtr>> obstacles_sort;
-	// save distances from robot to each obstacle
-	for (size_t i = 0; i < obstacles_->size(); i++) {
-		double distance = obstacles_->at(i)->getMinimumDistance(robot_pos);
-		obstacles_sort.push_back({distance, obstacles_->at(i)});
-	}
-	std::sort(
-		obstacles_sort.begin(),
-		obstacles_sort.end(),
-		[](const auto& left, const auto& right) {
-			return left.first < right.first;
-		}
-	);
-	// overwrite obstacles set with the N-closest
-	obstacles_->clear();
-	for (const auto& obstacle_wdist: obstacles_sort) {
-		obstacles_->push_back(obstacle_wdist.second);
-		// check if enough collected
-		if (obstacles_->size() >= cfg_->getGeneral()->obstacles_closest_polygons_num) {
-			break;
-		}
-	}
-	return true;
 }
 
 // protected

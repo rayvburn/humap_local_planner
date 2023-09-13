@@ -250,10 +250,10 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 	ttc_costs_.reset();
 
 	// update cost function with the people detections dataset
-	heading_disturbance_costs_.setPeopleDetections(*people_);
-	personal_space_costs_.setPeopleDetections(*people_);
-	fformation_space_costs_.setFformationsDetections(*groups_);
-	passing_speed_costs_.setPeopleDetections(*people_);
+	heading_disturbance_costs_.setPeopleDetections(people_env_model_);
+	personal_space_costs_.setPeopleDetections(people_env_model_);
+	fformation_space_costs_.setFformationsDetections(groups_env_model_);
+	passing_speed_costs_.setPeopleDetections(people_env_model_);
 }
 
 base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
@@ -769,9 +769,41 @@ void HumapPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mod
 		HumapPlanner::PERSON_POLYGON_CONTAINMENT_RATE
 	);
 
+	// selects N closest obstacles from @ref obstacles
+	obstacles_env_model_ = selectRelevant<ObstaclePtr>(
+		obstacles,
+		[=](ObstaclePtr obj) -> double {
+			// obstacles are in the same frame as the robot -> transform not needed
+			// FIXME robot is simplified to the point representation
+			Eigen::Vector2d robot_pos(pose_.getX(), pose_.getY());
+			return obj->getMinimumDistance(robot_pos);
+		},
+		cfg_->getGeneral()->obstacles_closest_polygons_num
+	);
+	// selects N closest humans from @ref people_
+	people_env_model_ = selectRelevant<Person>(
+		*people_,
+		[=](Person obj) -> double {
+			// FIXME objects are simplified to the points
+			Vector v(obj.getPositionX() - pose_.getX(), obj.getPositionY() - pose_.getY());
+			return v.calculateLength();
+		},
+		cfg_->getGeneral()->people_closest_num
+	);
+	// selects N closest groups from @ref groups_
+	groups_env_model_ = selectRelevant<Group>(
+		*groups_,
+		[=](Group obj) -> double {
+			// FIXME objects are simplified to the points
+			Vector v(obj.getPositionX() - pose_.getX(), obj.getPositionY() - pose_.getY());
+			return v.calculateLength();
+		},
+		cfg_->getGeneral()->groups_closest_num
+	);
+
 	// fill sparse world model with obstacles
 	teb_local_planner::PoseSE2 pose = pose_ref.getAsTebPose();
-	for (const ObstaclePtr obstacle: obstacles) {
+	for (const ObstaclePtr obstacle: obstacles_env_model_) {
 		BaseRobotFootprintModel::ClosestPoints pts = robot_model_->calculateClosestPoints(pose, obstacle.get());
 
 		Pose robot_closest_to_obstacle_pose(pts.robot);
@@ -811,7 +843,7 @@ void HumapPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mod
 	}
 
 	// represent human with an obstacle
-	for (const auto& person: *people_) {
+	for (const auto& person: people_env_model_) {
 		ObstaclePtr person_model_ptr = std::make_shared<CircularObstacle>(
 			person.getPositionX(),
 			person.getPositionY(),
@@ -836,9 +868,15 @@ void HumapPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mod
 
 	ROS_DEBUG_NAMED(
 		"HumapPlanner",
-		"Created environment model with %2lu objects extracted from world and %2lu people (%2lu static and %2lu dynamic obstacles)",
-		obstacles.size(),
+		"Created environment model from %2lu obstacles (out of %2lu total extracted from world), "
+		"%2lu people (out of %2lu total), and %2lu people groups (out of %2lu total). "
+		"Environment model consists of %2lu static and %2lu dynamic objects.",
+		obstacles_env_model_.size(),
+		obstacles_->size(),
+		people_env_model_.size(),
 		people_->size(),
+		groups_env_model_.size(),
+		groups_->size(),
 		world_model.getStaticObjectsData().size(),
 		world_model.getDynamicObjectsData().size()
 	);
