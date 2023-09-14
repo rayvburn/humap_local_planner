@@ -51,6 +51,74 @@ public:
 			fis_as_amplifier(1.0) {}
 	};
 
+	/// Struct to organize the results of the motion model, here: social force model
+	struct MotionModelData {
+		geometry::Vector force_internal;
+		geometry::Vector force_interaction_static;
+		geometry::Vector force_interaction_dynamic;
+		geometry::Vector force_social;
+		geometry::Vector force_total;
+		std::vector<Distance> distances_static;
+		std::vector<Distance> distances_dynamic;
+		std::string behaviour_active;
+
+		MotionModelData() = default;
+		MotionModelData(
+			const geometry::Vector& force_internal,
+			const geometry::Vector& force_interaction_static,
+			const geometry::Vector& force_interaction_dynamic,
+			const geometry::Vector& force_social,
+			const geometry::Vector& force_total,
+			const std::vector<Distance>& distances_static,
+			const std::vector<Distance>& distances_dynamic,
+			const std::string& behaviour_active
+		):
+			force_internal(force_internal),
+			force_interaction_static(force_interaction_static),
+			force_interaction_dynamic(force_interaction_dynamic),
+			force_social(force_social),
+			force_total(force_total),
+			distances_static(distances_static),
+			distances_dynamic(distances_dynamic),
+			behaviour_active(behaviour_active)
+		{}
+	};
+
+	/// Stores a trajectory along with corresponding motion model data
+	struct TrajectoryWithMotionModelData : MotionModelData {
+		// trajectory
+		base_local_planner::Trajectory traj;
+		// most motion data inherited, extended with:
+		std::vector<geometry::Pose> closest_points_static;
+		std::vector<geometry::Pose> closest_points_dynamic;
+
+		TrajectoryWithMotionModelData(
+			const base_local_planner::Trajectory& trajectory,
+			const MotionModelData& motion_data
+		):
+			MotionModelData(
+				motion_data.force_internal,
+				motion_data.force_interaction_static,
+				motion_data.force_interaction_dynamic,
+				motion_data.force_social,
+				motion_data.force_total,
+				motion_data.distances_static,
+				motion_data.distances_dynamic,
+				motion_data.behaviour_active
+			),
+			traj(trajectory)
+		{
+			for (const auto& dist_static: distances_static) {
+				closest_points_static.push_back(dist_static.object);
+				closest_points_static.push_back(dist_static.robot);
+			}
+			for (const auto& dist_dynamic: distances_dynamic) {
+				closest_points_dynamic.push_back(dist_dynamic.object);
+				closest_points_dynamic.push_back(dist_dynamic.robot);
+			}
+		}
+	};
+
 	SocialTrajectoryGenerator();
 
 	/**
@@ -180,52 +248,10 @@ public:
 	bool generateTrajectoryWithoutPlanning(base_local_planner::Trajectory& traj);
 
 	/**
-	 * @brief Retrieves internal force vector computed during the last @ref computeForces with motion data update req.
+	 * @brief Returns a vector of correctly generated trajectories with corresponding motion model data
 	 */
-	inline geometry::Vector getForceInternal() const {
-		return diag_force_internal_;
-	}
-
-	/**
-	 * @brief Retrieves interaction force vector computed during the last @ref computeForces with motion data update req.
-	 */
-	inline geometry::Vector getForceInteractionStatic() const {
-		return diag_force_interaction_static_;
-	}
-
-	/**
-	 * @brief Retrieves interaction force vector computed during the last @ref computeForces with motion data update req.
-	 */
-	inline geometry::Vector getForceInteractionDynamic() const {
-		return diag_force_interaction_dynamic_;
-	}
-
-	/**
-	 * @brief Retrieves social force vector computed during the last @ref computeForces with motion data update
-	 */
-	inline geometry::Vector getForceSocial() const {
-		return diag_force_social_;
-	}
-
-	/**
-	 * @brief Retrieves robot-obstacle poses computed during the last @ref computeForces with motion data update req.
-	 */
-	inline std::vector<geometry::Pose> getRobotStaticObstacleDistances() const {
-		return diag_closest_points_static_;
-	}
-
-	/**
-	 * @brief Retrieves robot-obstacle poses computed during the last @ref computeForces with motion data update req.
-	 */
-	inline std::vector<geometry::Pose> getRobotDynamicObstacleDistances() const {
-		return diag_closest_points_dynamic_;
-	}
-
-	/**
-	 * @brief Retrieves fuzzy behaviour computed during the last @ref computeForces with motion data update req.
-	 */
-	inline std::string getActiveFuzzyBehaviour() const {
-		return diag_behaviour_active_;
+	inline const std::vector<TrajectoryWithMotionModelData>& getGeneratedTrajectories() const {
+		return diag_trajectories_;
 	}
 
 	static std::vector<double> computeAmplifierSamples(
@@ -320,14 +346,11 @@ protected:
 	 * @defgroup diagnostics Diagnostics data
 	 * @{
 	 */
-	geometry::Vector diag_force_internal_;
-	geometry::Vector diag_force_interaction_static_;
-	geometry::Vector diag_force_interaction_dynamic_;
-	geometry::Vector diag_force_social_;
-	std::vector<geometry::Pose> diag_closest_points_static_;
-	std::vector<geometry::Pose> diag_closest_points_dynamic_;
-	std::string diag_behaviour_active_;
 	ros::Time diag_gen_start_time_;
+	/// Stores trajectories generated since the last `initialize` call
+	std::vector<TrajectoryWithMotionModelData> diag_trajectories_;
+	/// Stores the newest motion model data (usually updated at the first iteration when generating a trajectory)
+	MotionModelData diag_motion_model_data_;
 	/// @}
 
 }; // class SocialTrajectoryGenerator

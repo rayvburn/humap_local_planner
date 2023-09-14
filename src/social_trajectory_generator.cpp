@@ -89,6 +89,7 @@ void SocialTrajectoryGenerator::initialise(
 	// setup search
 	next_sample_index_ = 0;
 	sample_amplifier_params_v_.clear();
+	diag_trajectories_.clear();
 
 	// prepare all amplifier values to be evaluated later
 	auto sfm_speed_amps = computeAmplifierSamples(
@@ -248,6 +249,8 @@ void SocialTrajectoryGenerator::initialise(
 	discretize_by_time_ = discretize_by_time;
 
 	robot_mass_ = robot_mass;
+
+	diag_trajectories_.clear();
 }
 
 bool SocialTrajectoryGenerator::nextTrajectory(base_local_planner::Trajectory& traj) {
@@ -453,6 +456,8 @@ bool SocialTrajectoryGenerator::generateTrajectory(
 		);
 	}  // end for simulation steps
 
+	// collect to visualize the best trajectory
+	diag_trajectories_.push_back(TrajectoryWithMotionModelData(traj, diag_motion_model_data_));
 	return true;
 }
 
@@ -540,7 +545,12 @@ bool SocialTrajectoryGenerator::generateTrajectoryWithoutPlanning(base_local_pla
 
 	double sampled_speed_linear = std::hypot(twist_cmd.getX(), twist_cmd.getY());
 	double sampled_speed_angular = twist_cmd.getZ();
-	return areVelocityLimitsFulfilled(sampled_speed_linear, sampled_speed_angular, 1e-4);
+	bool vel_limits_ok = areVelocityLimitsFulfilled(sampled_speed_linear, sampled_speed_angular, 1e-4);
+
+	// collect for diagnostics
+	diag_trajectories_.push_back(TrajectoryWithMotionModelData(traj, diag_motion_model_data_));
+
+	return vel_limits_ok;
 }
 
 bool SocialTrajectoryGenerator::areVelocityLimitsFulfilled(
@@ -708,23 +718,14 @@ void SocialTrajectoryGenerator::computeForces(
 	social_conductor_.setEquationParameters(fis_param_as);
 
 	if (update_motion_data) {
-		diag_force_internal_ = sfm_.getForceInternal();
-		diag_force_interaction_dynamic_ = sfm_.getForceInteractionDynamic();
-		diag_force_interaction_static_ = sfm_.getForceInteractionStatic();
-		diag_force_social_ = social_conductor_.getSocialVector();
-		diag_behaviour_active_ = social_conductor_.getBehaviourActive();
-
-		diag_closest_points_static_.clear();
-		for (const auto& dist_static: meaningful_interaction_static) {
-			diag_closest_points_static_.push_back(dist_static.object);
-			diag_closest_points_static_.push_back(dist_static.robot);
-		}
-
-		diag_closest_points_dynamic_.clear();
-		for (const auto& dist_dynamic: meaningful_interaction_dynamic) {
-			diag_closest_points_dynamic_.push_back(dist_dynamic.object);
-			diag_closest_points_dynamic_.push_back(dist_dynamic.robot);
-		}
+		diag_motion_model_data_.force_internal = sfm_.getForceInternal();
+		diag_motion_model_data_.force_interaction_dynamic = sfm_.getForceInteractionDynamic();
+		diag_motion_model_data_.force_interaction_static = sfm_.getForceInteractionStatic();
+		diag_motion_model_data_.force_social = social_conductor_.getSocialVector();
+		diag_motion_model_data_.behaviour_active = social_conductor_.getBehaviourActive();
+		// distances_static and distances_dynamic
+		diag_motion_model_data_.distances_static = meaningful_interaction_static;
+		diag_motion_model_data_.distances_dynamic = meaningful_interaction_dynamic;
 	}
 
 	ROS_INFO_COND_NAMED(
