@@ -130,8 +130,9 @@ namespace humap_local_planner {
 	 * @brief General parameters related to trajectory generation
 	 */
 	struct TrajectoryGeneration {
+		/// True enables the generator that produces model-based trajectories.
+		bool use_social_trajectory_generator = true;
 		/// True enables generator that produces evenly spaced elements from a list of feasible velocities.
-		/// If set to false only social trajectory generator is used
 		bool use_equisampled_velocities_generator = true;
 		/// If set to true, the generator will recompute feasible velocities in each step and will restrict the
 		/// velocities to those that do not overshoot the goal in sim_time. Otherwise, when false, the generator will
