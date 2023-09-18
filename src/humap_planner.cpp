@@ -1040,15 +1040,27 @@ Pose HumapPlanner::getPoseFromPlan(
 }
 
 bool HumapPlanner::planMovingRobot() {
-	// initialize generator with updated parameters
-	generator_social_.initialise(
-		world_model_,
-		vel_,
-		*cfg_->getTrajectorySampling(),
-		cfg_->getLimits(),
-		cfg_->getSfm()->mass,
-		true // discretize by time
-	);
+	if (
+		!cfg_->getTrajectoryGeneration()->use_social_trajectory_generator
+		&& !cfg_->getTrajectoryGeneration()->use_equisampled_velocities_generator
+	) {
+		ROS_ERROR_NAMED(
+			"HumapPlanner",
+			"Both trajectory generators are disabled - no valid velocity command will be found"
+		);
+	}
+
+	if (cfg_->getTrajectoryGeneration()->use_social_trajectory_generator) {
+		// initialize generator with updated parameters
+		generator_social_.initialise(
+			world_model_,
+			vel_,
+			*cfg_->getTrajectorySampling(),
+			cfg_->getLimits(),
+			cfg_->getSfm()->mass,
+			true // discretize by time
+		);
+	}
 
 	if (cfg_->getTrajectoryGeneration()->use_equisampled_velocities_generator) {
 		Eigen::Vector3f vsamples;
