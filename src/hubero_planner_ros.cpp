@@ -343,8 +343,6 @@ void HuberoPlannerROS::reconfigureCB(HuberoPlannerConfig &config, uint32_t level
 
 // protected
 void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
-	std::lock_guard<std::mutex> l(cb_mutex_);
-
 	if (people_ == nullptr || groups_ == nullptr) {
 		return;
 	}
@@ -379,14 +377,15 @@ void HuberoPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
 		}
 	}
 
-	// clear vector, we receive a new aggregated info
-	people_->clear();
-	groups_->clear();
-
 	// extract all data embedded in people_msgs/People
 	std::vector<people_msgs_utils::Person> people_orig;
 	std::vector<people_msgs_utils::Group> groups_orig;
 	std::tie(people_orig, groups_orig) = people_msgs_utils::createFromPeople(msg->people);
+
+	std::lock_guard<std::mutex> l(cb_mutex_);
+	// clear vector, we receive a new aggregated info
+	people_->clear();
+	groups_->clear();
 
 	// trajectory prediction helpers
 	double dt = cfg_->getGeneral()->sim_granularity;
