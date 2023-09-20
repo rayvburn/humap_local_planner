@@ -310,6 +310,16 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	std_msgs::UInt8 planner_state;
 	planner_state.data = static_cast<uint8_t>(planner_->getState());
 	planner_state_pub_.publish(planner_state);
+
+	// if we cannot move... tell someone
+	if (trajectory.cost_ < 0) {
+		ROS_DEBUG_NAMED(
+			"HumapPlannerROS",
+			"The local planner failed to find a valid plan, cost functions discarded all candidates. "
+			"This can mean there is an obstacle too close to the robot."
+		);
+		return false;
+	}
 	return true;
 }
 
