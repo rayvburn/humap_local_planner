@@ -866,14 +866,11 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 		Pose robot_closest_to_obstacle_pose(pts.robot);
 		Pose obstacle_closest_to_robot_pose(pts.obstacle);
 
-		bool force_dynamic_object_interpretation =
-				cfg_->getSfm()->static_obj_interaction == sfm::StaticObjectInteraction::INTERACTION_REPULSIVE_EVASIVE;
-
 		world_model.addObstacle(
 			robot_closest_to_obstacle_pose,
 			obstacle_closest_to_robot_pose,
 			person.getVelocity(),
-			force_dynamic_object_interpretation
+			cfg_->getSfm()->human_force_formulation_dynamic
 		);
 	}
 
