@@ -1352,6 +1352,8 @@ bool HumapPlanner::collectTrajectoryMotionData(const base_local_planner::Traject
 }
 
 void HumapPlanner::logTrajectoriesDetails() {
+	bool invalid_traj = false;
+
 	if (result_traj_.cost_ < 0) {
 		ROS_ERROR_COND_NAMED(
 			cfg_->getDiagnostics()->log_explored_trajectories,
@@ -1360,6 +1362,8 @@ void HumapPlanner::logTrajectoriesDetails() {
 			traj_explored_.size(),
 			result_traj_.cost_
 		);
+		// set the flag to log the cause of the invalidity (cost details)
+		invalid_traj = true;
 	} else {
 		ROS_INFO_COND_NAMED(
 			cfg_->getDiagnostics()->log_explored_trajectories,
@@ -1378,7 +1382,7 @@ void HumapPlanner::logTrajectoriesDetails() {
 	// those are conditions of ROS_INFO_COND below - checked to possibly return earlier
 	if (
 		!cfg_->getDiagnostics()->log_explored_trajectories
-		&& !cfg_->getDiagnostics()->log_trajectory_cost_details
+		&& !(invalid_traj || cfg_->getDiagnostics()->log_trajectory_cost_details)
 		&& !cfg_->getDiagnostics()->log_pts_of_explored_trajectories
 	) {
 		return;
@@ -1411,7 +1415,7 @@ void HumapPlanner::logTrajectoriesDetails() {
 
 		// evaluate components contribution in total cost of the trajectory
 		ROS_INFO_COND_NAMED(
-			cfg_->getDiagnostics()->log_trajectory_cost_details,
+			invalid_traj || cfg_->getDiagnostics()->log_trajectory_cost_details,
 			"HumapPlanner",
 			"%sExplored trajectory %3d / %3lu cost details: "
 			"obstacle %5.2f, oscillation %5.2f, path %8.2f, goal %8.2f, goal_front %8.2f, alignment %8.2f, "
