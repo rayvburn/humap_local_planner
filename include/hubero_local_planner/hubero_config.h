@@ -74,6 +74,9 @@ namespace hubero_local_planner {
 		/// \brief Determines method of calculating force for static obstacles,
 		/// see \ref sfm::StaticObjectInteraction
 		unsigned short int static_obj_interaction = 0;
+		/// Whether to use a force formulation designated for an interaction with dynamic objects regardless
+		/// of the human's speed. When set to false, the formulation will be chosen according to the speed.
+		bool human_force_formulation_dynamic = false;
 		/// \brief Defines whether interaction forces should be calculated;
 		/// setting to False will force robot to take the shortest possible path.
 		bool disable_interaction_forces	= false;
