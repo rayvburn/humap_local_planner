@@ -151,8 +151,10 @@ bool SocialForceModel::computeSocialForce(
 	if (cfg_->disable_interaction_forces) {
 		// multiply force vector components by parameter values
 		factorInForceCoefficients();
-		// artificially set obstacle distances to be very very big (in meters)
-		applyNonlinearOperations(100.0, 100.0);
+		if (cfg_->filter_forces) {
+			// artificially set obstacle distances to be very very big (in meters)
+			applyNonlinearOperations(100.0, 100.0);
+		}
 		return false;
 	}
 
@@ -191,8 +193,10 @@ bool SocialForceModel::computeSocialForce(
 	// multiply force vector components by parameter values
 	factorInForceCoefficients();
 
-	// extend or truncate force vectors if needed
-	applyNonlinearOperations(world.getDistanceClosestStaticObject(), world.getDistanceClosestDynamicObject());
+	if (cfg_->filter_forces) {
+		// extend or truncate force vectors if needed
+		applyNonlinearOperations(world.getDistanceClosestStaticObject(), world.getDistanceClosestDynamicObject());
+	}
 
 	return true;
 }
