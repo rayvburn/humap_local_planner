@@ -102,6 +102,7 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	sfm_->max_force = cfg.max_force;
 	sfm_->heterogenous_population = cfg.heterogenous_population;
 	sfm_->static_obj_interaction = cfg.static_object_interaction_type;
+	sfm_->human_force_formulation_dynamic = cfg.human_force_formulation_dynamic;
 	sfm_->disable_interaction_forces = cfg.disable_interaction_forces;
 
 	sfm_->speed_desired = cfg.speed_desired;
