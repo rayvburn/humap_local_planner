@@ -1391,6 +1391,9 @@ void HumapPlanner::logTrajectoriesDetails() {
 	// investigate costs and velocities of all explored trajectories
 	int traj_num = 0;
 	for (const auto& traj: traj_explored_) {
+		// increment at the beginning is more intuitive when comparing to the full size
+		++traj_num;
+
 		double traj_x, traj_y, traj_th = 0.0;
 		traj.getEndpoint(traj_x, traj_y, traj_th);
 
@@ -1401,7 +1404,7 @@ void HumapPlanner::logTrajectoriesDetails() {
 			"%sExplored trajectory %3d / %3lu: cost %2.5f, vel {x %2.3f, y %2.3f, th %2.3f}, "
 			"points %u, end {x %2.2f, y %2.2f, th %2.2f}%s",
 			result_traj_.cost_ == traj.cost_ ? "\033[32m" : "", // mark the best trajectory green
-			++traj_num,
+			traj_num,
 			traj_explored_.size(),
 			traj.cost_,
 			traj.xv_, traj.yv_, traj.thetav_,
