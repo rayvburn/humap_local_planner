@@ -292,7 +292,7 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	}
 
 	// publish point cloud with explored trajectories only if the topic is subscribed as parameter set accordingly
-	if (traj_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_traj_pcl) {
+	if (traj_pcl_pub_.getNumSubscribers() > 0) {
 		traj_pcl_pub_.publish(createExploredTrajectoriesPcl());
 	}
 
@@ -302,7 +302,7 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	}
 
 	// publish the visualization of the grid costs
-	if (cost_grid_pcl_pub_.getNumSubscribers() > 0 && cfg_->getGeneral()->publish_cost_grid_pcl) {
+	if (cost_grid_pcl_pub_.getNumSubscribers() > 0) {
 		cost_grid_pcl_pub_.publish(createCostGridPcl());
 	}
 
