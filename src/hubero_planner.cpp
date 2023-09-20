@@ -1375,7 +1375,12 @@ void HuberoPlanner::logTrajectoriesDetails() {
 		);
 	}
 
-	if (!cfg_->getDiagnostics()->log_explored_trajectories && !cfg_->getDiagnostics()->log_pts_of_explored_trajectories) {
+	// those are conditions of ROS_INFO_COND below - checked to possibly return earlier
+	if (
+		!cfg_->getDiagnostics()->log_explored_trajectories
+		&& !cfg_->getDiagnostics()->log_trajectory_cost_details
+		&& !cfg_->getDiagnostics()->log_pts_of_explored_trajectories
+	) {
 		return;
 	}
 
