@@ -360,6 +360,11 @@ public:
 			return std::move(objects);
 		}
 
+		// some type of objects is completely neglected
+		if (max_object_num == 0) {
+			return std::vector<T>();
+		}
+
 		// pair with scalar metric and object
 		std::vector<std::pair<double, T>> objects_sort;
 		// save metrics for each object
