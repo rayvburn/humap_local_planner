@@ -5,12 +5,9 @@
 
 namespace humap_local_planner {
 
-PersonalSpaceIntrusionCostFunction::PersonalSpaceIntrusionCostFunction()
+PersonalSpaceIntrusionCostFunction::PersonalSpaceIntrusionCostFunction(const std::vector<Person>& people):
+	people_(people)
 {}
-
-void PersonalSpaceIntrusionCostFunction::setPeopleDetections(const std::vector<Person>& people) {
-	people_ = people;
-}
 
 bool PersonalSpaceIntrusionCostFunction::prepare() {
 	return true;

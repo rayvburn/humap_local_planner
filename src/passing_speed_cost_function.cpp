@@ -5,12 +5,9 @@
 
 namespace humap_local_planner {
 
-PassingSpeedCostFunction::PassingSpeedCostFunction()
+PassingSpeedCostFunction::PassingSpeedCostFunction(const std::vector<Person>& people):
+	people_(people)
 {}
-
-void PassingSpeedCostFunction::setPeopleDetections(const std::vector<Person>& people) {
-	people_ = people;
-}
 
 bool PassingSpeedCostFunction::prepare() {
 	return true;
