@@ -352,20 +352,20 @@ public:
 	template<typename T>
 	static std::vector<T> selectRelevant(
 		const std::vector<T>& objects,
-		std::function<double(T)> scalar_objective_fun,
+		std::function<double(const T&)> scalar_objective_fun,
 		size_t max_object_num
 	) {
 		if (objects.size() <= max_object_num) {
 			// no need to select since there are too few objects
-			return objects;
+			return std::move(objects);
 		}
 
 		// pair with scalar metric and object
 		std::vector<std::pair<double, T>> objects_sort;
 		// save metrics for each object
-		for (size_t i = 0; i < objects.size(); i++) {
-			double metric = scalar_objective_fun(objects.at(i));
-			objects_sort.push_back({metric, objects.at(i)});
+		for (const auto& obj: objects) {
+			double metric = scalar_objective_fun(obj);
+			objects_sort.push_back({metric, obj});
 		}
 		std::sort(
 			objects_sort.begin(),

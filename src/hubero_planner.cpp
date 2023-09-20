@@ -778,7 +778,12 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 	// selects N closest obstacles from @ref obstacles
 	obstacles_env_model_ = selectRelevant<ObstaclePtr>(
 		obstacles,
-		[=](ObstaclePtr obj) -> double {
+		[=](const ObstaclePtr& obj) -> double {
+			// check the validity of the pointer
+			if (!obj) {
+				// make it negligible
+				return std::numeric_limits<double>::max();
+			}
 			// obstacles are in the same frame as the robot -> transform not needed
 			// FIXME robot is simplified to the point representation
 			Eigen::Vector2d robot_pos(pose_.getX(), pose_.getY());
@@ -789,7 +794,7 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 	// selects N closest humans from @ref people_
 	people_env_model_ = selectRelevant<Person>(
 		*people_,
-		[=](Person obj) -> double {
+		[=](const Person& obj) -> double {
 			// FIXME objects are simplified to the points
 			Vector v(obj.getPositionX() - pose_.getX(), obj.getPositionY() - pose_.getY());
 			return v.calculateLength();
@@ -799,7 +804,7 @@ void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mo
 	// selects N closest groups from @ref groups_
 	groups_env_model_ = selectRelevant<Group>(
 		*groups_,
-		[=](Group obj) -> double {
+		[=](const Group& obj) -> double {
 			// FIXME objects are simplified to the points
 			Vector v(obj.getPositionX() - pose_.getX(), obj.getPositionY() - pose_.getY());
 			return v.calculateLength();

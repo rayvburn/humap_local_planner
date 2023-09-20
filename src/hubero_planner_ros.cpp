@@ -232,14 +232,19 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	geometry_msgs::PoseStamped drive_cmds;
 	base_local_planner::Trajectory trajectory;
-	// use planning or proactive approach
-	if (cfg_->getGeneral()->planning_approach) {
-		// update costs for trajectory scoring
-		planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
-		// sample trajectories and choose the one with the lowest cost
-		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
-	} else {
-		trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
+	{
+		// keep the shared data consistent throughout the execution
+		std::lock_guard<std::mutex> l(cb_mutex_);
+
+		// use planning or proactive approach
+		if (cfg_->getGeneral()->planning_approach) {
+			// update costs for trajectory scoring
+			planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
+			// sample trajectories and choose the one with the lowest cost
+			trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
+		} else {
+			trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
+		}
 	}
 
 	cmd_vel.linear.x = drive_cmds.pose.position.x;
@@ -263,7 +268,11 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active_);
 	vis_.publishClosestPoints(vis_data.closest_points_static_, vis_data.closest_points_dynamic_);
 	vis_.publishPath(robot_pose);
-	vis_.publishGrid(robot_pose, *planner_);
+	{
+		// keep the shared data consistent throughout the execution
+		std::lock_guard<std::mutex> l(cb_mutex_);
+		vis_.publishGrid(robot_pose, *planner_);
+	}
 	vis_.publishRobotFootprint(robot_pose, planner_->getRobotFootprintModel());
 	vis_.publishGoal(robot_goal.getPosition());
 	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());
