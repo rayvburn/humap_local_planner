@@ -73,6 +73,8 @@ namespace humap_local_planner {
 		/// Whether to use a force formulation designated for an interaction with dynamic objects regardless
 		/// of the human's speed. When set to false, the formulation will be chosen according to the speed.
 		bool human_force_formulation_dynamic = false;
+		/// Whether to apply filtering operations to the resultant forces
+		bool filter_forces = true;
 		/// \brief Defines whether interaction forces should be calculated;
 		/// setting to False will force robot to take the shortest possible path.
 		bool disable_interaction_forces	= false;
