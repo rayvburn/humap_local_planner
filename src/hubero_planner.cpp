@@ -16,7 +16,6 @@ HuberoPlanner::HuberoPlanner(
 	planner_util_(planner_util),
 	goal_reached_(false),
 	obstacles_(nullptr),
-	// people_ must be initialized, otherwise heading_disturbance_costs_ cannot see a valid ptr
 	people_(std::make_shared<const People>()),
 	groups_(std::make_shared<const Groups>()),
 	robot_model_(robot_model),
@@ -34,7 +33,11 @@ HuberoPlanner::HuberoPlanner(
 	backward_costs_(0.0),
 	ttc_costs_(world_model_),
 	heading_change_smoothness_costs_(vel_),
-	velocity_smoothness_costs_(vel_)
+	velocity_smoothness_costs_(vel_),
+	heading_disturbance_costs_(people_env_model_),
+	personal_space_costs_(people_env_model_),
+	fformation_space_costs_(groups_env_model_),
+	passing_speed_costs_(people_env_model_)
 {
 	ros::NodeHandle private_nh("~/" + name);
 	printf("[HuberoPlanner::HuberoPlanner] ctor, name: %s \r\n", name.c_str());
@@ -254,12 +257,6 @@ void HuberoPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& fo
 
 	// reset TTC datasets collected during previous iteration
 	ttc_costs_.reset();
-
-	// update cost function with the people detections dataset
-	heading_disturbance_costs_.setPeopleDetections(people_env_model_);
-	personal_space_costs_.setPeopleDetections(people_env_model_);
-	fformation_space_costs_.setFformationsDetections(groups_env_model_);
-	passing_speed_costs_.setPeopleDetections(people_env_model_);
 }
 
 base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(

@@ -5,12 +5,9 @@
 
 namespace hubero_local_planner {
 
-FformationSpaceIntrusionCostFunction::FformationSpaceIntrusionCostFunction()
+FformationSpaceIntrusionCostFunction::FformationSpaceIntrusionCostFunction(const std::vector<Group>& groups):
+	groups_(groups)
 {}
-
-void FformationSpaceIntrusionCostFunction::setFformationsDetections(const std::vector<Group>& groups) {
-	groups_ = groups;
-}
 
 bool FformationSpaceIntrusionCostFunction::prepare() {
 	return true;

@@ -12,12 +12,7 @@ namespace hubero_local_planner {
  */
 class PersonalSpaceIntrusionCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
-	PersonalSpaceIntrusionCostFunction();
-
-	/**
-	 * @brief Updates dataset containing people detections
-	 */
-	void setPeopleDetections(const std::vector<Person>& people);
+	PersonalSpaceIntrusionCostFunction(const std::vector<Person>& people);
 
 	/**
 	 * @brief General updating of context values if required.
@@ -31,7 +26,8 @@ public:
 	virtual double scoreTrajectory(base_local_planner::Trajectory& traj) override;
 
 protected:
-	std::vector<Person> people_;
+	/// A reference to a dataset containing people detections
+	const std::vector<Person>& people_;
 };
 
 } // namespace hubero_local_planner

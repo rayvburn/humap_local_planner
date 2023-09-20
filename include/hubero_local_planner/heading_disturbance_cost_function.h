@@ -14,12 +14,7 @@ namespace hubero_local_planner {
  */
 class HeadingDisturbanceCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
-	HeadingDisturbanceCostFunction();
-
-	/**
-	 * @brief Updates dataset containing people detections
-	 */
-	void setPeopleDetections(const std::vector<Person>& people);
+	HeadingDisturbanceCostFunction(const std::vector<Person>& people);
 
 	/**
 	 * @brief Set the Parameters object
@@ -48,7 +43,8 @@ public:
 	virtual double scoreTrajectory(base_local_planner::Trajectory& traj) override;
 
 protected:
-	std::vector<Person> people_;
+	/// A reference to a dataset containing people detections
+	const std::vector<Person>& people_;
 	double fov_person_;
 	double person_model_radius_;
 	double robot_circumradius_;

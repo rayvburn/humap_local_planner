@@ -5,16 +5,13 @@
 
 namespace hubero_local_planner {
 
-HeadingDisturbanceCostFunction::HeadingDisturbanceCostFunction():
+HeadingDisturbanceCostFunction::HeadingDisturbanceCostFunction(const std::vector<Person>& people):
+	people_(people),
 	fov_person_(3.31613),
 	person_model_radius_(0.28),
 	robot_circumradius_(0.275),
 	max_speed_(0.55)
 {}
-
-void HeadingDisturbanceCostFunction::setPeopleDetections(const std::vector<Person>& people) {
-	people_ = people;
-}
 
 void HeadingDisturbanceCostFunction::setParameters(
 	double fov_person,

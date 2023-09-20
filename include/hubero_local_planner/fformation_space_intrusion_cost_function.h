@@ -12,12 +12,7 @@ namespace hubero_local_planner {
  */
 class FformationSpaceIntrusionCostFunction: public base_local_planner::TrajectoryCostFunction {
 public:
-	FformationSpaceIntrusionCostFunction();
-
-	/**
-	 * @brief Updates dataset containing F-formations (groups) detections
-	 */
-	void setFformationsDetections(const std::vector<Group>& groups);
+	FformationSpaceIntrusionCostFunction(const std::vector<Group>& groups);
 
 	/**
 	 * @brief General updating of context values if required.
@@ -31,7 +26,8 @@ public:
 	virtual double scoreTrajectory(base_local_planner::Trajectory& traj) override;
 
 protected:
-	std::vector<Group> groups_;
+	/// A reference to a dataset containing F-formations (groups) detections
+	const std::vector<Group>& groups_;
 };
 
 } // namespace hubero_local_planner
