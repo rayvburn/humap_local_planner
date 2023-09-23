@@ -15,25 +15,33 @@ using namespace geometry;
 
 geometry::Pose computeNextPoseBaseVel(const geometry::Pose& pose, const geometry::Vector& vel, double dt) {
 	// NOTE: calculations based on base_local_planner::SimpleTrajectoryGenerator::computeNewPositions
-	geometry::Pose pose_new;
 	double new_x = pose.getX() + (vel.getX() * cos(pose.getYaw()) + vel.getY() * cos(M_PI_2 + pose.getYaw())) * dt;
 	double new_y = pose.getY() + (vel.getX() * sin(pose.getYaw()) + vel.getY() * sin(M_PI_2 + pose.getYaw())) * dt;
 	double new_yaw = pose.getYaw() + vel.getZ() * dt;
 
-	pose_new.setPosition(new_x, new_y, pose.getZ());
-	pose_new.setOrientation(pose.getRoll(), pose.getPitch(), Angle(new_yaw).getRadian());
-	return pose_new;
+	return geometry::Pose(
+		new_x,
+		new_y,
+		pose.getZ(),
+		pose.getRoll(),
+		pose.getPitch(),
+		Angle(new_yaw).getRadian()
+	);
 }
 
 geometry::Pose computeNextPose(const geometry::Pose& pose, const geometry::Vector& vel, double dt) {
-	geometry::Pose pose_new;
 	double new_x = pose.getX() + vel.getX() * dt;
 	double new_y = pose.getY() + vel.getY() * dt;
 	double new_yaw = pose.getYaw() + vel.getZ() * dt;
 
-	pose_new.setPosition(new_x, new_y, pose.getZ());
-	pose_new.setOrientation(pose.getRoll(), pose.getPitch(), Angle(new_yaw).getRadian());
-	return pose_new;
+	return geometry::Pose(
+		new_x,
+		new_y,
+		pose.getZ(),
+		pose.getRoll(),
+		pose.getPitch(),
+		Angle(new_yaw).getRadian()
+	);
 }
 
 void computeTwistHolonomic(
