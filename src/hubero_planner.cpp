@@ -322,8 +322,9 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 		drive_velocities.pose.orientation.z = 0;
 		ROS_ERROR_NAMED(
 			"HuberoPlanner",
-			"Could not find a valid trajectory (cost %2.2f), applying zero velocity to base",
-			result_traj_.cost_
+			"Could not find a valid trajectory (cost %.2f) among %lu trajectories. Applying zero velocity to the mobile base.",
+			result_traj_.cost_,
+			traj_explored_.size()
 		);
 	} else {
 		drive_velocities.pose.position.x = result_traj_.xv_;
