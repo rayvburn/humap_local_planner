@@ -216,6 +216,10 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	costs_->ttc_rollout_time = cfg.ttc_rollout_time;
 	costs_->ttc_collision_distance = cfg.ttc_collision_distance;
 	costs_->forward_point_distance = cfg.forward_point_distance;
+	costs_->heading_dir_compute_whole_horizon = cfg.heading_dir_compute_whole_horizon;
+	costs_->personal_space_compute_whole_horizon = cfg.personal_space_compute_whole_horizon;
+	costs_->fformation_space_compute_whole_horizon = cfg.fformation_space_compute_whole_horizon;
+	costs_->passing_speed_compute_whole_horizon = cfg.passing_speed_compute_whole_horizon;
 
 	diagnostics_->log_trajectory_generation_samples = cfg.log_trajectory_generation_samples;
 	diagnostics_->log_trajectory_generation_details = cfg.log_trajectory_generation_details;
