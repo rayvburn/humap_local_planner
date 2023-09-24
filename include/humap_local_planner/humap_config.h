@@ -248,6 +248,14 @@ namespace humap_local_planner {
 		double ttc_collision_distance = 0.05;
 		/// The distance from the center point of the robot to place an additional scoring point, in meters
 		double forward_point_distance = 0.325;
+		/// Whether to compute the cost fun. for the whole horizon or only for the first step of each traj. candidate
+		bool heading_dir_compute_whole_horizon = true;
+		/// Whether to compute the cost fun. for the whole horizon or only for the first step of each traj. candidate
+		bool personal_space_compute_whole_horizon = true;
+		/// Whether to compute the cost fun. for the whole horizon or only for the first step of each traj. candidate
+		bool fformation_space_compute_whole_horizon = true;
+		/// Whether to compute the cost fun. for the whole horizon or only for the first step of each traj. candidate
+		bool passing_speed_compute_whole_horizon = true;
 	};
 
 	struct DiagnosticsParams {
