@@ -99,11 +99,30 @@ protected:
 	void peopleCB(const people_msgs::PeopleConstPtr& msg);
 
 	/**
+	 * @brief Propagates the parameters to relevant objects.
+	 *
+	 * The cfg mutex that keeps the parameters consistent throughout the execution, blocks callbacks. Therefore,
+	 * updating parameters just before the planning is a safe approach is terms of concurrency and provides that
+	 * callbacks are not blocked.
+	 *
+	 * @return true If parameters were updated
+	 * @return false If parameters were not updated
+	 */
+	bool updateParameters();
+
+	/**
 	 * @brief Updates @ref obstacles_ with costmap converter's data
 	 *
 	 * @note This method is copied from TEB Local Planner
 	 */
 	bool updateObstacleContainerWithCostmapConverter();
+
+	/**
+	 * @brief Given the most recent people data, transforms the people poses into the global frame and aggregates them
+	 * into groups
+	 * @param config_updated flag indicating that the configuration parameters have been changed since the last call
+	 */
+	bool updatePeopleContainer(bool config_updated);
 
 	/**
 	 * @brief Get the current robot footprint/contour model
@@ -146,6 +165,8 @@ protected:
 
 	/// @brief Callback mutex
 	std::mutex cb_mutex_;
+	/// @brief Parameters reconfigure mutex
+	std::mutex cfg_mutex_;
 
 	/// @brief nav_core status
 	bool initialized_;
@@ -181,12 +202,21 @@ protected:
 
 	/// @brief Subscriber of aggregated data with people present in the environment
 	ros::Subscriber people_sub_;
+	/// @brief Container with the most recent people data (unmodified)
+	people_msgs::People people_orig_;
+	/// @brief Flag indicating that the @ref people_orig_ was updated since the last call to @ref updatePeopleContainer
+	bool people_container_updated_;
+	/// @brief Stores data about the people in the environment; a container that undergone the processing
 	std::shared_ptr<People> people_;
+	/// @brief Stores data about the people groups in the environment; a container that undergone the processing
 	std::shared_ptr<Groups> groups_;
 
 	/// @section Dynamic reconfigure
 	dynamic_reconfigure::Server<HuberoPlannerConfig> *dsrv_;
-	hubero_local_planner::HuberoPlannerConfig default_config_;
+	HuberoPlannerConfig cfg_default_;
+	HuberoPlannerConfig cfg_params_;
+	/// Flag indicating that the @ref cfg_params_ has been updated since the last call to @ref updateParameters
+	bool cfg_updated_;
 	std::shared_ptr<HuberoConfigROS> cfg_;
 
 	/// @section Odometry

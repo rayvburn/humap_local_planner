@@ -545,7 +545,6 @@ protected:
 	 */
 	LatchedStopRotateController stop_rotate_controller_;
 
-	std::mutex configuration_mutex_;
 	/// @brief Parameters of the planner
 	HuberoConfigConstPtr cfg_;
 	/// @brief The most recent robot pose expressed in the planner's frame

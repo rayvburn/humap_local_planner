@@ -75,8 +75,8 @@ void HuberoConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 }
 
 void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
-	std::lock_guard<std::mutex> lock(config_mutex_);
 	ROS_INFO("[HuberoConfigROS] reconfigure()");
+	std::lock_guard<std::mutex> lock(mutex_);
 
 	general_->angular_sim_granularity = cfg.angular_sim_granularity;
 	general_->sim_granularity = cfg.sim_granularity;

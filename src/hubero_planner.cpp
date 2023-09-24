@@ -131,7 +131,7 @@ HuberoPlanner::~HuberoPlanner() {
 
 void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 	// make sure that our configuration doesn't change mid-run
-	std::lock_guard<std::mutex> l(configuration_mutex_);
+	std::lock_guard<std::mutex> l(cfg->getMutex());
 	cfg_ = cfg;
 
 	generator_social_.setParameters(
@@ -170,7 +170,7 @@ bool HuberoPlanner::checkTrajectory(
 
 bool HuberoPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	// make sure that our configuration doesn't change mid-run
-	std::lock_guard<std::mutex> l(configuration_mutex_);
+	std::lock_guard<std::mutex> l(cfg_->getMutex());
 
 	// save for later use
 	pose_ = Pose(global_pose);
@@ -267,7 +267,7 @@ base_local_planner::Trajectory HuberoPlanner::findBestTrajectory(
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
-	std::lock_guard<std::mutex> l(configuration_mutex_);
+	std::lock_guard<std::mutex> l(cfg_->getMutex());
 
 	// assign, will likely be useful for planning
 	vel_ = velocity;
@@ -345,7 +345,7 @@ base_local_planner::Trajectory HuberoPlanner::findTrajectory(
 	geometry_msgs::PoseStamped& drive_velocities
 ) {
 	// make sure that our configuration doesn't change mid-run
-	std::lock_guard<std::mutex> l(configuration_mutex_);
+	std::lock_guard<std::mutex> l(cfg_->getMutex());
 
 	vel_ = velocity;
 	obstacles_ = obstacles;

@@ -314,6 +314,10 @@ public:
 		return diagnostics_;
 	}
 
+	std::mutex& getMutex() const {
+		return mutex_;
+	}
+
 	virtual ~HuberoConfig() = default;
 
 protected:
@@ -325,6 +329,9 @@ protected:
 	std::shared_ptr<TrajectorySamplingParams> traj_sampling_;
 	std::shared_ptr<CostParams> costs_;
 	std::shared_ptr<DiagnosticsParams> diagnostics_;
+
+	/// Mutex for config accesses and changes
+	mutable std::mutex mutex_;
 };
 
 typedef std::shared_ptr<const HuberoConfig> HuberoConfigConstPtr;
