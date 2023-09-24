@@ -224,27 +224,37 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 		robot_goal.getYaw()
 	);
 
+	/*
+	 * The planner has significant computation times. Locking the callback mutex or configuration parameters mutex
+	 * leads to the situation where the execution of other important callbacks (e.g., related to the costmap layer
+	 * sources) are blocked.
+	 * So, locking the mutex for the whole planning procedure is not an option, therefore copies of updated messages
+	 * (from callbacks) are saved in the callbacks and processed just before the planning.
+	 */
+	// propagate the parameters if they have been updated since the last control loop
+	bool config_updated = updateParameters();
+
 	// prepare obstacles
 	updateObstacleContainerWithCostmapConverter();
+
+	// prepare people
+	updatePeopleContainer(config_updated);
 
 	// prepare local plan
 	planner_->updatePlan(robot_pose_geom);
 
+	// prepare planning outputs
 	geometry_msgs::PoseStamped drive_cmds;
 	base_local_planner::Trajectory trajectory;
-	{
-		// keep the shared data consistent throughout the execution
-		std::lock_guard<std::mutex> l(cb_mutex_);
 
-		// use planning or proactive approach
-		if (cfg_->getGeneral()->planning_approach) {
-			// update costs for trajectory scoring
-			planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
-			// sample trajectories and choose the one with the lowest cost
-			trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
-		} else {
-			trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
-		}
+	// use planning or proactive approach
+	if (cfg_->getGeneral()->planning_approach) {
+		// update costs for trajectory scoring
+		planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
+		// sample trajectories and choose the one with the lowest cost
+		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
+	} else {
+		trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
 	}
 
 	cmd_vel.linear.x = drive_cmds.pose.position.x;
@@ -268,11 +278,7 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishBehaviourActive(robot_pose.getPosition(), vis_data.behaviour_active_);
 	vis_.publishClosestPoints(vis_data.closest_points_static_, vis_data.closest_points_dynamic_);
 	vis_.publishPath(robot_pose);
-	{
-		// keep the shared data consistent throughout the execution
-		std::lock_guard<std::mutex> l(cb_mutex_);
-		vis_.publishGrid(robot_pose, *planner_);
-	}
+	vis_.publishGrid(robot_pose, *planner_);
 	vis_.publishRobotFootprint(robot_pose, planner_->getRobotFootprintModel());
 	vis_.publishGoal(robot_goal.getPosition());
 	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());
@@ -325,93 +331,46 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 // protected
 void HumapPlannerROS::reconfigureCB(HumapPlannerConfig &config, uint32_t level) {
-	std::lock_guard<std::mutex> l(cb_mutex_);
-
-	// fill cfg_ with updated config
-	cfg_->reconfigure(config);
-
-	// update visualization-related objects
-	vis_.reconfigure(cfg_->getSfm()->max_force);
-
-	// update Humap planner with social trajectory generator
-	planner_->reconfigure(cfg_);
-
-	// copy LocalPlannerLimits and propagate recent changes to LocalPlannerUtil
-	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
-	planner_util_->reconfigureCB(limits, false);
+	std::lock_guard<std::mutex> l(cfg_mutex_);
+	cfg_params_ = config;
+	cfg_updated_ = true;
 }
 
 // protected
 void HumapPlannerROS::peopleCB(const people_msgs::PeopleConstPtr& msg) {
-	if (people_ == nullptr || groups_ == nullptr) {
-		return;
-	}
-
 	if (msg->header.frame_id.empty()) {
 		ROS_ERROR("Cannot process people message due to lack of frame_id");
 		return;
 	}
 
-	// transform people poses to local planner's frame - by default = no transform
-	geometry_msgs::TransformStamped transform;
-	transform.child_frame_id = planner_util_->getGlobalFrame();
-	transform.header.frame_id = msg->header.frame_id;
-	transform.header.stamp = ros::Time::now();
-	// indicates no transform
-	transform.transform.rotation.w = 1.0;
-
-	// lookup transform if frame IDs are not equal
-	if (transform.child_frame_id != transform.header.frame_id) {
-		try {
-			transform = tf_buffer_->lookupTransform(transform.child_frame_id, transform.header.frame_id, ros::Time(0));
-		} catch (tf2::LookupException& ex) {
-			ROS_ERROR_NAMED(
-				"HumapPlannerROS",
-				"Cannot find a valid transform to apply for people poses. Looking for transform from %s to %s. "
-				"Exception: %s",
-				transform.header.frame_id.c_str(),
-				transform.child_frame_id.c_str(),
-				ex.what()
-			);
-			return;
-		}
-	}
-
-	// extract all data embedded in people_msgs/People
-	std::vector<people_msgs_utils::Person> people_orig;
-	std::vector<people_msgs_utils::Group> groups_orig;
-	std::tie(people_orig, groups_orig) = people_msgs_utils::createFromPeople(msg->people);
-
 	std::lock_guard<std::mutex> l(cb_mutex_);
-	// clear vector, we receive a new aggregated info
-	people_->clear();
-	groups_->clear();
+	people_orig_ = *msg;
+	people_container_updated_ = true;
+}
 
-	// trajectory prediction helpers
-	double dt = cfg_->getGeneral()->sim_granularity;
-	unsigned int prediction_steps = std::ceil(cfg_->getGeneral()->sim_time / cfg_->getGeneral()->sim_granularity);
+// protected
+bool HumapPlannerROS::updateParameters() {
+	std::lock_guard<std::mutex> l(cfg_mutex_);
 
-	// transform to the planner frame
-	for (auto& person: people_orig) {
-		// first, check reliability of the tracked person, accept only accurate ones
-		if (person.getReliability() < 1e-02) {
-			continue;
-		}
-		// transform pose and vel
-		person.transform(transform);
-		// collect person entries in the target container creating an object and predicting its trajectory
-		people_->push_back(Person(person, dt, prediction_steps));
+	if (!cfg_updated_) {
+		return false;
 	}
-	for (auto& group: groups_orig) {
-		// first, check reliability of the tracked group, accept only accurate ones
-		if (group.getReliability() < 1e-02) {
-			continue;
-		}
-		// transform pose and vel
-		group.transform(transform);
-		// collect group entries in the target container creating an object and predicting its trajectory
-		groups_->push_back(Group(group, dt, prediction_steps));
-	}
+
+	// fill cfg_ with the updated config
+	cfg_->reconfigure(cfg_params_);
+
+	// update visualization-related objects
+	vis_.reconfigure(cfg_->getSfm()->max_force);
+
+	// update the planner with social trajectory generator
+	planner_->reconfigure(cfg_);
+
+	// copy LocalPlannerLimits and propagate recent changes to LocalPlannerUtil
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+	planner_util_->reconfigureCB(limits, false);
+
+	cfg_updated_ = false;
+	return true;
 }
 
 // protected
@@ -472,6 +431,110 @@ bool HumapPlannerROS::updateObstacleContainerWithCostmapConverter() {
 			obstacles_->back()->setCentroidVelocity(obstacles->obstacles[i].velocities, obstacles->obstacles[i].orientation);
 		}
 	}
+}
+
+// protected
+bool HumapPlannerROS::updatePeopleContainer(bool config_updated) {
+	if (people_ == nullptr || groups_ == nullptr) {
+		ROS_ERROR_NAMED(
+			"HumapPlannerROS",
+			"People container will not be updated because pointer(s) are null."
+		);
+		return false;
+	}
+
+	std::lock_guard<std::mutex> l(cb_mutex_);
+
+	// notify if a people information topic connection may be broken
+	if (people_orig_.header.frame_id.empty()) {
+		// when empty `frame_id` is passed to the `lookupTransform`, the `tf2::InvalidArgumentException` is thrown
+		ROS_WARN_DELAYED_THROTTLE_NAMED(
+			10.0,
+			"HumapPlannerROS",
+			"It seems that the local planner did not receive any messages about the people in the environment "
+			"(the frame_id is unknown). People will not be considered during planning."
+		);
+		// reset `people_container_updated_` flag because the data is ill-formed and cannot be "consumed"
+		people_container_updated_ = false;
+		return false;
+	}
+
+	// conditions that tell us that the container should be recalculated based on the newest data;
+	// note that calculating pred. steps is done per specific cfg param set; therefore, we have to recompute to avoid
+	// problems accessing, e.g., wrong trajectory velocity (out of bounds). Hence, config_updated is checked here
+	if (!people_container_updated_ && !config_updated) {
+		return false;
+	}
+
+	// reset the flag
+	people_container_updated_ = false;
+
+	// transform people poses to local planner's frame - by default = no transform
+	geometry_msgs::TransformStamped transform;
+	transform.child_frame_id = planner_util_->getGlobalFrame();
+	transform.header.frame_id = people_orig_.header.frame_id;
+	transform.header.stamp = ros::Time::now();
+	// indicates no transform
+	transform.transform.rotation.w = 1.0;
+
+	// lookup transform if frame IDs are not equal
+	if (transform.child_frame_id != transform.header.frame_id) {
+		try {
+			transform = tf_buffer_->lookupTransform(transform.child_frame_id, transform.header.frame_id, ros::Time(0));
+		} catch (tf2::LookupException& ex) {
+			ROS_ERROR_NAMED(
+				"HumapPlannerROS",
+				"Cannot find a valid transform to apply for people poses. Looking for transform from %s to %s. "
+				"Exception: %s",
+				transform.header.frame_id.c_str(),
+				transform.child_frame_id.c_str(),
+				ex.what()
+			);
+			return false;
+		}
+	}
+
+	// extract all data embedded in people_msgs/People
+	std::vector<people_msgs_utils::Person> people_orig;
+	std::vector<people_msgs_utils::Group> groups_orig;
+	std::tie(people_orig, groups_orig) = people_msgs_utils::createFromPeople(people_orig_.people);
+
+	// clear vector, we receive a new aggregated info
+	people_->clear();
+	groups_->clear();
+
+	// trajectory prediction helpers
+	double dt = 0.0;
+	unsigned int prediction_steps = 0;
+	{
+		// parameters safety (possible reconfigure in a meantime)
+		std::lock_guard<std::mutex> l(cfg_->getMutex());
+		dt = cfg_->getGeneral()->sim_granularity;
+		prediction_steps = std::ceil(cfg_->getGeneral()->sim_time / cfg_->getGeneral()->sim_granularity);
+	}
+
+	// transform to the planner frame
+	for (auto& person: people_orig) {
+		// first, check reliability of the tracked person, accept only accurate ones
+		if (person.getReliability() < 1e-02) {
+			continue;
+		}
+		// transform pose and vel
+		person.transform(transform);
+		// collect person entries in the target container creating an object and predicting its trajectory
+		people_->push_back(Person(person, dt, prediction_steps));
+	}
+	for (auto& group: groups_orig) {
+		// first, check reliability of the tracked group, accept only accurate ones
+		if (group.getReliability() < 1e-02) {
+			continue;
+		}
+		// transform pose and vel
+		group.transform(transform);
+		// collect group entries in the target container creating an object and predicting its trajectory
+		groups_->push_back(Group(group, dt, prediction_steps));
+	}
+	return true;
 }
 
 // protected
