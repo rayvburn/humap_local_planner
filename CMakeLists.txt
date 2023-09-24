@@ -188,6 +188,9 @@ set_target_properties(vis PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR
 add_library(config_ros include/${PROJECT_NAME}/humap_config_ros.h src/humap_config_ros.cpp)
 target_link_libraries(config_ros config ${catkin_LIBRARIES})
 set_target_properties(config_ros PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+#### Below helps with the `fatal error: humap_local_planner/HumapPlannerConfig.h: No such file or directory in
+#### humap_config_ros.h` when running tests
+add_dependencies(config_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Library
 add_library(humap_local_planner
