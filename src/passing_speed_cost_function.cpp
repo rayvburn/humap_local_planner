@@ -6,8 +6,13 @@
 namespace hubero_local_planner {
 
 PassingSpeedCostFunction::PassingSpeedCostFunction(const std::vector<Person>& people):
-	people_(people)
+	people_(people),
+	compute_whole_horizon_(true)
 {}
+
+void PassingSpeedCostFunction::setParameters(bool compute_whole_horizon) {
+	compute_whole_horizon_ = compute_whole_horizon;
+}
 
 bool PassingSpeedCostFunction::prepare() {
 	return true;
@@ -24,12 +29,22 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 	// iterate over predicted poses of a person, compare against each pose of robot trajectory
 	// against all people pose predictions ...
 	Trajectory robot_traj(traj);
+
+	// select the ending iteration number when not the whole horizon is meant to be evaluated;
+	// prepare for the case when `robot_traj.getVelocitiesNum()` is 0
+	unsigned int i_end_whole = static_cast<unsigned int>(robot_traj.getVelocitiesNum());
+	unsigned int i_end_first = std::min(i_end_whole, static_cast<unsigned int>(1));
+
 	for (const auto& person: people_) {
 		// storage for intrusions against person throughout the trajectory
 		std::vector<double> person_comforts;
 
 		// check all robot trajectory points ...
-		for (unsigned int i = 0; i < robot_traj.getVelocitiesNum(); i++) {
+		for (
+			unsigned int i = 0;
+			i < (compute_whole_horizon_ ? i_end_whole : i_end_first);
+			i++
+		) {
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);
 			auto v_robot = robot_traj.getVelocity(i);

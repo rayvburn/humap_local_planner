@@ -6,8 +6,13 @@
 namespace hubero_local_planner {
 
 FformationSpaceIntrusionCostFunction::FformationSpaceIntrusionCostFunction(const std::vector<Group>& groups):
-	groups_(groups)
+	groups_(groups),
+	compute_whole_horizon_(true)
 {}
+
+void FformationSpaceIntrusionCostFunction::setParameters(bool compute_whole_horizon) {
+	compute_whole_horizon_ = compute_whole_horizon;
+}
 
 bool FformationSpaceIntrusionCostFunction::prepare() {
 	return true;
@@ -26,14 +31,24 @@ double FformationSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner:
 
 	// compare group poses against each pose of robot trajectory
 	Trajectory robot_traj(traj);
+
+	// select the ending iteration number when not the whole horizon is meant to be evaluated;
+	// prepare for the case when `robot_traj.getSteps()` is 0
+	// NOTE: velocities are not considered below, therefore getSteps() can be considered instead
+	// of getVelocitiesNum()
+	unsigned int i_end_whole = static_cast<unsigned int>(robot_traj.getSteps());
+	unsigned int i_end_first = std::min(i_end_whole, static_cast<unsigned int>(1));
+
 	for (const auto& group: groups_) {
 		// storage for robot intrusions against groups throughout the trajectory
 		std::vector<double> group_intrusions;
 
 		// check all robot trajectory points ...
-		// NOTE: velocities are not considered below, therefore getSteps() can be considered instead
-		// of getVelocitiesNum()
-		for (unsigned int i = 0; i < robot_traj.getSteps(); i++) {
+		for (
+			unsigned int i = 0;
+			i < (compute_whole_horizon_ ? i_end_whole : i_end_first);
+			i++
+		) {
 			// retrieve poses
 			auto p_robot = robot_traj.getPose(i);
 			auto p_group = group.getTrajectoryPrediction().getPose(i);

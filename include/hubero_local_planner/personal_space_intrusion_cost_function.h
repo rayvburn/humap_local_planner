@@ -15,6 +15,14 @@ public:
 	PersonalSpaceIntrusionCostFunction(const std::vector<Person>& people);
 
 	/**
+	 * @brief Updates the internal parameters
+	 *
+	 * @param compute_whole_horizon set to true if the cost function should be computed for each entry
+	 * of the trajectory
+	 */
+	void setParameters(bool compute_whole_horizon);
+
+	/**
 	 * @brief General updating of context values if required.
 	 * Subclasses may overwrite. Return false in case there is any error.
 	 */
@@ -28,6 +36,7 @@ public:
 protected:
 	/// A reference to a dataset containing people detections
 	const std::vector<Person>& people_;
+	bool compute_whole_horizon_;
 };
 
 } // namespace hubero_local_planner
