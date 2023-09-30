@@ -28,7 +28,7 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 	}
 
 	// storage for comfort values related to subsequent people
-	std::vector<double> people_comforts;
+	std::vector<double> people_discomforts;
 
 	// iterate over predicted poses of a person, compare against each pose of robot trajectory
 	// against all people pose predictions ...
@@ -40,8 +40,8 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 	unsigned int i_end_first = std::min(i_end_whole, static_cast<unsigned int>(1));
 
 	for (const auto& person: people_) {
-		// storage for intrusions against person throughout the trajectory
-		std::vector<double> person_comforts;
+		// storage for discomforts throughout the trajectory
+		std::vector<double> person_discomforts;
 
 		// check all robot trajectory points ...
 		for (
@@ -68,16 +68,15 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 			);
 
 			// add to the local (current person) dataset
-			person_comforts.push_back(speed_comfort.getComfortNormalized());
+			person_discomforts.push_back(speed_comfort.getDiscomfortNormalized());
 		}
 
-		// choose minimum comfort (checking against comfort here, not discomfort)
-		// throughout the trajectory as a score for a given person
-		people_comforts.push_back(*std::min_element(person_comforts.cbegin(), person_comforts.cend()));
+		// choose the maximum discomfort throughout the trajectory as a score for a given person
+		people_discomforts.push_back(*std::max_element(person_discomforts.cbegin(), person_discomforts.cend()));
 	}
 
 	// return min overall
-	return *std::min_element(people_comforts.cbegin(), people_comforts.cend());
+	return *std::max_element(people_discomforts.cbegin(), people_discomforts.cend());
 }
 
 } // namespace hubero_local_planner
