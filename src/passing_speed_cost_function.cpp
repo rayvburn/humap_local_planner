@@ -7,10 +7,14 @@ namespace hubero_local_planner {
 
 PassingSpeedCostFunction::PassingSpeedCostFunction(const std::vector<Person>& people):
 	people_(people),
+	max_speed_(0.55),
+	min_dist_(0.275),
 	compute_whole_horizon_(true)
 {}
 
-void PassingSpeedCostFunction::setParameters(bool compute_whole_horizon) {
+void PassingSpeedCostFunction::setParameters(double max_speed, double min_dist, bool compute_whole_horizon) {
+	max_speed_ = max_speed;
+	min_dist_ = min_dist;
 	compute_whole_horizon_ = compute_whole_horizon;
 }
 
@@ -56,10 +60,15 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 			);
 			double speed_robot = std::hypot(v_robot.getX(), v_robot.getY());
 
-			social_nav_utils::PassingSpeedComfort speed_comfort(distance, speed_robot);
+			social_nav_utils::PassingSpeedComfort speed_comfort(
+				distance,
+				speed_robot,
+				min_dist_,
+				max_speed_
+			);
 
 			// add to the local (current person) dataset
-			person_comforts.push_back(speed_comfort.getComfort());
+			person_comforts.push_back(speed_comfort.getComfortNormalized());
 		}
 
 		// choose minimum comfort (checking against comfort here, not discomfort)

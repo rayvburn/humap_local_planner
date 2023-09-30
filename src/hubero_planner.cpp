@@ -773,7 +773,12 @@ void HuberoPlanner::updateCostParameters() {
 	);
 	personal_space_costs_.setParameters(cfg_->getCost()->personal_space_compute_whole_horizon);
 	fformation_space_costs_.setParameters(cfg_->getCost()->fformation_space_compute_whole_horizon);
-	passing_speed_costs_.setParameters(cfg_->getCost()->passing_speed_compute_whole_horizon);
+	passing_speed_costs_.setParameters(
+		cfg_->getLimits()->max_vel_trans,
+		// TODO: for non-circular robots this won't be a valid circumradius
+		robot_model_->getInscribedRadius(),
+		cfg_->getCost()->passing_speed_compute_whole_horizon
+	);
 }
 
 void HuberoPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_model) {

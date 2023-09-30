@@ -17,10 +17,13 @@ public:
 	/**
 	 * @brief Updates the internal parameters
 	 *
+	 * @param max_speed maximum speed achievable by the robot (used for normalization)
+	 * @param min_dist minimum distance between the centers of the robot and a human (human is assumed to be a point)
+	 * (used for normalization)
 	 * @param compute_whole_horizon set to true if the cost function should be computed for each entry
 	 * of the trajectory
 	 */
-	void setParameters(bool compute_whole_horizon);
+	void setParameters(double max_speed, double min_dist, bool compute_whole_horizon);
 
 	/**
 	 * @brief General updating of context values if required.
@@ -36,6 +39,8 @@ public:
 protected:
 	/// A reference to a dataset containing people detections
 	const std::vector<Person>& people_;
+	double max_speed_;
+	double min_dist_;
 	bool compute_whole_horizon_;
 };
 
