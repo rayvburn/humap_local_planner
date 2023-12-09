@@ -177,6 +177,30 @@ geometry::Pose subtractPoses(const geometry::Pose& pose_ref, const geometry::Pos
  */
 geometry::Pose addPoses(const geometry::Pose& pose_ref, const geometry::Pose& pose_other);
 
+/**
+ * @brief Saturate the translational and angular velocity to given limits
+ *
+ * Calculation method has been taken from TebLocalPlannerROS::saturateVelocity
+ * https://github.com/rst-tu-dortmund/teb_local_planner/blob/3b91dcc3b9e6733363e285e096ff7c7fea42883f/include/teb_local_planner/teb_local_planner_ros.h#L359
+ *
+ * The limit of the translational velocity for backwards driving can be changed independently.
+ * @param cmd_vel The velocity command that should be saturated.
+ * @param max_vel_x Maximum translational velocity for forward driving
+ * @param max_vel_y Maximum strafing velocity (for holonomic robots)
+ * @param max_vel_trans Maximum translational velocity for holonomic robots
+ * @param max_vel_theta Maximum (absolute) angular velocity
+ * @param max_vel_x_backwards Maximum translational velocity for backwards driving
+ * @return saturated velocity command
+ */
+geometry::Vector saturateVelocity(
+	const geometry::Vector& cmd_vel,
+	double max_vel_x,
+	double max_vel_y,
+	double max_vel_trans,
+	double max_vel_theta,
+	double max_vel_x_backwards
+);
+
 /** @} */ // end of velocitytransformations
 
 } // namespace hubero_local_planner

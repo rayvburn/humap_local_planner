@@ -392,4 +392,54 @@ geometry::Pose addPoses(const geometry::Pose& pose_ref, const geometry::Pose& po
 	);
 }
 
+geometry::Vector saturateVelocity(
+	const geometry::Vector& cmd_vel,
+	double max_vel_x,
+	double max_vel_y,
+	double max_vel_trans,
+	double max_vel_theta,
+	double max_vel_x_backwards
+) {
+	double ratio_x = 1.0;
+	double ratio_omega = 1.0;
+	double ratio_y = 1.0;
+
+	double vx = cmd_vel.getX();
+	double vy = cmd_vel.getY();
+	double omega = cmd_vel.getZ();
+
+	// Limit translational velocity for forward driving
+	if (vx > max_vel_x) {
+		ratio_x = max_vel_x / vx;
+	}
+
+	// limit strafing velocity
+	if (vy > max_vel_y || vy < -max_vel_y) {
+		ratio_y = std::abs(vy / max_vel_y);
+	}
+
+	// Limit angular velocity
+	if (omega > max_vel_theta || omega < -max_vel_theta) {
+		ratio_omega = std::abs(max_vel_theta / omega);
+	}
+
+	// Limit backwards velocity
+	if (vx < -std::abs(max_vel_x_backwards)) {
+		ratio_x = -std::abs(max_vel_x_backwards) / vx;
+	}
+
+	// TEB sets use_proportional_saturation to false by default, therefore appropriate version applied
+	vx *= ratio_x;
+	vy *= ratio_y;
+	omega *= ratio_omega;
+
+	double vel_linear = std::hypot(vx, vy);
+	if (vel_linear > max_vel_trans) {
+		double max_vel_trans_ratio = max_vel_trans / vel_linear;
+		vx *= max_vel_trans_ratio;
+		vy *= max_vel_trans_ratio;
+	}
+	return geometry::Vector(vx, vy, omega);
+}
+
 } // namespace hubero_local_planner
