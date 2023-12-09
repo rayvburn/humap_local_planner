@@ -114,48 +114,14 @@ void computeTwist(
 	Angle ang_z_force_diff(force_dir.getRadian() - yaw);
 	vw += twist_rotation_compensation * ang_z_force_diff.getRadian();
 
-	// logging section
-	debug_print_verbose("force - x: %2.3f, y: %2.3f, th: %2.3f, mass - %2.3f\r\n",
-		force.getX(), force.getY(), force.getZ(), robot_mass
-	);
-
-	debug_print_verbose("accel - x: %2.3f, y: %2.3f, th: %2.3f, vel - x: %2.3f, y: %2.3f, th: %2.3f\r\n",
-		acc_v.getX(), acc_v.getY(), acc_v.getZ(),
-		vel_v_new.getX(), vel_v_new.getY(), vel_v_new.getZ()
-	);
-
-	debug_print_verbose("cmd_vel 'init'  - lin.x: %2.3f, ang.z: %2.3f\r\n", vv, vw);
-
-	// hard non-linearities section:
-	// check if within limits: try to maintain path, ignoring trajectory
-	if (vv > max_vel_x || vw > max_rot_vel) {
-		double excess_x = vv / max_vel_x;
-		double excess_z = vw / max_rot_vel;
-		double shortening_factor = 1 / std::max(excess_x, excess_z);
-		// shorten proportionally
-		vv *= shortening_factor;
-		vw *= shortening_factor;
-		debug_print_warn(
-			"Requested velocity not within limits! excess_x %2.3f, excess_z %2.3f, multiplier %2.3f "
-			"cmd_vel 'modded' lin.x: %2.3f, ang.z: %2.3f\r\n",
-			excess_x, excess_z, shortening_factor, vv, vw
-		);
-	}
-
-	// trim minimum velocity to `min_vel_x`
-	if (vv < min_vel_x) {
-		vv = min_vel_x;
-		debug_print_warn("Requested velocity is smaller than min! 'modded' lin.x %2.3f\r\n", vv);
-	}
-
-	// assign final values
-	cmd_vel.setX(vv);
-	cmd_vel.setY(0.0);
-	cmd_vel.setZ(vw);
-
-	debug_print_verbose(
-		"cmd_vel 'final' - lin.x: %2.3f (min %2.3f, max %2.3f), ang.z: %2.3f (max %2.3f)\r\n",
-		cmd_vel.getX(), min_vel_x, max_vel_x, cmd_vel.getZ(), max_rot_vel
+	// saturate velocity if the force-velocity conversion violates the constraints
+	cmd_vel = saturateVelocity(
+		geometry::Vector(vv, 0.0, vw),
+		max_vel_x,
+		0.0,
+		max_vel_x,
+		max_rot_vel,
+		(min_vel_x < 0.0) ? std::abs(min_vel_x) : 0.0
 	);
 }
 
