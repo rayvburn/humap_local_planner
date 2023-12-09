@@ -219,21 +219,27 @@ bool adjustTwistWithAccLimits(
 	double vel_max_y_acc = std::min(vel_max_y, vel.getY() + acc_lim_y * sim_period);
 	double vel_max_th_acc = std::min(vel_max_th, vel.getZ() + acc_lim_th * sim_period);
 
-	// trim the velocity command to allowable range
-	geometry::Vector cmd_vel_backup = cmd_vel;
-	cmd_vel.setX(std::min(std::max(vel_min_x_acc, cmd_vel_backup.getX()), vel_max_x_acc));
-	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel_backup.getY()), vel_max_y_acc));
-	cmd_vel.setZ(std::min(std::max(vel_min_th_acc, cmd_vel_backup.getZ()), vel_max_th_acc));
-
-	auto isOrigCmdVelModified = [=]() -> bool {
-		return cmd_vel_backup.getX() != cmd_vel.getX()
-			|| cmd_vel_backup.getY() != cmd_vel.getY()
-			|| cmd_vel_backup.getZ() != cmd_vel.getZ();
+	auto isCmdVelModified = [](
+		const geometry::Vector& cmd_vel_init,
+		const geometry::Vector& cmd_vel_mod) -> bool
+	{
+		return cmd_vel_init.getX() != cmd_vel_mod.getX()
+			|| cmd_vel_init.getY() != cmd_vel_mod.getY()
+			|| cmd_vel_init.getZ() != cmd_vel_mod.getZ();
 	};
 
+	geometry::Vector cmd_vel_backup = cmd_vel;
+
+	// (possibly) trim the velocity command according to the velocities feasible given the @ref vel
 	if (!maintain_vel_components_rate) {
-		return isOrigCmdVelModified();
+		cmd_vel = geometry::Vector(
+			std::min(std::max(vel_min_x_acc, cmd_vel_backup.getX()), vel_max_x_acc),
+			std::min(std::max(vel_min_y_acc, cmd_vel_backup.getY()), vel_max_y_acc),
+			std::min(std::max(vel_min_th_acc, cmd_vel_backup.getZ()), vel_max_th_acc)
+		);
+		return isCmdVelModified(cmd_vel_backup, cmd_vel);
 	}
+
 	// if any velocity component needs to be modified, change other ones proportionally
 	cmd_vel = adjustTwistProportional(
 		vel,
@@ -245,7 +251,7 @@ bool adjustTwistWithAccLimits(
 		vel_max_y_acc,
 		vel_max_th_acc
 	);
-	return isOrigCmdVelModified();
+	return isCmdVelModified(cmd_vel_backup, cmd_vel);
 }
 
 bool adjustTwistWithAccAndGoalLimits(
