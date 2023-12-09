@@ -219,7 +219,7 @@ bool adjustTwistWithAccLimits(
 	double vel_max_y_acc = std::min(vel_max_y, vel.getY() + acc_lim_y * sim_period);
 	double vel_max_th_acc = std::min(vel_max_th, vel.getZ() + acc_lim_th * sim_period);
 
-	// if any component is modified, change other ones proportionally
+	// trim the velocity command to allowable range
 	geometry::Vector cmd_vel_backup = cmd_vel;
 	cmd_vel.setX(std::min(std::max(vel_min_x_acc, cmd_vel_backup.getX()), vel_max_x_acc));
 	cmd_vel.setY(std::min(std::max(vel_min_y_acc, cmd_vel_backup.getY()), vel_max_y_acc));
@@ -234,54 +234,17 @@ bool adjustTwistWithAccLimits(
 	if (!maintain_vel_components_rate) {
 		return isOrigCmdVelModified();
 	}
-
-	// find feasibility factor of the velocity component, i.e., which part of the commanded velocity can be achieved
-	auto findFeasVelComponent = [&](
-			double vel_curr,
-			double vel_cmd,
-			double vel_lim_min_acc,
-			double vel_lim_max_acc)
-			-> std::pair<double, double>
-	{
-		double vel_cmd_diff = vel_cmd - vel_curr;
-		if (vel_cmd >= vel_curr) {
-			// CASE1 - speeding up along <SOME> direction
-			double vel_lim_diff = vel_lim_max_acc - vel_curr; // ??
-			// defines part of the velocity delta that is feasible
-			double vel_feas_factor = vel_lim_diff / vel_cmd_diff;
-			return std::make_pair(vel_feas_factor, vel_cmd_diff);
-		}
-		// CASE2 - slowing down along <SOME> direction
-		double vel_lim_diff = vel_lim_min_acc - vel_curr;
-		// defines part of the velocity delta that is feasible
-		double vel_feas_factor = vel_lim_diff / vel_cmd_diff;
-		return std::make_pair(vel_feas_factor, vel_cmd_diff);
-	};
-
-	auto vel_cmd_feas_x = findFeasVelComponent(vel.getX(), cmd_vel_backup.getX(), vel_min_x_acc, vel_max_x_acc);
-	auto vel_cmd_feas_y = findFeasVelComponent(vel.getY(), cmd_vel_backup.getY(), vel_min_y_acc, vel_max_y_acc);
-	auto vel_cmd_feas_th = findFeasVelComponent(vel.getZ(), cmd_vel_backup.getZ(), vel_min_th_acc, vel_max_th_acc);
-
-	std::vector<double> vel_feasibility_factors = {vel_cmd_feas_x.first, vel_cmd_feas_y.first, vel_cmd_feas_th.first};
-	auto feas_factor_min = *std::min_element(vel_feasibility_factors.begin(), vel_feasibility_factors.end());
-
-	// evaluate if trimming 2/3 of components is needed (it is when feas_factor_min < 1.0 since one component cannot
-	// be set to the requested value)
-	if (std::isnan(feas_factor_min) || feas_factor_min >= 1.0) {
-		cmd_vel.setX(vel.getX() + vel_cmd_feas_x.second);
-		cmd_vel.setY(vel.getY() + vel_cmd_feas_y.second);
-		cmd_vel.setZ(vel.getZ() + vel_cmd_feas_th.second);
-		// correction not required - velocities within acceleration limits
-		return isOrigCmdVelModified();
-	}
-
-	// correction required - velocities outside acceleration limits
-	cmd_vel.setX(vel.getX() + vel_cmd_feas_x.second * feas_factor_min);
-	cmd_vel.setY(vel.getY() + vel_cmd_feas_y.second * feas_factor_min);
-	cmd_vel.setZ(vel.getZ() + vel_cmd_feas_th.second * feas_factor_min);
-
-	// NOTE: trimming to velocity limits is not required here as the factors from findFeasVelComponent already account
-	// for feasible velocity bounds
+	// if any velocity component needs to be modified, change other ones proportionally
+	cmd_vel = adjustTwistProportional(
+		vel,
+		cmd_vel_backup,
+		vel_min_x_acc,
+		vel_min_y_acc,
+		vel_min_th_acc,
+		vel_max_x_acc,
+		vel_max_y_acc,
+		vel_max_th_acc
+	);
 	return isOrigCmdVelModified();
 }
 
@@ -406,6 +369,67 @@ geometry::Vector saturateVelocity(
 		vy *= max_vel_trans_ratio;
 	}
 	return geometry::Vector(vx, vy, omega);
+}
+
+geometry::Vector adjustTwistProportional(
+	const geometry::Vector& vel,
+	const geometry::Vector& cmd_vel,
+	double min_vel_x,
+	double min_vel_y,
+	double min_vel_th,
+	double max_vel_x,
+	double max_vel_y,
+	double max_vel_th
+) {
+	// find feasibility factor of the velocity component, i.e., the percentage of the commanded velocity that can be
+	// achieved
+	auto findFeasVelComponent = [&](
+		double vel_curr,
+		double vel_cmd,
+		double vel_lim_min,
+		double vel_lim_max) -> std::pair<double, double>
+	{
+		double vel_cmd_diff = vel_cmd - vel_curr;
+		if (vel_cmd >= vel_curr) {
+			// CASE1 - speeding up along <SOME> direction
+			double vel_lim_diff = vel_lim_max - vel_curr;
+			// defines a percentage of the velocity delta that is feasible
+			double vel_feas_factor = vel_lim_diff / vel_cmd_diff;
+			return std::make_pair(vel_feas_factor, vel_cmd_diff);
+		}
+		// CASE2 - slowing down along <SOME> direction
+		double vel_lim_diff = vel_lim_min - vel_curr;
+		// defines a percentage of the velocity delta that is feasible
+		double vel_feas_factor = vel_lim_diff / vel_cmd_diff;
+		return std::make_pair(vel_feas_factor, vel_cmd_diff);
+	};
+
+	auto vel_cmd_feas_x = findFeasVelComponent(vel.getX(), cmd_vel.getX(), min_vel_x, max_vel_x);
+	auto vel_cmd_feas_y = findFeasVelComponent(vel.getY(), cmd_vel.getY(), min_vel_y, max_vel_y);
+	auto vel_cmd_feas_th = findFeasVelComponent(vel.getZ(), cmd_vel.getZ(), min_vel_th, max_vel_th);
+
+	std::vector<double> vel_feasibility_factors = {vel_cmd_feas_x.first, vel_cmd_feas_y.first, vel_cmd_feas_th.first};
+	auto feas_factor_min = *std::min_element(vel_feasibility_factors.begin(), vel_feasibility_factors.end());
+
+	// evaluate if trimming 2/3 of components is needed (it is when feas_factor_min < 1.0 since one component cannot
+	// be set to the requested value)
+	if (std::isnan(feas_factor_min) || feas_factor_min >= 1.0) {
+		// velocities within limits - correction is not required (no multiplication)
+		return geometry::Vector(
+			vel.getX() + vel_cmd_feas_x.second,
+			vel.getY() + vel_cmd_feas_y.second,
+			vel.getZ() + vel_cmd_feas_th.second
+		);
+	}
+
+	// correction - commanded velocity exceeded limits (multiplication required)
+	// NOTE: trimming to velocity limits is not required here as the factors from findFeasVelComponent already account
+	// for feasible velocity bounds
+	return geometry::Vector(
+		vel.getX() + vel_cmd_feas_x.second * feas_factor_min,
+		vel.getY() + vel_cmd_feas_y.second * feas_factor_min,
+		vel.getZ() + vel_cmd_feas_th.second * feas_factor_min
+	);
 }
 
 } // namespace hubero_local_planner

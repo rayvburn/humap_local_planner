@@ -201,6 +201,22 @@ geometry::Vector saturateVelocity(
 	double max_vel_x_backwards
 );
 
+/**
+ * @brief Trims the translational and angular velocity to given limits keeping the proportions between them
+ *
+ * Might reproduce the path arising from the commanded velocities slightly better than brute-force trimming
+ */
+geometry::Vector adjustTwistProportional(
+	const geometry::Vector& vel,
+	const geometry::Vector& cmd_vel,
+	double min_vel_x,
+	double min_vel_y,
+	double min_vel_th,
+	double max_vel_x,
+	double max_vel_y,
+	double max_vel_th
+);
+
 /** @} */ // end of velocitytransformations
 
 } // namespace hubero_local_planner
