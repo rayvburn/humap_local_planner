@@ -878,12 +878,30 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 	// costs for robot being aligned with path (nose on path)
 	alignment_costs_.setTargetPoses(global_plan_);
 
+	// limit the distance to the forward checkpoint if there are people nearby
+	double min_gap_human_robot = std::numeric_limits<double>::max();
+	for (const auto& person: people_env_model_) {
+		// compute Euclidean distance between the human and the robot
+		double distance = std::hypot(
+			person.getPositionX() - pose_.getX(),
+			person.getPositionY() - pose_.getY()
+		);
+
+		// estimate the actual space between the human and the robot
+		double gap = distance - cfg_->getGeneral()->person_model_radius - robot_model_->getInscribedRadius();
+
+		// select minimal but positive
+		min_gap_human_robot = std::min(std::max(0.0, gap), min_gap_human_robot);
+	}
+	// do not allow the cost functions to score points that may be located within personal spaces or so
+	double forward_point_distance = std::min(min_gap_human_robot, cfg_->getCost()->forward_point_distance);
+
 	/*
 	 * Based on DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
 	 * We want the robot nose to be drawn to its final position before robot turns towards goal orientation
 	 * Also, `goal_front_costs_` uses `Last` as `CostAggregationType`
 	 */
-	auto plan_fwd_pose = getPoseFromPlan(cfg_->getCost()->forward_point_distance, false, false);
+	auto plan_fwd_pose = getPoseFromPlan(forward_point_distance, false, false);
 	std::vector<geometry_msgs::PoseStamped> front_global_plan;
 	for (const auto& pose: global_plan_) {
 		double diff_x = std::abs(pose.pose.position.x - plan_fwd_pose.getX());
@@ -896,6 +914,7 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 		front_global_plan.push_back(pose);
 	}
 	goal_front_costs_.setTargetPoses(front_global_plan);
+	goal_front_costs_.setXShift(forward_point_distance);
 
 	// reduce scales of MapGridCostFunction-based cost functions when the robot is close to the goal
 	if (dist_to_goal <= cfg_->getCost()->forward_point_distance) {
@@ -903,6 +922,7 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 	} else {
 		alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
 	}
+	alignment_costs_.setXShift(forward_point_distance);
 
 	// reset TTC datasets collected during previous iteration
 	ttc_costs_.reset();
