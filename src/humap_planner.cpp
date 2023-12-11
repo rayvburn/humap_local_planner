@@ -216,51 +216,8 @@ bool HumapPlanner::updatePlan(const geometry_msgs::PoseStamped& global_pose) {
 	return true;
 }
 
-void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec) {
-	// some cost functions require variable scales based on the distance to the goal
-	double dist_to_goal = (goal_.getPosition() - pose_.getPosition()).calculateLength();
-
-	// update robot footprint so it won't crash with anything
-	obstacle_costs_.setFootprint(footprint_spec);
-	// costs for going away from path
-	path_costs_.setTargetPoses(global_plan_);
-	// costs for not going towards the local goal as much as possible
-	goal_costs_.setTargetPoses(global_plan_);
-
-	// costs for robot being aligned with path (nose on path)
-	alignment_costs_.setTargetPoses(global_plan_);
-
-	/*
-	 * Based on DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
-	 * We want the robot nose to be drawn to its final position before robot turns towards goal orientation
-	 * Also, `goal_front_costs_` uses `Last` as `CostAggregationType`
-	 */
-	auto plan_fwd_pose = getPoseFromPlan(cfg_->getCost()->forward_point_distance, false, false);
-	std::vector<geometry_msgs::PoseStamped> front_global_plan;
-	for (const auto& pose: global_plan_) {
-		double diff_x = std::abs(pose.pose.position.x - plan_fwd_pose.getX());
-		double diff_y = std::abs(pose.pose.position.y - plan_fwd_pose.getY());
-		// target position tolerance
-		static constexpr double POS_TOLERANCE = 1e-03;
-		if (diff_x <= POS_TOLERANCE && diff_y <= POS_TOLERANCE) {
-			break;
-		}
-		front_global_plan.push_back(pose);
-	}
-	goal_front_costs_.setTargetPoses(front_global_plan);
-
-	// reduce scales of MapGridCostFunction-based cost functions when the robot is close to the goal
-	if (dist_to_goal <= cfg_->getCost()->forward_point_distance) {
-		alignment_costs_.setScale(0.0);
-	} else {
-		alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
-	}
-
-	// reset TTC datasets collected during previous iteration
-	ttc_costs_.reset();
-}
-
 base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
+	const std::vector<geometry_msgs::Point>& footprint_spec,
 	const Vector& velocity,
 	const ObstContainerConstPtr obstacles,
 	std::shared_ptr<const People> people,
@@ -282,6 +239,8 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 
 	world_model_ = World(pose_, robot_vel_glob, goal_local_, goal_);
 	createEnvironmentModel(pose_, world_model_);
+
+	updateLocalCosts(footprint_spec);
 
 	// update internal state to decide which behaviour should be selected for operation
 	state_ptr_->update();
@@ -903,6 +862,50 @@ void HumapPlanner::createEnvironmentModel(const Pose& pose_ref, World& world_mod
 		world_model.getStaticObjectsData().size(),
 		world_model.getDynamicObjectsData().size()
 	);
+}
+
+void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec) {
+	// some cost functions require variable scales based on the distance to the goal
+	double dist_to_goal = (goal_.getPosition() - pose_.getPosition()).calculateLength();
+
+	// update robot footprint so it won't crash with anything
+	obstacle_costs_.setFootprint(footprint_spec);
+	// costs for going away from path
+	path_costs_.setTargetPoses(global_plan_);
+	// costs for not going towards the local goal as much as possible
+	goal_costs_.setTargetPoses(global_plan_);
+
+	// costs for robot being aligned with path (nose on path)
+	alignment_costs_.setTargetPoses(global_plan_);
+
+	/*
+	 * Based on DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
+	 * We want the robot nose to be drawn to its final position before robot turns towards goal orientation
+	 * Also, `goal_front_costs_` uses `Last` as `CostAggregationType`
+	 */
+	auto plan_fwd_pose = getPoseFromPlan(cfg_->getCost()->forward_point_distance, false, false);
+	std::vector<geometry_msgs::PoseStamped> front_global_plan;
+	for (const auto& pose: global_plan_) {
+		double diff_x = std::abs(pose.pose.position.x - plan_fwd_pose.getX());
+		double diff_y = std::abs(pose.pose.position.y - plan_fwd_pose.getY());
+		// target position tolerance
+		static constexpr double POS_TOLERANCE = 1e-03;
+		if (diff_x <= POS_TOLERANCE && diff_y <= POS_TOLERANCE) {
+			break;
+		}
+		front_global_plan.push_back(pose);
+	}
+	goal_front_costs_.setTargetPoses(front_global_plan);
+
+	// reduce scales of MapGridCostFunction-based cost functions when the robot is close to the goal
+	if (dist_to_goal <= cfg_->getCost()->forward_point_distance) {
+		alignment_costs_.setScale(0.0);
+	} else {
+		alignment_costs_.setScale(scales_cm_costs_.alignment_scale);
+	}
+
+	// reset TTC datasets collected during previous iteration
+	ttc_costs_.reset();
 }
 
 Pose HumapPlanner::getPoseFromPlan(

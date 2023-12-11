@@ -249,10 +249,9 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 
 	// use planning or proactive approach
 	if (cfg_->getGeneral()->planning_approach) {
-		// update costs for trajectory scoring
-		planner_->updateLocalCosts(costmap_ros_->getRobotFootprint());
+		auto footprint = costmap_ros_->getRobotFootprint();
 		// sample trajectories and choose the one with the lowest cost
-		trajectory = planner_->findBestTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
+		trajectory = planner_->findBestTrajectory(footprint, robot_vel, obstacles_, people_, groups_, drive_cmds);
 	} else {
 		trajectory = planner_->findTrajectory(robot_vel, obstacles_, people_, groups_, drive_cmds);
 	}
