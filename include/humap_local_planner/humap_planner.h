@@ -139,20 +139,8 @@ public:
 	bool updatePlan(const geometry_msgs::PoseStamped& global_pose);
 
 	/**
-	 * @brief Prepares cost functions for planning
-	 * @param footprint_spec The robot's footprint
-	 *
-	 * The obstacle cost function gets the footprint.
-	 * The path and goal cost functions get the global_plan
-	 * The alignment cost functions get a version of the global plan that is modified based on the global_pose
-	 *
-	 * @note This should be called before @ref findBestTrajectory. Not needed before @ref findTrajectory
-	 * @note Based on dwa_local_planner::DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
-	 */
-	void updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec);
-
-	/**
 	 * @brief Given the current position and velocity of the robot, find the best trajectory to exectue
+	 * @param footprint_spec the robot's footprint
 	 * @param pose robot pose in the global frame of the local planner (usually `odom`)
 	 * @param velocity robot velocity in the base coordinate system
 	 * @param goal global goal
@@ -161,6 +149,7 @@ public:
 	 * @return The highest scoring trajectory. A cost >= 0 means the trajectory is legal to execute.
 	 */
 	base_local_planner::Trajectory findBestTrajectory(
+		const std::vector<geometry_msgs::Point>& footprint_spec,
 		const Vector& velocity,
 		const ObstContainerConstPtr obstacles,
 		std::shared_ptr<const People> people,
@@ -450,6 +439,18 @@ protected:
 	 * @param world_model world model that be filled up with obstacles
 	 */
 	void createEnvironmentModel(const Pose& pose_ref, World& world_model);
+
+	/**
+	 * @brief Prepares cost functions for planning
+	 * @param footprint_spec The robot's footprint
+	 *
+	 * The obstacle cost function gets the footprint.
+	 * The path and goal cost functions get the global_plan
+	 * The alignment cost functions get a version of the global plan that is modified based on the global_pose
+	 *
+	 * @note Based on dwa_local_planner::DWAPlanner::updatePlanAndLocalCosts authored by Eitan Marder-Eppstein
+	 */
+	void updateLocalCosts(const std::vector<geometry_msgs::Point>& footprint_spec);
 
 	/**
 	 * @brief Retrieves pose that is @ref dist_from_current_pose far from the current pose
