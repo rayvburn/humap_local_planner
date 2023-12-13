@@ -88,8 +88,19 @@ public:
 		double max_scaling_factor
 	);
 
-	// Calls footprintCost using class members
-	double getFootprintCost(unsigned int px, unsigned int py);
+	/// Calls footprintCost using class members for a footprint located at map coordinates given by @ref px, @ref py
+	double getFootprintCost(unsigned int px, unsigned int py) const;
+
+	/// Returns footprint cost when located at world coordinates given by @ref x, @ref y, @ref th
+	double getFootprintCost(double x, double y, double th) const;
+
+	/// Returns footprint cost at a given location and for a custom separation distance
+	double getFootprintCost(double x, double y, double th, double separation_dist) const;
+
+	/// Returns an extra keepout distance beyond the footprint's bounds
+	inline double getSeparationDistance() const {
+		return min_separation_dist_;
+	}
 
 	static double footprintCost(
 		const double& x,

@@ -132,7 +132,7 @@ double ObstacleSeparationCostFunction::getScalingFactor(
 	return scale;
 }
 
-double ObstacleSeparationCostFunction::getFootprintCost(unsigned int px, unsigned int py) {
+double ObstacleSeparationCostFunction::getFootprintCost(unsigned int px, unsigned int py) const {
 	// convert inputs (map cells) to world coordinates
 	double x, y = 0.0;
 	costmap_->mapToWorld(px, py, x, y);
@@ -143,6 +143,22 @@ double ObstacleSeparationCostFunction::getFootprintCost(unsigned int px, unsigne
 		costmap_, world_model_
 	);
 	return f_cost;
+}
+
+double ObstacleSeparationCostFunction::getFootprintCost(double x, double y, double th) const {
+	return footprintCost(
+		x, y, th,
+		1.0, min_separation_dist_, separation_kernel_, footprint_spec_,
+		costmap_, world_model_
+	);
+}
+
+double ObstacleSeparationCostFunction::getFootprintCost(double x, double y, double th, double separation_dist) const {
+	return footprintCost(
+		x, y, th,
+		1.0, separation_dist, separation_kernel_, footprint_spec_,
+		costmap_, world_model_
+	);
 }
 
 double ObstacleSeparationCostFunction::footprintCost(
