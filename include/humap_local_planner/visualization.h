@@ -76,6 +76,9 @@ public:
 	virtual ~Visualization() = default;
 
 private:
+	/// Evaluates whether the position can be assigned to a marker
+	bool isPositionValid(const Vector& pos) const;
+
 	/// \brief Gap between markers along Z axis
 	static constexpr double MARKER_GAP = 0.07;
 
