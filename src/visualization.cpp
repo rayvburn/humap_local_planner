@@ -150,6 +150,12 @@ bool Visualization::publishVelocity(
 		const double& angle_ang,
 		const double& angular_z
 ) {
+	if (!isPositionValid(pos_start)) {
+		return false;
+	}
+	if (!isPositionValid(pos_lin_end)) {
+		return false;
+	}
 	if (pub_marker_array_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -204,6 +210,10 @@ bool Visualization::publishVelocity(
 }
 
 bool Visualization::publishPath(const Pose& new_pos) {
+	if (!isPositionValid(new_pos.getPosition())) {
+		return false;
+	}
+
 	marker_path_.header.seq++;
 	marker_path_.header.stamp = ros::Time::now();
 
@@ -237,6 +247,9 @@ bool Visualization::publishGrid(
 		const Pose& pos_current,
 		HuberoPlanner& planner
 ) {
+	if (!isPositionValid(pos_current.getPosition())) {
+		return false;
+	}
 	if (pub_grid_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -276,6 +289,9 @@ bool Visualization::publishRobotFootprint(
 		const Pose& pos_current,
 		const RobotFootprintModelConstPtr footprint
 ) {
+	if (!isPositionValid(pos_current.getPosition())) {
+		return false;
+	}
 	if (pub_marker_array_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -287,6 +303,9 @@ bool Visualization::publishRobotFootprint(
 }
 
 bool Visualization::publishGoalInitiation(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -299,6 +318,9 @@ bool Visualization::publishGoalInitiation(const Vector& pos) {
 }
 
 bool Visualization::publishGoalLocal(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -311,6 +333,9 @@ bool Visualization::publishGoalLocal(const Vector& pos) {
 }
 
 bool Visualization::publishGoal(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -323,6 +348,9 @@ bool Visualization::publishGoal(const Vector& pos) {
 }
 
 bool Visualization::publishPlannerState(const Vector& pos, const std::string& state) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -332,6 +360,12 @@ bool Visualization::publishPlannerState(const Vector& pos, const std::string& st
 	auto marker = marker_state_.create(Vector(pos.getX(), pos.getY(), 0.15), state);
 	pub_marker_.publish(marker);
 	return true;
+}
+
+bool Visualization::isPositionValid(const Vector& pos) const {
+	bool inf = std::isinf(pos.getX()) || std::isinf(pos.getY()) || std::isinf(pos.getZ());
+	bool nan = std::isnan(pos.getX()) || std::isnan(pos.getY()) || std::isnan(pos.getZ());
+	return !inf && !nan;
 }
 
 } /* namespace hubero_local_planner */
