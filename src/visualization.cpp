@@ -347,6 +347,21 @@ bool Visualization::publishGoal(const Vector& pos) {
 	return true;
 }
 
+bool Visualization::publishGoalRecoveryRotateAndRecede(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_rr_recovery");
+	marker_point_.setColor(0.75f, 0.0f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
 bool Visualization::publishPlannerState(const Vector& pos, const std::string& state) {
 	if (!isPositionValid(pos)) {
 		return false;

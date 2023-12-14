@@ -257,6 +257,10 @@ public:
 		return goal_initiation_;
 	}
 
+	Pose getGoalRotateAndRecedeRecovery() const {
+		return recovery_.getRotateAndRecedeRecoveryGoal();
+	}
+
 	/**
 	 * @brief Returns planning state according to the internal finite state machine
 	 */
