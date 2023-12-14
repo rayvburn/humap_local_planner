@@ -488,6 +488,11 @@ protected:
 	bool planOrientationAdjustment(const Pose& goal);
 
 	/**
+	 * @brief Performs a recovery once the robot is stuck according to the cost functions
+	 */
+	bool planRecoveryRotateAndRecede();
+
+	/**
 	 * @brief Helper method for LatchedStopRotateController to check if trajectory is valid
 	 *
 	 * Based on dwa_local_planner::DWAPlanner::checkTrajectory by Eitan Marder-Eppstein
