@@ -51,6 +51,8 @@
 #include <hubero_local_planner/person.h>
 #include <hubero_local_planner/group.h>
 
+#include <hubero_local_planner/recovery_manager.h>
+
 #include <nav_msgs/Path.h>
 
 namespace hubero_local_planner {
@@ -594,6 +596,9 @@ protected:
 
 	// Stores original cost scales adjusted for the costmap resolution
 	ScalesCmCostFunctions scales_cm_costs_;
+
+	// Detects failures and plans recoveries
+	RecoveryManager recovery_;
 
 	/**
 	 * Cost function that discards trajectories that move into obstacles or other high-cost areas
