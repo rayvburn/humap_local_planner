@@ -11,6 +11,7 @@ RecoveryManager::RecoveryManager():
 	stuck_(false),
 	deviating_from_global_plan_(false),
 	near_collision_(false),
+	prev_near_collision_(near_collision_),
 	can_recover_from_collision_(true),
 	recovery_goal_x_(NAN),
 	recovery_goal_y_(NAN),
@@ -87,6 +88,7 @@ void RecoveryManager::checkCollision(
 	double occdist_cost = obstacle_costfun.scoreTrajectory(traj);
 	if (RecoveryManager::isPoseCollisionFree(occdist_cost)) {
 		// we're safe
+		prev_near_collision_ = near_collision_;
 		near_collision_ = false;
 		can_recover_from_collision_ = true;
 		resetRecoveryGoal();
@@ -94,11 +96,13 @@ void RecoveryManager::checkCollision(
 	}
 	if (occdist_cost >= costmap_2d::LETHAL_OBSTACLE) {
 		// something went wrong
+		prev_near_collision_ = near_collision_;
 		near_collision_ = true;
 		can_recover_from_collision_ = false;
 		return;
 	}
 	if (occdist_cost < 0.0) {
+		prev_near_collision_ = near_collision_;
 		// footprint seems to be in collision with some object marked on the costmap (may be outdated)
 		near_collision_ = true;
 		// we can attempt to recover from a collision once the separation distance is positive (there should still

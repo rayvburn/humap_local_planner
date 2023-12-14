@@ -187,7 +187,7 @@ public:
 	}
 
 	inline bool isNearCollision() const {
-		return near_collision_;
+		return prev_near_collision_ || near_collision_;
 	}
 
 	inline bool canRecover() const {
@@ -238,6 +238,8 @@ protected:
 	bool deviating_from_global_plan_;
 
 	bool near_collision_;
+	// Escaping the recovery might be problematic (switching between recovery and normal mode in subsequent iterations)
+	bool prev_near_collision_;
 	bool can_recover_from_collision_;
 
 	/// Coordinates of the recovery goal
