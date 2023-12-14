@@ -257,6 +257,10 @@ public:
 		return goal_initiation_;
 	}
 
+	Pose getGoalRecovery() const {
+		return Pose(recovery_.getRecoveryGoalX(), recovery_.getRecoveryGoalY(), recovery_.getRecoveryGoalYaw());
+	}
+
 	/**
 	 * @brief Returns planning state according to the internal finite state machine
 	 */

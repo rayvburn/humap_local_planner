@@ -282,6 +282,7 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishGoal(robot_goal.getPosition());
 	vis_.publishGoalLocal(planner_->getGoalLocal().getPosition());
 	vis_.publishGoalInitiation(planner_->getGoalInitiation().getPosition());
+	vis_.publishGoalRecovery(planner_->getGoalRecovery().getPosition());
 	vis_.publishPlannerState(robot_pose.getPosition(), planner_->getStateName());
 
 	base_local_planner::publishPlan(createLocalPlan(trajectory), l_plan_pub_);
