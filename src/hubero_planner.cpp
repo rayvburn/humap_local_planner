@@ -181,10 +181,14 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 }
 
 bool HuberoPlanner::checkTrajectory(
-		const Eigen::Vector3f pos,
-		const Eigen::Vector3f vel,
-		const Eigen::Vector3f vel_samples) {
-	printf("[HuberoPlanner::checkTrajectory] \r\n");
+	const Eigen::Vector3f pos,
+	const Eigen::Vector3f vel,
+	const Eigen::Vector3f vel_samples
+) {
+	ROS_ERROR_NAMED(
+		"HuberoPlanner",
+		"`checkTrajectory` has not been implemented - a trajectory will be marked as invalid"
+	);
 	return false;
 }
 
