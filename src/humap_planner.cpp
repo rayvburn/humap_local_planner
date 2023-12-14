@@ -279,6 +279,8 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		case PlannerState::MOVE:
 			traj_valid = planMovingRobot();
 			break;
+		case PlannerState::RECOVERY_ROTATE_AND_RECEDE:
+			traj_valid = planRecoveryRotateAndRecede();
 		default:
 			break;
 	}
@@ -1246,6 +1248,155 @@ bool HumapPlanner::planOrientationAdjustment(const Pose& goal) {
 			std::placeholders::_3
 		)
 	);
+
+	result_traj_.resetPoints();
+	result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
+	result_traj_.xv_ = cmd_vel.linear.x;
+	result_traj_.yv_ = cmd_vel.linear.y;
+	result_traj_.thetav_ = cmd_vel.angular.z;
+	// negative cost when trajectory is invalid
+	result_traj_.cost_ = traj_valid ? 0.0 : -1.0;
+	// add at least the current pose so the trajectory can be somehow scored
+	result_traj_.addPoint(pose_.getX(), pose_.getY(), pose_.getYaw());
+
+	// update explored trajectories (1 valid trajectory will be added to the list)
+	traj_explored_.clear();
+	traj_explored_.push_back(result_traj_);
+	return traj_valid;
+}
+
+bool HumapPlanner::planRecoveryRotateAndRecede() {
+	if (!recovery_.planRecoveryRotateAndRecede(pose_.getX(), pose_.getY(), pose_.getYaw(), obstacle_costs_)) {
+		result_traj_.resetPoints();
+		result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
+		result_traj_.xv_ = 0.0;
+		result_traj_.yv_ = 0.0;
+		result_traj_.thetav_ = 0.0;
+		result_traj_.cost_ = 0.0;
+		// add at least the current pose so the trajectory can be somehow scored
+		result_traj_.addPoint(pose_.getX(), pose_.getY(), pose_.getYaw());
+		// update explored trajectories (1 valid trajectory will be added to the list)
+		traj_explored_.clear();
+		ROS_ERROR_THROTTLE_NAMED(
+			5.0,
+			"HumapPlanner",
+			"Cannot find a feasible pose for the recovery routine. "
+			"Waiting for the navigation stack's recovery behaviour."
+		);
+		return false;
+	}
+
+	// get a recovery goal pose from the recovery pose search
+	geometry::Pose goal_recovery(
+		recovery_.getRecoveryGoalX(),
+		recovery_.getRecoveryGoalY(),
+		recovery_.getRecoveryGoalYaw()
+	);
+
+	// let's make the goal tolerances and acceleration limits pretty strict here
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+	limits.xy_goal_tolerance /= 10.0;
+	limits.yaw_goal_tolerance /= 10.0;
+	limits.acc_lim_x /= 5.0;
+	limits.acc_lim_y /= 5.0;
+	limits.acc_lim_theta /= 5.0;
+	// allow very slow rotations to avoid overshooting the goal orientation
+	limits.min_vel_theta /= 5.0;
+
+	// whether robot already rotated towards the recovery goal (expect that it should be done )
+	bool oriented_towards_goal = std::abs(pose_.getYaw() - goal_recovery.getYaw()) <= limits.yaw_goal_tolerance;
+
+	// planned velocity command - the result of recovery routine
+	geometry_msgs::Twist cmd_vel;
+	bool traj_valid = false;
+
+	// 2 stage procedure: first rotate in place towards the goal pose, then move straight towards that pose
+	if (!oriented_towards_goal) {
+		// rotate implementing strategy similar to the one in @ref planOrientationAdjustment but ignore strict cost
+		// functions that will probably not allow, e.g., rotating very close to obstacles (particularly when
+		// the separation distance is non-zero)
+		auto checkTrajectory = std::function<bool(Eigen::Vector3f, Eigen::Vector3f, Eigen::Vector3f)>(
+			[](
+				const Eigen::Vector3f pos,
+				const Eigen::Vector3f vel,
+				const Eigen::Vector3f vel_samples
+			) -> bool {
+				// no constraints, all trajectories is treated as valid
+				return true;
+			}
+		);
+
+		// NOTE: LatchedStopRotateController assumes that all received poses are expressed in the same frame,
+		// headers of stamped types are not required then
+		geometry_msgs::PoseStamped velocity;
+		velocity.pose = Pose(vel_.getX(), vel_.getY(), vel_.getZ()).getAsMsgPose();
+
+		geometry_msgs::PoseStamped pose;
+		pose.pose = pose_.getAsMsgPose();
+
+		geometry_msgs::PoseStamped goal_pose;
+		goal_pose.pose = goal_recovery.getAsMsgPose();
+
+		traj_valid = stop_rotate_controller_.computeVelocityCommandsStopRotate(
+			cmd_vel,
+			limits.getAccLimits(),
+			cfg_->getGeneral()->sim_period,
+			goal_pose,
+			velocity,
+			pose,
+			limits,
+			std::bind(
+				checkTrajectory,
+				std::placeholders::_1,
+				std::placeholders::_2,
+				std::placeholders::_3
+			)
+		);
+	} else {
+		// Seems that the robot reached the goal orientation but it is not guaranteed that its angular velocity is 0,
+		// once getting there. Therefore, check if angular velocity from the rotation step should be shut off first.
+		bool angular_vel_nonzero = std::abs(vel_.getZ()) >= 1e-02;
+
+		// start moving with the minimum velocity regarding the acceleration limits;
+		// in case `min_vel_x` is set to a negative value, provide that we'll be going forward
+		double vel_x_forward = std::max(limits.min_vel_x, 0.1);
+		geometry::Vector cmd_vel_forward(vel_x_forward, 0.0, 0.0);
+
+		adjustTwistWithAccLimits(
+			vel_,
+			limits.acc_lim_x,
+			limits.acc_lim_y,
+			limits.acc_lim_theta,
+			limits.min_vel_x,
+			limits.min_vel_y,
+			-limits.max_vel_theta,
+			limits.max_vel_x,
+			limits.max_vel_y,
+			limits.max_vel_theta,
+			cfg_->getGeneral()->sim_period,
+			cmd_vel_forward,
+			false // hard-coded maintain_vel_components_rate
+		);
+
+		// all velocity components zeroed at first
+		cmd_vel.linear.x = 0.0;
+		cmd_vel.linear.y = 0.0;
+		cmd_vel.linear.z = 0.0;
+		cmd_vel.angular.x = 0.0;
+		cmd_vel.angular.y = 0.0;
+		cmd_vel.angular.z = 0.0;
+
+		if (angular_vel_nonzero) {
+			// see note at the top of the branch;
+			// if we overshoot, we'll get back to the rotation-in-place stage
+			cmd_vel.angular.z = cmd_vel_forward.getZ();
+		} else {
+			// safe to move with a linear motion only
+			cmd_vel.linear.x = cmd_vel_forward.getX();
+			cmd_vel.linear.y = cmd_vel_forward.getY();
+		}
+		traj_valid = true;
+	}
 
 	result_traj_.resetPoints();
 	result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
