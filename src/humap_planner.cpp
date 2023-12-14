@@ -111,6 +111,18 @@ HumapPlanner::HumapPlanner(
 		goal_pose.pose = goal_.getAsMsgPose();
 		return stop_rotate_controller_.isPositionReached(goal_pose, pose, cfg_->getLimits()->xy_goal_tolerance);
 	});
+	auto is_oscillating_fun = std::function<bool()>([&]{
+		return recovery_.isOscillating();
+	});
+	auto is_stuck_fun = std::function<bool()>([&]{
+		return recovery_.isStuck();
+	});
+	auto near_collision_fun = std::function<bool()>([&]{
+		return recovery_.isNearCollision();
+	});
+	auto can_recover_fun = std::function<bool()>([&]{
+		return recovery_.canRecover();
+	});
 
 	state_ptr_ = std::make_unique<PlannerState>(
 		pose_,
@@ -118,7 +130,11 @@ HumapPlanner::HumapPlanner(
 		goal_local_,
 		goal_initiation_,
 		pos_reached_fun,
-		goal_reached_fun
+		goal_reached_fun,
+		is_oscillating_fun,
+		is_stuck_fun,
+		near_collision_fun,
+		can_recover_fun
 	);
 }
 
@@ -159,6 +175,9 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 	);
 
 	updateCostParameters();
+
+	// keep 5 sec of history (buffer length not parameterized)
+	recovery_.setOscillationBufferLength(static_cast<int>(std::ceil(5.0 / cfg_->getGeneral()->sim_period)));
 }
 
 bool HumapPlanner::checkTrajectory(
@@ -294,6 +313,32 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		q.setRPY(0, 0, result_traj_.thetav_);
 		tf2::convert(q, drive_velocities.pose.orientation);
 	}
+
+	// post-planning faults detection
+	recovery_.checkOscillation(
+		(!traj_valid || result_traj_.cost_ < 0) ? 0.0 : result_traj_.xv_,
+		(!traj_valid || result_traj_.cost_ < 0) ? 0.0 : result_traj_.thetav_,
+		cfg_->getLimits()->max_vel_x,
+		cfg_->getLimits()->min_vel_x < 0.0 ? std::abs(cfg_->getLimits()->min_vel_x) : 0.0,
+		cfg_->getLimits()->max_vel_theta,
+		// translational velocity epsilon for oscillation detection
+		std::abs(cfg_->getLimits()->min_vel_x) / 5.0,
+		// rotational velocity epsilon for oscillation detection
+		std::abs(cfg_->getLimits()->min_vel_theta) / 5.0
+	);
+
+	recovery_.checkDeviation(
+		// select the best trajectory or the first explored (its first pose is crucial)
+		(result_traj_.cost_ < 0 && !traj_explored_.empty()) ? traj_explored_.front() : result_traj_,
+		goal_front_costs_,
+		alignment_costs_
+	);
+
+	recovery_.checkCollision(
+		// select the best trajectory or first explored (its first pose is crucial)
+		(result_traj_.cost_ < 0 && !traj_explored_.empty()) ? traj_explored_.front() : result_traj_,
+		obstacle_costs_
+	);
 	return result_traj_;
 }
 

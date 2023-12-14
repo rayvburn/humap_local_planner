@@ -215,6 +215,7 @@ add_library(humap_local_planner
     src/unsaturated_translation_cost_function.cpp
     src/latched_stop_rotate_controller.cpp
     src/planner_state.cpp
+    src/recovery_manager.cpp
 )
 add_dependencies(humap_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(humap_local_planner
