@@ -20,12 +20,16 @@ public:
 		MOVE,
 		/// Mobile base adjusts rotates in place to reach the goal orientation (local planner does not account for RPY)
 		ADJUST_ORIENTATION,
+		/// Mobile base looks for a safe pose to reach (and moves to this pose) once got stuck
+		RECOVERY_ROTATE_AND_RECEDE,
 		/// Noop state after started after reaching the latest goal
 		STOPPED
 	};
 
 	/**
 	 * @brief PlannerState
+	 *
+	 * Default implementations of recovery-related functions act as if the recovery is never needed
 	 *
 	 * @param pose reference to the current pose of robot
 	 * @param goal reference to the global goal
@@ -34,6 +38,10 @@ public:
 	 * orientation that follows global path poses
 	 * @param pos_reached_fun function that allows to check if goal position is reached
 	 * @param goal_reached_fun function that allows to check if goal orientation is reached
+	 * @param oscillating_fun function that allows to check whether the robot is oscillating
+	 * @param stuck_fun function that allows to check whether the robot is stuck
+	 * @param near_collision_fun function that allows to check whether the robot is close to colliding with its env.
+	 * @param can_recover_fun function that allows to check whether the robot can recover from being stuck
 	 * @param initiation_yaw_threshold
 	 */
 	PlannerState(
@@ -43,6 +51,10 @@ public:
 		const geometry::Pose& goal_initiation,
 		std::function<bool()> pos_reached_fun,
 		std::function<bool()> goal_reached_fun,
+		std::function<bool()> oscillating_fun = std::function<bool()>([]() -> bool { return false; }),
+		std::function<bool()> stuck_fun = std::function<bool()>([]() -> bool { return false; }),
+		std::function<bool()> near_collision_fun = std::function<bool()>([]() -> bool { return false; }),
+		std::function<bool()> can_recover_fun = std::function<bool()>([]() -> bool { return false; }),
 		double initiation_yaw_threshold	= IGN_DTOR(30)
 	);
 
@@ -71,6 +83,7 @@ protected:
 		{State::INITIATE_EXECUTION, "init"},
 		{State::MOVE, "move"},
 		{State::ADJUST_ORIENTATION, "adjust"},
+		{State::RECOVERY_ROTATE_AND_RECEDE, "recovery_rr"},
 		{State::STOPPED, "stop"}
 	};
 
@@ -88,6 +101,14 @@ protected:
 	std::function<bool()> pos_reached_fun_;
 	/// Event checker
 	std::function<bool()> goal_reached_fun_;
+	/// Event checker
+	std::function<bool()> oscillating_fun_;
+	/// Event checker
+	std::function<bool()> stuck_fun_;
+	/// Event checker
+	std::function<bool()> near_collision_fun_;
+	/// Event checker
+	std::function<bool()> can_recover_fun_;
 };
 
 } // namespace humap_local_planner
