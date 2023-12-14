@@ -1209,6 +1209,8 @@ bool HumapPlanner::planOrientationAdjustment(const Pose& goal) {
 	result_traj_.thetav_ = cmd_vel.angular.z;
 	// negative cost when trajectory is invalid
 	result_traj_.cost_ = traj_valid ? 0.0 : -1.0;
+	// add at least the current pose so the trajectory can be somehow scored
+	result_traj_.addPoint(pose_.getX(), pose_.getY(), pose_.getYaw());
 
 	// update explored trajectories (1 valid trajectory will be added to the list)
 	traj_explored_.clear();
