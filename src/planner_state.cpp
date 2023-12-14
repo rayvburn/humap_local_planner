@@ -11,6 +11,10 @@ PlannerState::PlannerState(
 	const geometry::Pose& goal_initiation,
 	std::function<bool()> pos_reached_fun,
 	std::function<bool()> goal_reached_fun,
+	std::function<bool()> oscillating_fun,
+	std::function<bool()> stuck_fun,
+	std::function<bool()> near_collision_fun,
+	std::function<bool()> can_recover_fun,
 	double initiation_yaw_threshold):
 	state_(STOPPED),
 	initiation_yaw_threshold_(initiation_yaw_threshold),
@@ -19,7 +23,11 @@ PlannerState::PlannerState(
 	goal_local_(goal_local),
 	goal_initiation_(goal_initiation),
 	pos_reached_fun_(pos_reached_fun),
-	goal_reached_fun_(goal_reached_fun)
+	goal_reached_fun_(goal_reached_fun),
+	oscillating_fun_(oscillating_fun),
+	stuck_fun_(stuck_fun),
+	near_collision_fun_(near_collision_fun),
+	can_recover_fun_(can_recover_fun)
 {}
 
 void PlannerState::update(bool new_goal_received) {
@@ -31,9 +39,21 @@ void PlannerState::update(bool new_goal_received) {
 		auto dir_to_init_pose = std::abs(computeDirectionToPose(goal_initiation_).getRadian());
 		pointing_towards_goal = dir_to_init_pose <= initiation_yaw_threshold_;
 	}
+	// recovery-related
+	bool oscillating = oscillating_fun_();
+	bool stuck = stuck_fun_();
+	bool near_collision = near_collision_fun_();
+	bool can_recover = can_recover_fun_();
 
 	switch (getState()) {
 		case INITIATE_EXECUTION: {
+			// emergency transition has a higher priority than normal transitions
+			if (oscillating || stuck || near_collision) {
+				// recovery should be started
+				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			}
+
 			// check if any state transition got activated
 			if (new_goal_received && pointing_towards_goal) {
 				// already pointing towards the local goal -> let's skip INITIATE_EXECUTION
@@ -49,6 +69,13 @@ void PlannerState::update(bool new_goal_received) {
 		}
 
 		case MOVE: {
+			// emergency transition has a higher priority than normal transitions
+			if (oscillating || stuck || near_collision) {
+				// recovery should be started
+				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			}
+
 			bool pos_reached = pos_reached_fun_();
 
 			// angle towards the local goal (when the robot has the goal behind, it switches to INITIATE_EXECUTION)
@@ -70,6 +97,13 @@ void PlannerState::update(bool new_goal_received) {
 		}
 
 		case ADJUST_ORIENTATION: {
+			// emergency transition has a higher priority than normal transitions
+			if (oscillating || stuck || near_collision) {
+				// recovery should be started
+				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			}
+
 			bool pos_reached = pos_reached_fun_();
 			bool goal_reached = goal_reached_fun_();
 
@@ -83,6 +117,16 @@ void PlannerState::update(bool new_goal_received) {
 				state_ = INITIATE_EXECUTION;
 			} else if (!new_goal_received && pos_reached && goal_reached) {
 				state_ = STOPPED;
+			}
+			break;
+		}
+
+		case RECOVERY_ROTATE_AND_RECEDE: {
+			if (!can_recover) {
+				state_ = STOPPED;
+			} else if (!oscillating && !stuck && !near_collision) {
+				// recovery finished or robot is unstuck, moving further is possible
+				state_ = MOVE;
 			}
 			break;
 		}
