@@ -270,23 +270,26 @@ bool adjustTwistWithAccAndGoalLimits(
 	bool maintain_vel_components_rate,
 	double dist_to_goal
 ) {
-	// maximum velocities kinematic limits that may be straitened to avoid overshooting the goal pose
-	double vel_max_x_corrected = vel_max_x;
-	double vel_max_y_corrected = vel_max_y;
-
-
 	// Modified version of code from base_local_planner::SimpleTrajectoryGenerator::initialise
 	// authored by Thibault Kruse
 	// https://github.com/ros-planning/navigation/blob/noetic-devel/base_local_planner/src/simple_trajectory_generator.cpp#L94
 	// "we limit the velocities to those that do not overshoot the goal in **sim_time**"
 	//
 	// formulation below is a transformed equation of a 'constantly accelerated motion' - we know the distance
-	// within which the robot must be stopped so we compute the maximum velocity that allows to do so; time is
-	// computed under constant velocity assumption t = s/v
-	double vx_safe = 2.0 * dist_to_goal / acc_lim_x;
-	double vy_safe = 2.0 * dist_to_goal / acc_lim_y;
-	vel_max_x_corrected = std::max(std::min(vel_max_x, vx_safe), vel_min_x);
-	vel_max_y_corrected = std::max(std::min(vel_max_y, vy_safe), vel_min_y);
+	// within which the robot must be stopped so we compute the maximum velocity that allows to do so
+	double acc_lim_decel = std::hypot(acc_lim_x, acc_lim_y);
+	// maximum initial speed allowing to stop after dist_to_goal given a deceleration rate of "acc_lim_decel"
+	double speed_init_max = std::sqrt(2.0 * acc_lim_decel * dist_to_goal);
+
+	// to trim both velocity components proportionally
+	double vel_vector_angle = std::atan2(vel.getY(), vel.getX());
+	// updated velocity limits that prevent from overshooting the goal pose
+	double vx_safe = cos(vel_vector_angle) * speed_init_max;
+	double vy_safe = sin(vel_vector_angle) * speed_init_max;
+
+	// original kinematic limits related to max. velocity may be reduced to avoid overshooting the goal pose
+	double vel_max_x_corrected = std::max(std::min(vel_max_x, vx_safe), vel_min_x);
+	double vel_max_y_corrected = std::max(std::min(vel_max_y, vy_safe), vel_min_y);
 
 	return adjustTwistWithAccLimits(
 		vel,
