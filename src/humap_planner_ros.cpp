@@ -55,7 +55,7 @@ void HumapPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, c
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
 		g_plan_pruned_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan_pruned", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
-		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("trajectories", 1);
+		traj_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("explored_trajectories", 1);
 		ttc_markers_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("ttc_prediction", 1);
 		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
 		planner_state_pub_ = private_nh.advertise<std_msgs::UInt8>("planner_state", 1);
@@ -759,7 +759,7 @@ sensor_msgs::PointCloud2 HumapPlannerROS::createExploredTrajectoriesPcl() const 
 			continue;
 		}
 
-		// Fill out the plan
+		// Fill out the explored trajectories
 		for(unsigned int i = 0; i < t->getPointsSize(); ++i) {
 			double p_x, p_y, p_th;
 			t->getPoint(i, p_x, p_y, p_th);
