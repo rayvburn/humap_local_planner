@@ -26,6 +26,7 @@
 #include <hubero_local_planner/visualization.h>
 
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/point_cloud2_iterator.h>
 
 #include <people_msgs/People.h>
 #include <hubero_local_planner/person.h>
@@ -172,6 +173,10 @@ protected:
 	bool initialized_;
 
 	/// @section Publishers
+	/// @brief Publishes predicted trajectories of people as PCL (for visualisation)
+	ros::Publisher people_traj_pred_pcl_pub_;
+	/// @brief Publishes predicted trajectories of people groups as PCL (for visualisation)
+	ros::Publisher group_traj_pred_pcl_pub_;
 	/// @brief Global plan publisher (for visualisation)
 	ros::Publisher g_plan_pub_;
 	/// @brief Pruned global plan publisher (for visualisation)
@@ -227,6 +232,84 @@ protected:
 	tf2_ros::TransformBroadcaster tf_broadcaster_;
 
 	Visualization vis_;
+
+	/**
+	 * @brief Creates a PCL with trajectory prediction points
+	 *
+	 * Template methods must be implemented in header files
+	 *
+	 * @tparam T @ref People or @ref Groups containers
+	 * @param container
+	 * @return sensor_msgs::PointCloud2
+	 */
+	template <typename T>
+	sensor_msgs::PointCloud2 createTrajectoryPredictionPcl(const std::vector<T>& container) const {
+		sensor_msgs::PointCloud2 traj_cloud;
+		traj_cloud.header.frame_id = planner_util_->getGlobalFrame();
+		traj_cloud.header.stamp = ros::Time::now();
+
+		if (container.empty()) {
+			return traj_cloud;
+		}
+
+		sensor_msgs::PointCloud2Modifier cloud_mod(traj_cloud);
+		cloud_mod.setPointCloud2Fields(
+			6,
+			"x", 1, sensor_msgs::PointField::FLOAT32,
+			"y", 1, sensor_msgs::PointField::FLOAT32,
+			"z", 1, sensor_msgs::PointField::FLOAT32,
+			"theta", 1, sensor_msgs::PointField::FLOAT32,
+			"time", 1, sensor_msgs::PointField::FLOAT32,
+			"id", 1, sensor_msgs::PointField::FLOAT32
+		);
+
+		// check how many points there will be in a point cloud
+		unsigned int num_points = 0;
+		for (
+			auto t = container.cbegin();
+			t != container.cend();
+			++t
+		) {
+			num_points += t->getTrajectoryPrediction().getPoses().size();
+		}
+
+		cloud_mod.resize(num_points);
+
+		// IDs for groups whose names cannot be expressed as numbers
+		unsigned long int id_fallback = 0;
+
+		sensor_msgs::PointCloud2Iterator<float> iter_x(traj_cloud, "x");
+		for (
+			auto t = container.cbegin();
+			t != container.cend();
+			++t
+		) {
+			double id = 0.0;
+			try {
+				id = std::stod(t->getName());
+				// to make IDs unique
+				id_fallback = std::max(std::ceil(id), static_cast<double>(id_fallback));
+			} catch (const std::invalid_argument&) {
+				// name could not be converted to a double
+				id = static_cast<double>(++id_fallback);
+			}
+
+			// Fill out the trajectories
+			for (size_t i = 0; i < t->getTrajectoryPrediction().getPoses().size(); i++) {
+				auto pose = t->getTrajectoryPrediction().getPose(i);
+				auto time = t->getTrajectoryPrediction().getTime(i);
+
+				iter_x[0] = pose.getX();
+				iter_x[1] = pose.getY();
+				iter_x[2] = pose.getZ();
+				iter_x[3] = pose.getYaw();
+				iter_x[4] = time;
+				iter_x[5] = id;
+				++iter_x;
+			}
+		}
+		return traj_cloud;
+	}
 
 }; // class HuberoPlannerROS
 }; // namespace hubero_local_planner

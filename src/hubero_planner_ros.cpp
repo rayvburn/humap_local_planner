@@ -10,7 +10,6 @@
 
 #include <base_local_planner/goal_functions.h>
 #include <nav_msgs/Path.h>
-#include <sensor_msgs/point_cloud2_iterator.h>
 #include <std_msgs/UInt8.h>
 
 #include <people_msgs_utils/utils.h>
@@ -52,6 +51,8 @@ void HuberoPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, 
 	if (!isInitialized()) {
 		// create Node Handle with name of plugin (as used in move_base for loading)
 		ros::NodeHandle private_nh("~/" + name);
+		people_traj_pred_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("people_traj_prediction", 1);
+		group_traj_pred_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("group_traj_prediction", 1);
 		g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
 		g_plan_pruned_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan_pruned", 1);
 		l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
@@ -295,6 +296,14 @@ bool HuberoPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 		pruned_plan.header.stamp = ros::Time::now();
 		pruned_plan.poses = planner_->getGlobalPlanPruned();
 		g_plan_pruned_pub_.publish(pruned_plan);
+	}
+
+	// point cloud with trajectory predictions
+	if (people_traj_pred_pcl_pub_.getNumSubscribers() > 0) {
+		people_traj_pred_pcl_pub_.publish(createTrajectoryPredictionPcl(planner_->getPeople()));
+	}
+	if (group_traj_pred_pcl_pub_.getNumSubscribers() > 0) {
+		group_traj_pred_pcl_pub_.publish(createTrajectoryPredictionPcl(planner_->getGroups()));
 	}
 
 	// publish point cloud with explored trajectories only if the topic is subscribed as parameter set accordingly
