@@ -307,6 +307,16 @@ public:
 		return global_plan_;
 	}
 
+	/// Retrieves a container with information about the people in the environment that are regarded in the env. model
+	inline People getPeople() const {
+		return people_env_model_;
+	}
+
+	/// Retrieves a container with information about the groups in the environment that are regarded in the env. model
+	inline Groups getGroups() const {
+		return groups_env_model_;
+	}
+
 	/**
 	 * @brief Enlarges obstacle by moving its edge point (that is closest to the robot)
 	 *
