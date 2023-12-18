@@ -51,6 +51,8 @@
 #include <hubero_local_planner/person.h>
 #include <hubero_local_planner/group.h>
 
+#include <hubero_local_planner/path_crossing_detector.h>
+#include <hubero_local_planner/yield_way_crossing_manager.h>
 #include <hubero_local_planner/recovery_manager.h>
 
 #include <nav_msgs/Path.h>
@@ -502,6 +504,11 @@ protected:
 	bool planOrientationAdjustment(const Pose& goal);
 
 	/**
+	 * @brief Performs planning of a yielding way to a person that crosses the path of the robot
+	 */
+	bool planYieldWayCrossing();
+
+	/**
 	 * @brief Performs a recovery once the robot is stuck according to the cost functions
 	 */
 	bool planRecoveryRotateAndRecede();
@@ -615,6 +622,11 @@ protected:
 
 	// Stores original cost scales adjusted for the costmap resolution
 	ScalesCmCostFunctions scales_cm_costs_;
+
+	// Detector of crossing the robot's path by a nearby people
+	PathCrossingDetector crossing_;
+	// Helps to perform the yielding way procedure
+	YieldWayCrossingManager yield_way_crossing_;
 
 	// Detects failures and plans recoveries
 	RecoveryManager recovery_;
