@@ -216,6 +216,8 @@ add_library(humap_local_planner
     src/latched_stop_rotate_controller.cpp
     src/planner_state.cpp
     src/recovery_manager.cpp
+    src/path_crossing_detector.cpp
+    src/yield_way_crossing_manager.cpp
 )
 add_dependencies(humap_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(humap_local_planner

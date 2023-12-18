@@ -111,6 +111,12 @@ HumapPlanner::HumapPlanner(
 		goal_pose.pose = goal_.getAsMsgPose();
 		return stop_rotate_controller_.isPositionReached(goal_pose, pose, cfg_->getLimits()->xy_goal_tolerance);
 	});
+	auto crossing_detected_fun = std::function<bool()>([&]{
+		return crossing_.isCrossingDetected();
+	});
+	auto yield_way_crossing_finished_fun = std::function<bool()>([&]{
+		return !yield_way_crossing_.isActive();
+	});
 	auto is_oscillating_fun = std::function<bool()>([&]{
 		return recovery_.isOscillating();
 	});
@@ -131,6 +137,8 @@ HumapPlanner::HumapPlanner(
 		goal_initiation_,
 		pos_reached_fun,
 		goal_reached_fun,
+		crossing_detected_fun,
+		yield_way_crossing_finished_fun,
 		is_oscillating_fun,
 		is_stuck_fun,
 		near_collision_fun,
@@ -175,6 +183,13 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 	);
 
 	updateCostParameters();
+
+	crossing_.setParameters(
+		cfg_->getGeneral()->person_model_radius,
+		robot_model_->getInscribedRadius(),
+		std::max(cfg_->getCost()->occdist_separation, 0.025),
+		0.60 // TODO
+	);
 
 	// keep 5 sec of history (buffer length not parameterized)
 	recovery_.setOscillationBufferLength(static_cast<int>(std::ceil(5.0 / cfg_->getGeneral()->sim_period)));
@@ -283,6 +298,9 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		case PlannerState::MOVE:
 			traj_valid = planMovingRobot();
 			break;
+		case PlannerState::YIELD_WAY_CROSSING:
+			traj_valid = planYieldWayCrossing();
+			break;
 		case PlannerState::RECOVERY_ROTATE_AND_RECEDE:
 			traj_valid = planRecoveryRotateAndRecede();
 			break;
@@ -346,6 +364,15 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		(result_traj_.cost_ < 0 && !traj_explored_.empty()) ? traj_explored_.front() : result_traj_,
 		obstacle_costs_
 	);
+
+	auto traj_robot_g = Trajectory(result_traj_, true);
+	auto traj_robot_poses = traj_robot_g.getPoses();
+	std::vector<Trajectory> trajs_people;
+	for (const auto& person: people_env_model_) {
+		auto traj_person = person.getTrajectoryPrediction();
+		trajs_people.push_back(traj_person);
+	}
+	crossing_.detect(traj_robot_g, trajs_people);
 	return result_traj_;
 }
 
@@ -1268,6 +1295,135 @@ bool HumapPlanner::planOrientationAdjustment(const Pose& goal) {
 	traj_explored_.clear();
 	traj_explored_.push_back(result_traj_);
 	return traj_valid;
+}
+
+bool HumapPlanner::planYieldWayCrossing() {
+	// update the class that helps performing the yielding routine
+	if (!yield_way_crossing_.update(pose_, crossing_.getClosestSafeDirection())) {
+		ROS_WARN_NAMED(
+			"HumapPlanner",
+			"Cannot find a feasible pose for yielding the way to a person that crosses the robot's planned path. "
+			"The person might also become unobservable."
+		);
+		yield_way_crossing_.finish();
+		return false;
+	}
+
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+
+	// investigate all cases when exiting from the state is possible (hoping that the global plan has been adjusted
+	// and the robot won't be moving toward a person anymore)
+	if (yield_way_crossing_.getGoalDistanceXy() < limits.xy_goal_tolerance) {
+		yield_way_crossing_.finish();
+		return true;
+	}
+	if (std::abs(yield_way_crossing_.getGoalDistanceYaw()) < limits.yaw_goal_tolerance) {
+		yield_way_crossing_.finish();
+		return true;
+	}
+	if (yield_way_crossing_.getTraveledDistance() >= 0.75) {
+		yield_way_crossing_.finish();
+		return true;
+	}
+	// gap will be "Inf" if no people nearby are detected
+	if (crossing_.getGapToClosestPerson() > cfg_->getGeneral()->person_model_radius) {
+		yield_way_crossing_.finish();
+		return true;
+	}
+
+	// NOTE: LatchedStopRotateController assumes that all received poses are expressed in the same frame,
+	// headers of stamped types are not required then
+	geometry_msgs::PoseStamped velocity;
+	velocity.pose = Pose(vel_.getX(), vel_.getY(), vel_.getZ()).getAsMsgPose();
+
+	geometry_msgs::PoseStamped pose;
+	pose.pose = pose_.getAsMsgPose();
+
+	// base_local_planner::LocalPlannerLimits::getAccLimits is not marked as `const`...
+	Eigen::Vector3f acc_limits;
+	acc_limits[0] = limits.acc_lim_x;
+	acc_limits[1] = limits.acc_lim_y;
+	acc_limits[2] = limits.acc_lim_theta;
+
+	// output
+	geometry_msgs::Twist cmd_vel_rot;
+
+	// reused the code that performs rotation including the acceleration limits - just to obtain the angular velocity
+	bool rotate_valid = stop_rotate_controller_.rotateToGoal(
+		pose,
+		velocity,
+		yield_way_crossing_.getGoalDirection(), // target orientation
+		cmd_vel_rot,
+		acc_limits,
+		cfg_->getGeneral()->sim_period,
+		limits,
+		std::bind(
+			&HumapPlanner::checkInPlaceTrajectory,
+			this,
+			std::placeholders::_1,
+			std::placeholders::_2,
+			std::placeholders::_3
+		)
+	);
+
+	// decelerate and start turning towards the safe position
+	double vel_x_forward = std::abs(limits.min_vel_x);
+	// but don't move faster than at the start of the routine
+	vel_x_forward = std::min(vel_.getX(), vel_x_forward);
+
+	// routine does not require strafing
+	geometry::Vector cmd_vel(
+		vel_x_forward,
+		0.0,
+		cmd_vel_rot.angular.z
+	);
+
+	// make the new velocity command be compliant with the kinematic and dynamic constraints
+	adjustTwistWithAccLimits(
+		vel_,
+		limits.acc_lim_x,
+		limits.acc_lim_y,
+		limits.acc_lim_theta,
+		limits.min_vel_x,
+		limits.min_vel_y,
+		-limits.max_vel_theta,
+		limits.max_vel_x,
+		limits.max_vel_y,
+		limits.max_vel_theta,
+		cfg_->getGeneral()->sim_period,
+		cmd_vel,
+		false // hard-coded maintain_vel_components_rate
+	);
+
+	// check the trajectory obstacle-wise
+	Eigen::Vector3f vel_sample;
+	vel_sample[0] = cmd_vel.getX();
+	vel_sample[1] = cmd_vel.getY();
+	vel_sample[2] = cmd_vel.getZ();
+	bool traj_valid = checkTrajectory(
+		pose_.getAsEigen2D(),
+		vel_.getAsEigen<Eigen::Vector3f>(),
+		vel_sample
+	);
+
+	// terminate behaviour execution if trajectories are not collision-free
+	if (!traj_valid || !rotate_valid) {
+		yield_way_crossing_.finish();
+	}
+
+	result_traj_.resetPoints();
+	result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
+	result_traj_.xv_ = cmd_vel.getX();
+	result_traj_.yv_ = cmd_vel.getY();
+	result_traj_.thetav_ = cmd_vel.getZ();
+	// negative cost when trajectory is invalid
+	result_traj_.cost_ = traj_valid ? 0.0 : -1.0;
+	// add at least the current pose so the trajectory can be somehow scored
+	result_traj_.addPoint(pose_.getX(), pose_.getY(), pose_.getYaw());
+	// update explored trajectories (1 valid trajectory will be added to the list)
+	traj_explored_.clear();
+	traj_explored_.push_back(result_traj_);
+	return traj_valid && rotate_valid;
 }
 
 bool HumapPlanner::planRecoveryRotateAndRecede() {
