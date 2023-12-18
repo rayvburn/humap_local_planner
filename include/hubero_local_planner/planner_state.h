@@ -20,6 +20,8 @@ public:
 		MOVE,
 		/// Mobile base adjusts rotates in place to reach the goal orientation (local planner does not account for RPY)
 		ADJUST_ORIENTATION,
+		/// Once sideways crossing path is detected, the robot stops or adjusts its orientation to yield a way
+		YIELD_WAY_CROSSING,
 		/// Mobile base looks for a safe pose to reach (and moves to this pose) once got stuck
 		RECOVERY_ROTATE_AND_RECEDE,
 		/// Noop state after started after reaching the latest goal
@@ -38,6 +40,8 @@ public:
 	 * orientation that follows global path poses
 	 * @param pos_reached_fun function that allows to check if goal position is reached
 	 * @param goal_reached_fun function that allows to check if goal orientation is reached
+	 * @param crossing_detected_fun checks if yielding way to a human crossing the robot's path is necessary
+	 * @param yield_way_crossing_finished_fun checks if yielding routine has finished
 	 * @param oscillating_fun function that allows to check whether the robot is oscillating
 	 * @param stuck_fun function that allows to check whether the robot is stuck
 	 * @param near_collision_fun function that allows to check whether the robot is close to colliding with its env.
@@ -51,6 +55,8 @@ public:
 		const geometry::Pose& goal_initiation,
 		std::function<bool()> pos_reached_fun,
 		std::function<bool()> goal_reached_fun,
+		std::function<bool()> crossing_detected_fun = std::function<bool()>([]() -> bool { return false; }),
+		std::function<bool()> yield_way_crossing_finished_fun = std::function<bool()>([]() -> bool { return true; }),
 		std::function<bool()> oscillating_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> stuck_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> near_collision_fun = std::function<bool()>([]() -> bool { return false; }),
@@ -83,6 +89,7 @@ protected:
 		{State::INITIATE_EXECUTION, "init"},
 		{State::MOVE, "move"},
 		{State::ADJUST_ORIENTATION, "adjust"},
+		{State::YIELD_WAY_CROSSING, "yield"},
 		{State::RECOVERY_ROTATE_AND_RECEDE, "recovery_rr"},
 		{State::STOPPED, "stop"}
 	};
@@ -101,6 +108,10 @@ protected:
 	std::function<bool()> pos_reached_fun_;
 	/// Event checker
 	std::function<bool()> goal_reached_fun_;
+	/// Event checker
+	std::function<bool()> crossing_detected_fun_;
+	/// Event checker
+	std::function<bool()> yield_way_crossing_finished_fun_;
 	/// Event checker
 	std::function<bool()> oscillating_fun_;
 	/// Event checker
