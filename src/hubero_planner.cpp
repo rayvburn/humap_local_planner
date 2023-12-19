@@ -191,8 +191,12 @@ void HuberoPlanner::reconfigure(HuberoConfigConstPtr cfg) {
 		0.60 // TODO
 	);
 
-	// keep 5 sec of history (buffer length not parameterized)
-	recovery_.setOscillationBufferLength(static_cast<int>(std::ceil(5.0 / cfg_->getGeneral()->sim_period)));
+	// keep N sec of history (buffer length not parameterized)
+	recovery_.setOscillationBufferLength(
+		static_cast<int>(std::ceil(
+			cfg_->getPlannerBehaviors()->oscillation_buffer_length / cfg_->getGeneral()->sim_period
+		))
+	);
 }
 
 bool HuberoPlanner::checkTrajectory(
