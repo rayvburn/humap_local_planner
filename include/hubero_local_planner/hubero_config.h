@@ -52,6 +52,11 @@ namespace hubero_local_planner {
 		int groups_closest_num = -1;
 	};
 
+	struct PlannerBehaviorsParams {
+		/// Length of a buffer to detect oscillations. Expressed as a number of seconds to keep the measurements
+		double oscillation_buffer_length = 5.0;
+	};
+
 	/// \brief Declaration of an SfmParams typedef'ed struct;
 	/// default values are provided
 	struct SfmParams {
@@ -286,6 +291,7 @@ public:
 	HuberoConfig() {
 		limits_ = std::make_shared<PlannerLimitsParams>();
 		general_ = std::make_shared<GeneralParams>();
+		planner_behaviors_ = std::make_shared<PlannerBehaviorsParams>();
 		sfm_ = std::make_shared<SfmParams>();
 		fis_ = std::make_shared<FisParams>();
 		traj_gen_ = std::make_shared<TrajectoryGeneration>();
@@ -300,6 +306,10 @@ public:
 
 	std::shared_ptr<const GeneralParams> getGeneral() const {
 		return general_;
+	}
+
+	std::shared_ptr<PlannerBehaviorsParams> getPlannerBehaviors() const {
+		return planner_behaviors_;
 	}
 
 	std::shared_ptr<const SfmParams> getSfm() const {
@@ -335,6 +345,7 @@ public:
 protected:
 	std::shared_ptr<PlannerLimitsParams> limits_;
 	std::shared_ptr<GeneralParams> general_;
+	std::shared_ptr<PlannerBehaviorsParams> planner_behaviors_;
 	std::shared_ptr<SfmParams> sfm_;
 	std::shared_ptr<FisParams> fis_;
 	std::shared_ptr<TrajectoryGeneration> traj_gen_;
