@@ -122,10 +122,15 @@ public:
 
 	/**
 	 * @brief  Check if a trajectory is legal for a position/velocity pair
+	 *
+	 * Helper method for LatchedStopRotateController to check if trajectory is valid
+	 *
 	 * @param pos The robot's position
 	 * @param vel The robot's velocity
 	 * @param vel_samples The desired velocity
 	 * @return True if the trajectory is valid, false otherwise
+	 *
+	 * Based on dwa_local_planner::DWAPlanner::checkTrajectory by Eitan Marder-Eppstein
 	 */
 	bool checkTrajectory(
 		const Eigen::Vector3f pos,
@@ -512,17 +517,6 @@ protected:
 	 * @brief Performs a recovery once the robot is stuck according to the cost functions
 	 */
 	bool planRecoveryRotateAndRecede();
-
-	/**
-	 * @brief Helper method for LatchedStopRotateController to check if trajectory is valid
-	 *
-	 * Based on dwa_local_planner::DWAPlanner::checkTrajectory by Eitan Marder-Eppstein
-	 */
-	bool checkInPlaceTrajectory(
-		const Eigen::Vector3f pos,
-		const Eigen::Vector3f vel,
-		const Eigen::Vector3f vel_samples
-	);
 
 	/**
 	 * @brief Updates motion driving factors based on the newest data from the trajectory generator
