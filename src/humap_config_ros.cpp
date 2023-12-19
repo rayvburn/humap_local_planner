@@ -90,6 +90,8 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	general_->people_closest_num = cfg.people_closest_num;
 	general_->groups_closest_num = cfg.groups_closest_num;
 
+	planner_behaviors_->oscillation_buffer_length = cfg.oscillation_buffer_length;
+
 	sfm_->fov = cfg.fov;
 	sfm_->fov_factor_method = cfg.sfm_fov_factor_method;
 	sfm_->mass = cfg.mass;
