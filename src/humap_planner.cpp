@@ -188,7 +188,7 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 		cfg_->getGeneral()->person_model_radius,
 		robot_model_->getInscribedRadius(),
 		std::max(cfg_->getCost()->occdist_separation, 0.025),
-		0.60 // TODO
+		cfg_->getPlannerBehaviors()->path_crossing_confidence_threshold
 	);
 
 	// keep N sec of history (buffer length not parameterized)
@@ -1385,7 +1385,7 @@ bool HumapPlanner::planYieldWayCrossing() {
 		yield_way_crossing_.finish();
 		return true;
 	}
-	if (yield_way_crossing_.getTraveledDistance() >= 0.75) {
+	if (yield_way_crossing_.getTraveledDistance() > cfg_->getPlannerBehaviors()->yield_way_max_travel_distance) {
 		yield_way_crossing_.finish();
 		return true;
 	}
