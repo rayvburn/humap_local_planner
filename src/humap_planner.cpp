@@ -200,10 +200,71 @@ bool HumapPlanner::checkTrajectory(
 	const Eigen::Vector3f vel,
 	const Eigen::Vector3f vel_samples
 ) {
-	ROS_ERROR_NAMED(
-		"HumapPlanner",
-		"`checkTrajectory` has not been implemented - a trajectory will be marked as invalid"
+	geometry_msgs::PoseStamped goal_pose = global_plan_.back();
+	Eigen::Vector3f goal(goal_pose.pose.position.x, goal_pose.pose.position.y, tf2::getYaw(goal_pose.pose.orientation));
+
+	// no samples along each direction - zeroing at least 1 component disables collecting the sample params (desirable)
+	Eigen::Vector3f v_sample_num;
+	v_sample_num[0] = 0;
+	v_sample_num[1] = 0;
+	v_sample_num[2] = 0;
+
+	// struct must be copied to comply with existing interface
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+
+	// create new, simple trajectory generator
+	base_local_planner::SimpleTrajectoryGenerator traj_gen;
+	traj_gen.initialise(
+		pos,
+		vel,
+		goal,
+		&limits,
+		v_sample_num
 	);
+
+	std::vector<base_local_planner::TrajectorySampleGenerator*> traj_gen_list;
+	traj_gen_list.push_back(&traj_gen);
+
+	// use class member critics
+	std::vector<base_local_planner::TrajectoryCostFunction*> critics;
+	critics.push_back(&obstacle_costs_);
+	critics.push_back(&path_costs_);
+	critics.push_back(&goal_costs_);
+	critics.push_back(&alignment_costs_);
+	critics.push_back(&goal_front_costs_);
+	critics.push_back(&heading_change_smoothness_costs_);
+
+	base_local_planner::SimpleScoredSamplingPlanner traj_scorer(traj_gen_list, critics);
+
+	base_local_planner::Trajectory traj;
+	traj_gen.generateTrajectory(pos, vel, vel_samples, traj);
+	double cost = traj_scorer.scoreTrajectory(traj, -1);
+
+	//if the trajectory is a legal one... the check passes
+	if (cost >= 0) {
+		ROS_INFO_COND_NAMED(
+			cfg_->getDiagnostics()->log_explored_trajectories,
+			"HumapPlanner",
+			"Valid trajectory was checked - x: %2.3f, y: %2.3f, th: %2.3f (cost %2.2f)",
+			vel_samples[0],
+			vel_samples[1],
+			vel_samples[2],
+			cost
+		);
+		return true;
+	}
+
+	ROS_ERROR_COND_NAMED(
+		cfg_->getDiagnostics()->log_explored_trajectories,
+		"HumapPlanner",
+		"Invalid trajectory was checked - x: %2.3f, y: %2.3f, th: %2.3f (cost: %2.2f)",
+		vel_samples[0],
+		vel_samples[1],
+		vel_samples[2],
+		cost
+	);
+
+	// otherwise the check fails
 	return false;
 }
 
@@ -1272,7 +1333,7 @@ bool HumapPlanner::planOrientationAdjustment(const Pose& goal) {
 		pose,
 		*cfg_->getLimits(),
 		std::bind(
-			&HumapPlanner::checkInPlaceTrajectory,
+			&HumapPlanner::checkTrajectory,
 			this,
 			std::placeholders::_1,
 			std::placeholders::_2,
@@ -1357,7 +1418,7 @@ bool HumapPlanner::planYieldWayCrossing() {
 		cfg_->getGeneral()->sim_period,
 		limits,
 		std::bind(
-			&HumapPlanner::checkInPlaceTrajectory,
+			&HumapPlanner::checkTrajectory,
 			this,
 			std::placeholders::_1,
 			std::placeholders::_2,
@@ -1572,81 +1633,6 @@ bool HumapPlanner::planRecoveryRotateAndRecede() {
 	traj_explored_.clear();
 	traj_explored_.push_back(result_traj_);
 	return traj_valid;
-}
-
-bool HumapPlanner::checkInPlaceTrajectory(
-	const Eigen::Vector3f pos,
-	const Eigen::Vector3f vel,
-	const Eigen::Vector3f vel_samples
-) {
-	oscillation_costs_.resetOscillationFlags();
-
-	geometry_msgs::PoseStamped goal_pose = global_plan_.back();
-	Eigen::Vector3f goal(goal_pose.pose.position.x, goal_pose.pose.position.y, tf2::getYaw(goal_pose.pose.orientation));
-
-	// number of samples along each direction (x, y, theta), arbitrarily chosen
-	Eigen::Vector3f v_sample_num;
-	v_sample_num[0] = 1;
-	v_sample_num[1] = 1;
-	v_sample_num[2] = 10;
-
-	// struct must be copied to comply with existing interface
-	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
-
-	// create new, simple trajectory generator
-	base_local_planner::SimpleTrajectoryGenerator traj_gen;
-	traj_gen.initialise(
-		pos,
-		vel,
-		goal,
-		&limits,
-		v_sample_num
-	);
-
-	std::vector<base_local_planner::TrajectorySampleGenerator*> traj_gen_list;
-	traj_gen_list.push_back(&traj_gen);
-
-	// use class member critics
-	std::vector<base_local_planner::TrajectoryCostFunction*> critics;
-	critics.push_back(&obstacle_costs_);
-	critics.push_back(&path_costs_);
-	critics.push_back(&goal_costs_);
-	critics.push_back(&alignment_costs_);
-	critics.push_back(&goal_front_costs_);
-	critics.push_back(&heading_change_smoothness_costs_);
-
-	base_local_planner::SimpleScoredSamplingPlanner traj_scorer(traj_gen_list, critics);
-
-	base_local_planner::Trajectory traj;
-	traj_gen.generateTrajectory(pos, vel, vel_samples, traj);
-	double cost = traj_scorer.scoreTrajectory(traj, -1);
-
-	//if the trajectory is a legal one... the check passes
-	if (cost >= 0) {
-		ROS_INFO_COND_NAMED(
-			cfg_->getDiagnostics()->log_explored_trajectories,
-			"HumapPlanner",
-			"Selected trajectory for stop & rotate mode - x: %2.3f, y: %2.3f, th: %2.3f (cost %2.2f)",
-			vel_samples[0],
-			vel_samples[1],
-			vel_samples[2],
-			cost
-		);
-		return true;
-	}
-
-	ROS_ERROR_COND_NAMED(
-		cfg_->getDiagnostics()->log_explored_trajectories,
-		"HumapPlanner",
-		"Invalid Trajectory for stop & rotate mode - x: %2.3f, y: %2.3f, th: %2.3f (cost: %2.2f)",
-		vel_samples[0],
-		vel_samples[1],
-		vel_samples[2],
-		cost
-	);
-
-	// otherwise the check fails
-	return false;
 }
 
 void HumapPlanner::collectTrajectoryMotionData() {
