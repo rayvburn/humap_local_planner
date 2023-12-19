@@ -91,6 +91,8 @@ void HuberoConfigROS::reconfigure(HuberoPlannerConfig& cfg) {
 	general_->groups_closest_num = cfg.groups_closest_num;
 
 	planner_behaviors_->oscillation_buffer_length = cfg.oscillation_buffer_length;
+	planner_behaviors_->path_crossing_confidence_threshold = cfg.path_crossing_confidence_threshold;
+	planner_behaviors_->yield_way_max_travel_distance = cfg.yield_way_max_travel_distance;
 
 	sfm_->fov = cfg.fov;
 	sfm_->fov_factor_method = cfg.sfm_fov_factor_method;

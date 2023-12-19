@@ -55,6 +55,10 @@ namespace hubero_local_planner {
 	struct PlannerBehaviorsParams {
 		/// Length of a buffer to detect oscillations. Expressed as a number of seconds to keep the measurements
 		double oscillation_buffer_length = 5.0;
+		/// Confidence threshold to consider geometrical arrangement between the robot and a person as path crossing
+		double path_crossing_confidence_threshold = 0.6;
+		/// Maximum distance that the robot can travel while in the YIELD_WAY_CROSSING state
+		double yield_way_max_travel_distance = 0.75;
 	};
 
 	/// \brief Declaration of an SfmParams typedef'ed struct;
