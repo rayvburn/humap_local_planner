@@ -1,4 +1,4 @@
-# hubero_local_planner
+# humap_local_planner
 
 A local planning module for A Framework to Simulate Human Behaviour in Robot Research
 
@@ -45,7 +45,7 @@ git clone -b melodic-devel-robot-footprint-model-access-fix git@github.com:rayvb
 
 ### `fuzzylite`
 
-Additionally, `fuzzylite` library built from source is required to run `hubero_local_planner`. Follow these steps:
+Additionally, `fuzzylite` library built from source is required to run `humap_local_planner`. Follow these steps:
 
 ```bash
 cd ~/

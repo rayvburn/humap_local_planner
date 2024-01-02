@@ -1,9 +1,9 @@
-#include <hubero_local_planner/heading_change_smoothness_cost_function.h>
-#include <hubero_local_planner/trajectory.h>
+#include <humap_local_planner/heading_change_smoothness_cost_function.h>
+#include <humap_local_planner/trajectory.h>
 
 #include <cmath>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 bool HeadingChangeSmoothnessCostFunction::prepare() {
 	return true;
@@ -29,4 +29,4 @@ double HeadingChangeSmoothnessCostFunction::scoreTrajectory(base_local_planner::
 	return hcs / static_cast<double>((t.getPoses().size() - 1));
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

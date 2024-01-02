@@ -1,6 +1,6 @@
-#include <hubero_local_planner/planner_state.h>
+#include <humap_local_planner/planner_state.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 using namespace geometry;
 
@@ -108,4 +108,4 @@ std::string PlannerState::getStateName() const {
 	return it->second;
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

@@ -1,9 +1,9 @@
-#include <hubero_local_planner/passing_speed_cost_function.h>
-#include <hubero_local_planner/trajectory.h>
+#include <humap_local_planner/passing_speed_cost_function.h>
+#include <humap_local_planner/trajectory.h>
 
 #include <social_nav_utils/passing_speed_comfort.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 PassingSpeedCostFunction::PassingSpeedCostFunction()
 {}
@@ -59,4 +59,4 @@ double PassingSpeedCostFunction::scoreTrajectory(base_local_planner::Trajectory&
 	return *std::min_element(people_comforts.cbegin(), people_comforts.cend());
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

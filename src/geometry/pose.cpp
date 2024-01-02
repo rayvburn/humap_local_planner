@@ -1,6 +1,6 @@
-#include <hubero_local_planner/geometry/pose.h>
+#include <humap_local_planner/geometry/pose.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace geometry {
 
 Pose::Pose(double x, double y, double yaw): Pose::Pose(x, y, 0.0, 0.0, 0.0, yaw) {}
@@ -178,4 +178,4 @@ Eigen::Vector3f Pose::getAsEigen2D() const {
 }
 
 }; // namespace geometry
-}; // namespace hubero_local_planner
+}; // namespace humap_local_planner

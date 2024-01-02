@@ -2,7 +2,7 @@ clear;
 clc;
 
 % entries from unit test:
-% TEST(HuberoVelocityConversions, computeVelocityLocal)
+% TEST(HumapVelocityConversions, computeVelocityLocal)
 
 % 1) going straight ahead along X axis
 fprintf("1) "); computeVelocityLocal([ 1.0;  0.0;  0.0 ], [nan; nan;    0.0  ]);

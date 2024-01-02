@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/marker_base.h>
+#include <humap_local_planner/vis/marker_base.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -45,4 +45,4 @@ MarkerBase::~MarkerBase() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

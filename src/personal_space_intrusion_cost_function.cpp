@@ -1,9 +1,9 @@
-#include <hubero_local_planner/personal_space_intrusion_cost_function.h>
-#include <hubero_local_planner/trajectory.h>
+#include <humap_local_planner/personal_space_intrusion_cost_function.h>
+#include <humap_local_planner/trajectory.h>
 
 #include <social_nav_utils/personal_space_intrusion.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 PersonalSpaceIntrusionCostFunction::PersonalSpaceIntrusionCostFunction()
 {}
@@ -80,4 +80,4 @@ double PersonalSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner::T
 	return *std::max_element(people_intrusions.cbegin(), people_intrusions.cend());
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

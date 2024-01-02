@@ -1,9 +1,9 @@
-#include <hubero_local_planner/speedy_goal_cost_function.h>
-#include <hubero_local_planner/geometry/vector.h>
+#include <humap_local_planner/speedy_goal_cost_function.h>
+#include <humap_local_planner/geometry/vector.h>
 
 #include <cmath>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 SpeedyGoalCostFunction::SpeedyGoalCostFunction(const geometry::Pose& global_goal):
 	global_goal_(global_goal) {}
@@ -48,4 +48,4 @@ double SpeedyGoalCostFunction::scoreTrajectory(base_local_planner::Trajectory& t
 	return dist_factor * trans_vel_diff;
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

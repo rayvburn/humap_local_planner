@@ -5,10 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/fuzz/regions.h>
-#include <hubero_local_planner/fuzz/social_conductor.h>
+#include <humap_local_planner/fuzz/regions.h>
+#include <humap_local_planner/fuzz/social_conductor.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace fuzz {
 
 SocialConductor::SocialConductor():
@@ -17,7 +17,7 @@ SocialConductor::SocialConductor():
 	use_exponential_formulation_(true)
 {}
 
-void SocialConductor::initialize(std::shared_ptr<const hubero_local_planner::FisParams> cfg) {
+void SocialConductor::initialize(std::shared_ptr<const humap_local_planner::FisParams> cfg) {
 	cfg_ = cfg;
 }
 
@@ -171,4 +171,4 @@ double SocialConductor::computeBehaviourStrengthExponential(
 }
 
 } /* namespace fuzz */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

@@ -1,17 +1,17 @@
 #include <gtest/gtest.h>
 #include <ros/ros.h>
-#include <hubero_local_planner/geometry/geometry.h>
-#include <hubero_local_planner/world.h>
+#include <humap_local_planner/geometry/geometry.h>
+#include <humap_local_planner/world.h>
 
 #include "gtest_cout.h"
 
-using namespace hubero_local_planner;
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner;
+using namespace humap_local_planner::geometry;
 
 // parts of these tests are used in `test_sfm.cpp`
 
 // to make sure that distance to goal is computed from robot's center to the goal
-TEST(HuberoWorldGeneration, robotTargetDistance) {
+TEST(HumapWorldGeneration, robotTargetDistance) {
     // 1st case
     const Pose ROBOT_POSE(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_LOCAL(2.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -45,7 +45,7 @@ TEST(HuberoWorldGeneration, robotTargetDistance) {
     EXPECT_FLOAT_EQ(IGN_DTOR(45.0), Angle(robot.target.dist_v).getRadian());
 }
 
-TEST(HuberoWorldGeneration, predict) {
+TEST(HumapWorldGeneration, predict) {
     const Pose ROBOT_POSE(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_LOCAL(2.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_GLOBAL(3.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -70,7 +70,7 @@ TEST(HuberoWorldGeneration, predict) {
     EXPECT_EQ(obstacle.object.getZ(), OBSTACLE_POSE.getZ() + OBSTACLE_VEL.getZ());
 }
 
-TEST(HuberoWorldGeneration, predictSequence) {
+TEST(HumapWorldGeneration, predictSequence) {
     const Pose ROBOT_POSE(1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_LOCAL(2.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     const Pose GOAL_GLOBAL(3.0, 0.0, 0.0, 0.0, 0.0, 0.0);

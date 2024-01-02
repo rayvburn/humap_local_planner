@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/arrow.h>
+#include <humap_local_planner/vis/arrow.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 Arrow::Arrow(): max_length_(1.0f), sfm_max_force_(2000.0) {}
@@ -74,4 +74,4 @@ Arrow::~Arrow() {
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

@@ -1,5 +1,5 @@
-#include <hubero_local_planner/utils/transformations.h>
-#include <hubero_local_planner/utils/debug.h>
+#include <humap_local_planner/utils/transformations.h>
+#include <humap_local_planner/utils/debug.h>
 
 // debugging macros
 #define DEBUG_BASIC 0
@@ -9,7 +9,7 @@
 #define debug_print_verbose(fmt, ...) _template_debug_print_basic_(DEBUG_VERBOSE, fmt, ##__VA_ARGS__)
 #define debug_print_warn(fmt, ...) _template_debug_print_warn_(DEBUG_WARN, fmt, ##__VA_ARGS__)
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 using namespace geometry;
 
@@ -47,7 +47,7 @@ void computeTwistHolonomic(
 	const double& max_rot_vel,
 	geometry::Vector& cmd_vel
 ) {
-	std::cout << "hubero_local_planner::computeTwistHolonomic not implemented yet" << std::endl;
+	std::cout << "humap_local_planner::computeTwistHolonomic not implemented yet" << std::endl;
 }
 
 void computeTwist(
@@ -80,7 +80,7 @@ void computeTwist(
 	Vector acc_v = force / robot_mass;
 
 	/*
-	 * Previous implementation multiplied `acc_v * dt`, see hubero_local_planner#55 and explanation above
+	 * Previous implementation multiplied `acc_v * dt`, see humap_local_planner#55 and explanation above
 	 * for details
 	 */
 	Vector vel_v_new = acc_v;
@@ -280,4 +280,4 @@ geometry::Pose addPoses(const geometry::Pose& pose_ref, const geometry::Pose& po
 	);
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/line_list.h>
+#include <humap_local_planner/vis/line_list.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -167,4 +167,4 @@ LineList::~LineList() {}
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

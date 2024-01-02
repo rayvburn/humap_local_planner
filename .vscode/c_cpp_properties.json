@@ -8,7 +8,7 @@
             "includePath": [
                 // e.g., action, msg, srv files
                 "${workspaceFolder}/../../devel/include/**",
-                "${workspaceFolder}/../../devel/.private/hubero_local_planner/include/**",
+                "${workspaceFolder}/../../devel/.private/humap_local_planner/include/**",
                 "${workspaceFolder}/include/**",
                 // C++
                 "/usr/include/c++/7/**",

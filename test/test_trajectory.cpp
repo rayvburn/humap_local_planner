@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
 // #include <ros/ros.h>
-#include <hubero_local_planner/trajectory.h>
+#include <humap_local_planner/trajectory.h>
 #include <people_msgs_utils/person.h>
 
-using namespace hubero_local_planner;
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner;
+using namespace humap_local_planner::geometry;
 
 // Simple: without angular velocity
-TEST(HuberoTrajectory, trajectoryFromObject) {
+TEST(HumapTrajectory, trajectoryFromObject) {
 	geometry_msgs::Point pos;
 	pos.x = 0.0;
 	pos.y = 0.0;
@@ -60,7 +60,7 @@ TEST(HuberoTrajectory, trajectoryFromObject) {
 	ASSERT_DOUBLE_EQ(t.getVelocity(4).getZ(), 0.0);
 }
 
-TEST(HuberoTrajectory, trajectoryFromBaseLocalPlanner) {
+TEST(HumapTrajectory, trajectoryFromBaseLocalPlanner) {
 	base_local_planner::Trajectory traj;
 	traj.time_delta_ = 1.0;
 	traj.xv_ = 1.0;

@@ -5,10 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/text.h>
+#include <humap_local_planner/vis/text.h>
 #include <string>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -69,4 +69,4 @@ Text::~Text() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

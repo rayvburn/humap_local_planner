@@ -1,11 +1,11 @@
 <package>
-    <name>hubero_local_planner</name>
+    <name>humap_local_planner</name>
     <version>0.0.1</version>
-    <description>HuBeRo local planner package</description>
+    <description>Humap local planner package</description>
     <author email="jaroslaw.karwowski.dokt@pw.edu.pl">Jarosław Karwowski</author>
     <maintainer email="jaroslaw.karwowski.dokt@pw.edu.pl">Jarosław Karwowski</maintainer>
     <license>BSD</license>
-    <url>https://github.com/rayvburn/hubero_local_planner</url>
+    <url>https://github.com/rayvburn/humap_local_planner</url>
 
     <buildtool_depend>catkin</buildtool_depend>
 
@@ -46,5 +46,3 @@
     </export>
 
 </package>
-
-

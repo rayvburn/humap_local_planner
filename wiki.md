@@ -38,7 +38,7 @@ If one has changed simulation time, planner frequency or so, he must also adjust
 ### Tuning guide
 
 #### `force_internal_amplifier`
-A good practice is to debug all explored trajectories in `HuberoPlanner::findBestTrajectory`. For a custom application, user should uncomment/investigate explored trajectories with respective velocity limits. Once translational velocity starts repeating among consecutive `force_internal_amplifiers`, one can trim `max` value to the highest that impacts overall velocity. Note that it is highly related to `internal_force_factor` itself. It's wise to tune `internal_force_factor` without planning first - adjust this parameter to satisfying robot speeds.
+A good practice is to debug all explored trajectories in `HumapPlanner::findBestTrajectory`. For a custom application, user should uncomment/investigate explored trajectories with respective velocity limits. Once translational velocity starts repeating among consecutive `force_internal_amplifiers`, one can trim `max` value to the highest that impacts overall velocity. Note that it is highly related to `internal_force_factor` itself. It's wise to tune `internal_force_factor` without planning first - adjust this parameter to satisfying robot speeds.
 
 #### `sfm_aw_amplifier`
 Values outside of range defined by `<-1.0; +1.0>` do not affect generated trajectories set at all.

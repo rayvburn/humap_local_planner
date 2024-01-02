@@ -1,9 +1,9 @@
-#include <hubero_local_planner/heading_disturbance_cost_function.h>
-#include <hubero_local_planner/trajectory.h>
+#include <humap_local_planner/heading_disturbance_cost_function.h>
+#include <humap_local_planner/trajectory.h>
 
 #include <social_nav_utils/heading_direction_disturbance.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 HeadingDisturbanceCostFunction::HeadingDisturbanceCostFunction():
 	fov_person_(3.31613),
@@ -89,4 +89,4 @@ double HeadingDisturbanceCostFunction::scoreTrajectory(base_local_planner::Traje
 	return *std::max_element(people_disturbances.cbegin(), people_disturbances.cend());
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

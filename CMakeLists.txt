@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(hubero_local_planner)
+project(humap_local_planner)
 
 add_definitions(-std=c++17)
 
@@ -53,12 +53,12 @@ add_definitions(${EIGEN3_DEFINITIONS})
 
 # dynamic reconfigure
 generate_dynamic_reconfigure_options(
-    cfg/HuberoPlanner.cfg
+    cfg/HumapPlanner.cfg
 )
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES hubero_local_planner
+    LIBRARIES humap_local_planner
     CATKIN_DEPENDS
         base_local_planner
         dynamic_reconfigure
@@ -132,7 +132,7 @@ set(SOURCES_VIS
 )
 
 set(HEADERS_CONFIG
-    include/${PROJECT_NAME}/hubero_config.h
+    include/${PROJECT_NAME}/humap_config.h
 )
 
 set(HEADERS_GEOMETRY
@@ -185,21 +185,21 @@ target_link_libraries(vis vis_helper)
 set_target_properties(vis PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 ### ConfigROS
-add_library(config_ros include/${PROJECT_NAME}/hubero_config_ros.h src/hubero_config_ros.cpp)
+add_library(config_ros include/${PROJECT_NAME}/humap_config_ros.h src/humap_config_ros.cpp)
 target_link_libraries(config_ros config ${catkin_LIBRARIES})
 set_target_properties(config_ros PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 ## Library
-add_library(hubero_local_planner
-    include/${PROJECT_NAME}/hubero_planner.h
-    src/hubero_planner.cpp
-    include/${PROJECT_NAME}/hubero_planner_ros.h
-    src/hubero_planner_ros.cpp
-    include/hubero_local_planner/obstacles.h
-    include/hubero_local_planner/robot_footprint_model.h
-    include/hubero_local_planner/social_trajectory_generator.h
+add_library(humap_local_planner
+    include/${PROJECT_NAME}/humap_planner.h
+    src/humap_planner.cpp
+    include/${PROJECT_NAME}/humap_planner_ros.h
+    src/humap_planner_ros.cpp
+    include/humap_local_planner/obstacles.h
+    include/humap_local_planner/robot_footprint_model.h
+    include/humap_local_planner/social_trajectory_generator.h
     # class definition in the header, see doc in the file for details
-    include/hubero_local_planner/trajectory.h
+    include/humap_local_planner/trajectory.h
     src/social_trajectory_generator.cpp
     src/ttc_cost_function.cpp
     src/heading_change_smoothness_cost_function.cpp
@@ -213,8 +213,8 @@ add_library(hubero_local_planner
     src/latched_stop_rotate_controller.cpp
     src/planner_state.cpp
 )
-add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner
+add_dependencies(humap_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(humap_local_planner
     ${catkin_LIBRARIES}
     fuzzy
     sfm
@@ -233,7 +233,7 @@ target_link_libraries(hubero_local_planner
 # None
 
 ## Install
-install(TARGETS hubero_local_planner
+install(TARGETS humap_local_planner
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
@@ -250,17 +250,17 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 ## Testing ##
 #############
-# catkin run_tests --no-deps hubero_local_planner --verbose
+# catkin run_tests --no-deps humap_local_planner --verbose
 if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_velocity_conversions test/test_velocity_conversions.cpp)
   if(TARGET test_velocity_conversions)
-    target_link_libraries(test_velocity_conversions hubero_local_planner)
+    target_link_libraries(test_velocity_conversions humap_local_planner)
   endif()
 
   # world
   catkin_add_gtest(test_world_generation test/test_world_generation.cpp)
   if(TARGET test_world_generation)
-    target_link_libraries(test_world_generation hubero_local_planner)
+    target_link_libraries(test_world_generation humap_local_planner)
   endif()
 
   catkin_add_gtest(test_geometry_angle test/test_geometry_angle.cpp)
@@ -305,11 +305,11 @@ if (CATKIN_ENABLE_TESTING)
 
   catkin_add_gtest(test_planner_state test/test_planner_state.cpp)
   if(TARGET test_planner_state)
-    target_link_libraries(test_planner_state hubero_local_planner)
+    target_link_libraries(test_planner_state humap_local_planner)
   endif()
 
   catkin_add_gtest(test_trajectory test/test_trajectory.cpp)
   if(TARGET test_trajectory)
-    target_link_libraries(test_trajectory hubero_local_planner)
+    target_link_libraries(test_trajectory humap_local_planner)
   endif()
 endif()

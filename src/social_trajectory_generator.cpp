@@ -1,9 +1,9 @@
-#include <hubero_local_planner/social_trajectory_generator.h>
-#include <hubero_local_planner/utils/transformations.h>
+#include <humap_local_planner/social_trajectory_generator.h>
+#include <humap_local_planner/utils/transformations.h>
 
 #include <cmath>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 using namespace base_local_planner;
 using namespace geometry;
@@ -20,8 +20,8 @@ SocialTrajectoryGenerator::SocialTrajectoryGenerator():
 }
 
 void SocialTrajectoryGenerator::setParameters(
-	std::shared_ptr<const hubero_local_planner::SfmParams> sfm_params_ptr,
-	std::shared_ptr<const hubero_local_planner::FisParams> fis_params_ptr,
+	std::shared_ptr<const humap_local_planner::SfmParams> sfm_params_ptr,
+	std::shared_ptr<const humap_local_planner::FisParams> fis_params_ptr,
 	double sim_time,
 	double sim_granularity,
 	double angular_sim_granularity,
@@ -743,4 +743,4 @@ void SocialTrajectoryGenerator::computeForces(
 	);
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

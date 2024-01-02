@@ -1,10 +1,10 @@
-#include <hubero_local_planner/ttc_cost_function.h>
-#include <hubero_local_planner/utils/transformations.h>
+#include <humap_local_planner/ttc_cost_function.h>
+#include <humap_local_planner/utils/transformations.h>
 
 #include <cmath>
 #include <limits>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 TTCCostFunction::TTCCostFunction(const World& world_model):
 	world_model_(world_model),
@@ -187,4 +187,4 @@ double TTCCostFunction::computeCost(double ttc, double total_prediction_time) co
 	return 1.0 / (ttc / total_prediction_time);
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

@@ -76,5 +76,17 @@
     },
     "telemetry.enableCrashReporter": false,
     "telemetry.enableTelemetry": false,
-    "C_Cpp.errorSquiggles": "Enabled"
+    "C_Cpp.errorSquiggles": "Enabled",
+    "python.autoComplete.extraPaths": [
+        "/home/rayvburn/ros_workspace/ws_social_navigation/devel/lib/python2.7/dist-packages",
+        "/home/rayvburn/ros_workspace/ws_perception/devel/lib/python2.7/dist-packages",
+        "/home/rayvburn/ros_workspace/ws_tiago/devel/lib/python2.7/dist-packages",
+        "/opt/ros/melodic/lib/python2.7/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/rayvburn/ros_workspace/ws_social_navigation/devel/lib/python2.7/dist-packages",
+        "/home/rayvburn/ros_workspace/ws_perception/devel/lib/python2.7/dist-packages",
+        "/home/rayvburn/ros_workspace/ws_tiago/devel/lib/python2.7/dist-packages",
+        "/opt/ros/melodic/lib/python2.7/dist-packages"
+    ]
 }

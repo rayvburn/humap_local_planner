@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/geometry/geometry.h>
+#include <humap_local_planner/geometry/geometry.h>
 
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner::geometry;
 
 static const double TOLERANCE_STRICT = 1e-09;
 static const double TOLERANCE_SOFT = 1e-04;
 
-TEST(HuberoGeometryVector, ctor_vector) {
+TEST(HumapGeometryVector, ctor_vector) {
     Vector v1;
     ASSERT_DOUBLE_EQ(v1.getX(), 0.0);
     ASSERT_DOUBLE_EQ(v1.getY(), 0.0);
@@ -27,7 +27,7 @@ TEST(HuberoGeometryVector, ctor_vector) {
     ASSERT_EQ(v3_ign, v3.getRawVector());
 }
 
-TEST(HuberoGeometryVector, setters) {
+TEST(HumapGeometryVector, setters) {
     Vector v1;
     ASSERT_DOUBLE_EQ(v1.getX(), 0.0);
     ASSERT_DOUBLE_EQ(v1.getY(), 0.0);
@@ -40,7 +40,7 @@ TEST(HuberoGeometryVector, setters) {
     ASSERT_DOUBLE_EQ(v1.getZ(), 3.33);
 }
 
-TEST(HuberoGeometryVector, rotation) {
+TEST(HumapGeometryVector, rotation) {
     Vector v1(2.0, 0.0, 0.0);
     ASSERT_DOUBLE_EQ(v1.calculateDirection().getRadian(), 0.0);
     v1.rotate(IGN_PI_4);
@@ -66,7 +66,7 @@ TEST(HuberoGeometryVector, rotation) {
     ASSERT_NEAR(v4.rotated(IGN_PI_2).calculateDirection().getRadian(), v4_rot_dir.getRadian(), TOLERANCE_STRICT);
 }
 
-TEST(HuberoGeometryVector, ctor_angle) {
+TEST(HumapGeometryVector, ctor_angle) {
     Angle a1(IGN_PI_4);
     Vector v1(a1);
     ASSERT_NEAR(v1.calculateDirection().getRadian(), IGN_PI_4, TOLERANCE_STRICT);
@@ -80,7 +80,7 @@ TEST(HuberoGeometryVector, ctor_angle) {
     ASSERT_NEAR(v3.calculateDirection().getRadian(), 0.0, TOLERANCE_STRICT); // 2PI normalized
 }
 
-TEST(HuberoGeometryVector, ctor_pose2d) {
+TEST(HumapGeometryVector, ctor_pose2d) {
     // reference
     Pose pose_ref(0.567, 1.234, 0.987, 0.0, 0.0, IGN_PI);
 
@@ -95,7 +95,7 @@ TEST(HuberoGeometryVector, ctor_pose2d) {
     ASSERT_DOUBLE_EQ(v_from_geom_msg.getZ(), pose_ref.getYaw());
 }
 
-TEST(HuberoGeometryVector, conversion) {
+TEST(HumapGeometryVector, conversion) {
     Vector v_ref(-2.123, -3.321, +5.987);
 
     ignition::math::Vector3d v_ign(v_ref.getX(), v_ref.getY(), v_ref.getZ());
@@ -122,7 +122,7 @@ TEST(HuberoGeometryVector, conversion) {
     ASSERT_EQ(v_twist_out.angular.z, v_twist.angular.z);
 }
 
-TEST(HuberoGeometryVector, normalization) {
+TEST(HumapGeometryVector, normalization) {
     Vector v1(0.0, 10.0, 0.0);
     v1.normalize();
     ASSERT_DOUBLE_EQ(v1.getX(), 0.0);
@@ -142,7 +142,7 @@ TEST(HuberoGeometryVector, normalization) {
     ASSERT_NEAR(v3.getZ(), 0.5774, TOLERANCE_SOFT);
 }
 
-TEST(HuberoGeometryVector, computations_misc) {
+TEST(HumapGeometryVector, computations_misc) {
     // Length
     Vector v1(0.0, 10.0, 0.0);
     ASSERT_NEAR(v1.calculateLength(), 10.0, TOLERANCE_SOFT);
@@ -169,7 +169,7 @@ TEST(HuberoGeometryVector, computations_misc) {
     ASSERT_NEAR(vc5.getZ(), -37.5000, TOLERANCE_SOFT);
 }
 
-TEST(HuberoGeometryVector, addition) {
+TEST(HumapGeometryVector, addition) {
     Vector v1;
     Vector v1_add(1.0, -0.2, 3.0);
     Vector v1_res(v1 + v1_add);
@@ -190,7 +190,7 @@ TEST(HuberoGeometryVector, addition) {
     ASSERT_DOUBLE_EQ(v2.getZ(), 0.0);
 }
 
-TEST(HuberoGeometryVector, subtraction) {
+TEST(HumapGeometryVector, subtraction) {
     Vector v1(15.0, 12.0, -3.0);
     Vector v2(-3.0, 0.0, +15.0);
 
@@ -210,7 +210,7 @@ TEST(HuberoGeometryVector, subtraction) {
     ASSERT_DOUBLE_EQ(v1.getZ(), -18.0);
 }
 
-TEST(HuberoGeometryVector, multiplication) {
+TEST(HumapGeometryVector, multiplication) {
     Vector v1(15.0, 12.0, -3.0);
     Vector v2(-3.0, 0.0, +3.0);
     double scalar_mult = 2.0;
@@ -236,7 +236,7 @@ TEST(HuberoGeometryVector, multiplication) {
     ASSERT_DOUBLE_EQ(v2.getZ(), 6.0);
 }
 
-TEST(HuberoGeometryVector, division) {
+TEST(HumapGeometryVector, division) {
     Vector v1(15.0, 12.0, -3.0);
     Vector v2(-3.0, 1.0, +3.0);
     Vector v2_z(-3.0, 0.0, +3.0);

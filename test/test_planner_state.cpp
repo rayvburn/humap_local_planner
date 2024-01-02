@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
-#include <hubero_local_planner/planner_state.h>
+#include <humap_local_planner/planner_state.h>
 #include <angles/angles.h>
 
-using namespace hubero_local_planner;
+using namespace humap_local_planner;
 
 geometry::Pose g_pose;
 geometry::Pose g_goal;
@@ -18,7 +18,7 @@ bool isGoalReached() {
 		&& angles::shortest_angular_distance(g_pose.getYaw(), g_goal.getYaw()) < 0.3;
 }
 
-TEST(HuberoPlannerState, initial) {
+TEST(HumapPlannerState, initial) {
 	g_pose = geometry::Pose(0.0, 0.0, 0.0);
 	g_goal = geometry::Pose(0.0, 0.0, 0.0);
 	g_goal_local = geometry::Pose(0.0, 0.0, 0.0);
@@ -27,7 +27,7 @@ TEST(HuberoPlannerState, initial) {
 	EXPECT_EQ(state.getState(), PlannerState::STOPPED);
 }
 
-TEST(HuberoPlannerState, goalRequiresRotationAtTheStart) {
+TEST(HumapPlannerState, goalRequiresRotationAtTheStart) {
 	g_pose = geometry::Pose(0.0, 0.0, IGN_DTOR(45));
 	g_goal = geometry::Pose(-10.0, -10.0, 0.0);
 	g_goal_local = geometry::Pose(-2.0, -2.0, 0.0);
@@ -66,7 +66,7 @@ TEST(HuberoPlannerState, goalRequiresRotationAtTheStart) {
 	EXPECT_EQ(state.getState(), PlannerState::STOPPED);
 }
 
-TEST(HuberoPlannerState, moveInterrupted) {
+TEST(HumapPlannerState, moveInterrupted) {
 	g_pose = geometry::Pose(0.0, 0.0, IGN_DTOR(45));
 	g_goal = geometry::Pose(-10.0, -10.0, 0.0);
 	g_goal_local = geometry::Pose(-2.0, -2.0, 0.0);

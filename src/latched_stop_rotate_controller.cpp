@@ -5,7 +5,7 @@
  *      Author: tkruse
  */
 
-#include <hubero_local_planner/latched_stop_rotate_controller.h>
+#include <humap_local_planner/latched_stop_rotate_controller.h>
 
 #include <cmath>
 
@@ -18,7 +18,7 @@
 
 #include <tf2/utils.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 LatchedStopRotateController::LatchedStopRotateController(const std::string& name) {
 	ros::NodeHandle private_nh("~/" + name);

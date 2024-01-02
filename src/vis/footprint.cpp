@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/footprint.h>
+#include <humap_local_planner/vis/footprint.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 Footprint::Footprint(): MarkerBase::MarkerBase(), height_(0.0) {
@@ -42,4 +42,4 @@ visualization_msgs::MarkerArray Footprint::create(
 
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

@@ -1,9 +1,9 @@
-#include <hubero_local_planner/fformation_space_intrusion_cost_function.h>
-#include <hubero_local_planner/trajectory.h>
+#include <humap_local_planner/fformation_space_intrusion_cost_function.h>
+#include <humap_local_planner/trajectory.h>
 
 #include <social_nav_utils/formation_space_intrusion.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 FformationSpaceIntrusionCostFunction::FformationSpaceIntrusionCostFunction()
 {}
@@ -73,4 +73,4 @@ double FformationSpaceIntrusionCostFunction::scoreTrajectory(base_local_planner:
 	return *std::max_element(groups_intrusions.cbegin(), groups_intrusions.cend());
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

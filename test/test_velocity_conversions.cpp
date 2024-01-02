@@ -1,16 +1,16 @@
 
 #include <gtest/gtest.h>
 #include <ros/ros.h>
-#include <hubero_local_planner/utils/transformations.h>
-#include <hubero_local_planner/geometry/geometry.h>
+#include <humap_local_planner/utils/transformations.h>
+#include <humap_local_planner/geometry/geometry.h>
 
 #include "gtest_cout.h"
 
-using namespace hubero_local_planner;
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner;
+using namespace humap_local_planner::geometry;
 
 // local -> global velocity conversion does not change Z component of the vector
-TEST(HuberoVelocityConversions, computeVelocityGlobal) {
+TEST(HumapVelocityConversions, computeVelocityGlobal) {
 	Vector vel_local(0.15, 0.0, 0.25);
 	Angle yaw(0.0);
 	Angle expected_global_dir;
@@ -66,7 +66,7 @@ TEST(HuberoVelocityConversions, computeVelocityGlobal) {
 	ASSERT_DOUBLE_EQ(vel_global.calculateDirection().getRadian(), expected_global_dir.getRadian());
 }
 
-TEST(HuberoVelocityConversions, computeTwist) {
+TEST(HumapVelocityConversions, computeTwist) {
 	// parameters
 	const double SIM_PERIOD = 1.0; 	// time delta between acceleration calculation
 	const double ROBOT_MASS = 1.0; 	// kg
@@ -123,7 +123,7 @@ TEST(HuberoVelocityConversions, computeTwist) {
 	EXPECT_LT(cmd_vel.getZ(), 0.0);
 }
 
-TEST(HuberoVelocityConversions, computeVelocityLocal) {
+TEST(HumapVelocityConversions, computeVelocityLocal) {
 	Vector vel_local;
 
 	// 1) going straight ahead along X axis
@@ -207,7 +207,7 @@ TEST(HuberoVelocityConversions, computeVelocityLocal) {
 	EXPECT_DOUBLE_EQ(vel_local.getZ(), -IGN_PI_2);
 }
 
-TEST(HuberoVelocityConversions, DISABLED_computeVelocityLocalHolonomic) {
+TEST(HumapVelocityConversions, DISABLED_computeVelocityLocalHolonomic) {
 	Vector vel_local;
 
 	// TODO: formulation for a holonomic-drives is needed

@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/sfm/social_force_model.h>
+#include <humap_local_planner/sfm/social_force_model.h>
 
 // additional headers
 #include <cmath>			// atan2()
@@ -20,13 +20,13 @@
 // debugging
 static bool print_info = false;
 // FIXME:
-#include <hubero_local_planner/sfm/sfm_debug.h>
+#include <humap_local_planner/sfm/sfm_debug.h>
 
 // #define SFM_DEBUG_LARGE_VECTOR_LENGTH
 // #define SFM_FUZZY_PROC_INDICATORS
 // #define SFM_PRINT_FORCE_RESULTS
 
-#include <hubero_local_planner/utils/debug.h>
+#include <humap_local_planner/utils/debug.h>
 
 #define DEBUG_BASIC 0
 #define DEBUG_WARN 1
@@ -40,7 +40,7 @@ static bool print_info = false;
 
 // ----------------------------------------
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace sfm {
 
 // ------------------------------------------------------------------- //
@@ -60,7 +60,7 @@ SocialForceModel::SocialForceModel():
 	cfg_(nullptr)
 {}
 
-void SocialForceModel::init(std::shared_ptr<const hubero_local_planner::SfmParams> cfg) {
+void SocialForceModel::init(std::shared_ptr<const humap_local_planner::SfmParams> cfg) {
 	cfg_ = cfg;
 	if (cfg_ == nullptr) {
 		throw std::runtime_error("Given nullptr to SFM instead of a valid configuration parameter struct");
@@ -886,4 +886,4 @@ void SocialForceModel::computeCombinedForce() {
 // ------------------------------------------------------------------- //
 
 } /* namespace sfm */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

@@ -1,10 +1,10 @@
-#include <hubero_local_planner/velocity_smoothness_cost_function.h>
-#include <hubero_local_planner/geometry/pose.h>
-#include <hubero_local_planner/utils/transformations.h>
+#include <humap_local_planner/velocity_smoothness_cost_function.h>
+#include <humap_local_planner/geometry/pose.h>
+#include <humap_local_planner/utils/transformations.h>
 
 #include <cmath>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 VelocitySmoothnessCostFunction::VelocitySmoothnessCostFunction(const geometry::Vector& velocity_base):
 	velocity_base_(velocity_base) {}
@@ -66,4 +66,4 @@ double VelocitySmoothnessCostFunction::scoreTrajectory(base_local_planner::Traje
 	return (vx_deviation + vy_deviation + vth_deviation) / traj.getPointsSize();
 }
 
-} // namespace hubero_local_planner
+} // namespace humap_local_planner

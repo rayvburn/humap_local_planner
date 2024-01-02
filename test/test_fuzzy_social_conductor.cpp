@@ -1,20 +1,20 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/geometry/geometry.h>
-#include <hubero_local_planner/fuzz/social_conductor.h>
+#include <humap_local_planner/geometry/geometry.h>
+#include <humap_local_planner/fuzz/social_conductor.h>
 
 #include <chrono>
 #include <memory>
 #include <thread>
 
-using namespace hubero_local_planner::geometry;
-using namespace hubero_local_planner::fuzz;
+using namespace humap_local_planner::geometry;
+using namespace humap_local_planner::fuzz;
 
 // Test cases
 TEST(FuzzySocialConductor, behaviourStrengthExponential) {
     SocialConductor sc;
-    auto params_ptr = std::make_shared<hubero_local_planner::FisParams>();
+    auto params_ptr = std::make_shared<humap_local_planner::FisParams>();
     sc.initialize(params_ptr);
 
     // params to check against
@@ -70,10 +70,10 @@ TEST(FuzzySocialConductor, behaviourStrengthExponential) {
 TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
     SocialConductor sc;
 
-    hubero_local_planner::FisParams params {};
+    humap_local_planner::FisParams params {};
     params.force_factor = 1.0;
-    std::shared_ptr<const hubero_local_planner::FisParams> cfg =
-        std::make_shared<hubero_local_planner::FisParams>(params);
+    std::shared_ptr<const humap_local_planner::FisParams> cfg =
+        std::make_shared<humap_local_planner::FisParams>(params);
     sc.initialize(cfg);
 
     Pose robot1(0.0, 0.0, IGN_PI_4);
@@ -101,10 +101,10 @@ TEST(FuzzySocialConductor, behaviourForceOrientationSimple) {
 TEST(FuzzySocialConductor, behaviourForceOrientationAdditivity) {
     SocialConductor sc;
 
-    hubero_local_planner::FisParams params {};
+    humap_local_planner::FisParams params {};
     params.force_factor = 1.0;
-    std::shared_ptr<const hubero_local_planner::FisParams> cfg =
-        std::make_shared<hubero_local_planner::FisParams>(params);
+    std::shared_ptr<const humap_local_planner::FisParams> cfg =
+        std::make_shared<humap_local_planner::FisParams>(params);
     sc.initialize(cfg);
     // the param. must be set, otherwise output will always be zeroed
     sc.setEquationParameters(1.0);

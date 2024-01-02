@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/visualization.h>
+#include <humap_local_planner/visualization.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 Visualization::Visualization(const std::string& frame, const double& marker_stack_height)
 	: marker_stack_height_(marker_stack_height) {
@@ -235,7 +235,7 @@ void Visualization::resetPath() {
 
 bool Visualization::publishGrid(
 		const Pose& pos_current,
-		HuberoPlanner& planner
+		HumapPlanner& planner
 ) {
 	if (pub_grid_.getNumSubscribers() == 0) {
 		return false;
@@ -322,4 +322,4 @@ bool Visualization::publishPlannerState(const Vector& pos, const std::string& st
 	return true;
 }
 
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

@@ -5,10 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/world.h>
-#include <hubero_local_planner/utils/transformations.h>
+#include <humap_local_planner/world.h>
+#include <humap_local_planner/utils/transformations.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 World::World(
 		const geometry::Pose& robot_pose_centroid,
@@ -230,4 +230,4 @@ void World::computeObjectRelativeLocation(
 	d_alpha_beta_angle = angle_d_alpha_beta;
 }
 
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

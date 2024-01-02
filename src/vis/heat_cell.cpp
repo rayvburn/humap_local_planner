@@ -5,10 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/heat_cell.h>
+#include <humap_local_planner/vis/heat_cell.h>
 #include <std_msgs/ColorRGBA.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // --------------------------------------------------------------
@@ -187,4 +187,4 @@ HeatCell::HsvColor HeatCell::convertMagnitudeToHSV(const double& magnitude) cons
 // --------------------------------------------------------------
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

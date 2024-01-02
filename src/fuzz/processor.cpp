@@ -5,15 +5,15 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/fuzz/regions.h>
-#include <hubero_local_planner/fuzz/processor.h>
-#include <hubero_local_planner/geometry/angle.h>
+#include <humap_local_planner/fuzz/regions.h>
+#include <humap_local_planner/fuzz/processor.h>
+#include <humap_local_planner/geometry/angle.h>
 
 #include <fl/fuzzylite.h>
 
 // ------------------------------------------------------------------- //
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace fuzz {
 
 Processor::Processor():
@@ -396,4 +396,4 @@ RelativeLocation Processor::decodeRelativeLocation(const double &rel_loc) {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

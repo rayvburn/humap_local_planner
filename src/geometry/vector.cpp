@@ -1,7 +1,7 @@
-#include <hubero_local_planner/geometry/vector.h>
+#include <humap_local_planner/geometry/vector.h>
 #include <ignition/math/Pose3.hh> // Quaternion
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace geometry {
 
 Vector::Vector(const double& x, const double& y, const double& z): v_(x, y, z) {}
@@ -99,4 +99,4 @@ geometry_msgs::Twist Vector::getAsTwist() const {
 }
 
 }; // namespace geometry
-}; // namespace hubero_local_planner
+}; // namespace humap_local_planner

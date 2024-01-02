@@ -1,6 +1,6 @@
-#include <hubero_local_planner/contextualized_cost_function.h>
+#include <humap_local_planner/contextualized_cost_function.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 ContextualizedCostFunction::ContextualizedCostFunction(costmap_2d::Costmap2D* costmap):
 	costmap_(costmap) {}

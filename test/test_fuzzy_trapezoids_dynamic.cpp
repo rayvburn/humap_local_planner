@@ -1,17 +1,17 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/defines.h>
-#include <hubero_local_planner/fuzz/processor.h>
-#include <hubero_local_planner/fuzz/trapezoid_loc_dep.h>
-#include <hubero_local_planner/fuzz/trapezoid_loc_indep.h>
+#include <humap_local_planner/defines.h>
+#include <humap_local_planner/fuzz/processor.h>
+#include <humap_local_planner/fuzz/trapezoid_loc_dep.h>
+#include <humap_local_planner/fuzz/trapezoid_loc_indep.h>
 
 // allows to easibly enable debug info (i.a., what trapezoid data is being calculated for etc.)
 // #define PRINT_DEBUG
 
-using namespace hubero_local_planner;
-using namespace hubero_local_planner::geometry;
-using namespace hubero_local_planner::fuzz;
+using namespace humap_local_planner;
+using namespace humap_local_planner::geometry;
+using namespace humap_local_planner::fuzz;
 
 struct DirCrossBorders {
     Angle gamma_eq;
