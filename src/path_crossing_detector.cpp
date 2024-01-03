@@ -12,6 +12,7 @@ PathCrossingDetector::PathCrossingDetector():
 	confidence_threshold_(0.70),
 	safe_point_distance_multiplier_(SAFE_POINT_DISTANCE_MULTIPLIER_DEFAULT),
 	speed_negligible_threshold_(SPEED_NEGLIGIBLE_THRESHOLD_DEFAULT),
+	crossing_detected_(false),
 	gap_closest_person_(NAN)
 {}
 
