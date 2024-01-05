@@ -1,5 +1,6 @@
 #include <humap_local_planner/path_crossing_detector.h>
 #include <social_nav_utils/gaussians.h>
+#include <social_nav_utils/relative_location.h>
 
 #include <algorithm>
 
@@ -123,6 +124,15 @@ bool PathCrossingDetector::detect(
 			// evaluate the angle of approaching crossing vectors
 			geometry::Angle cross_angle(direction_robot - direction_person);
 
+			// knowing whether the human approaches from the left or right is also necessary
+			social_nav_utils::RelativeLocation rel_loc(
+				robot_pose_it->getX(),
+				robot_pose_it->getY(),
+				robot_pose_it->getYaw(),
+				person_pose_it->getX(),
+				person_pose_it->getY()
+			);
+
 			/*
 			 * Detection of crossings between the paths of the robot and the human. Cases of interest are crossings
 			 * with the human approaching directly from the side (right or left).
@@ -131,8 +141,8 @@ bool PathCrossingDetector::detect(
 			 */
 			// side-angle confidence; whether the crossing person approaches directly from the side
 			double angle_confidence = social_nav_utils::calculateGaussianAngle(
-				std::abs(cross_angle.getRadian()),
-				M_PI_2,
+				cross_angle.getRadian(),
+				rel_loc.isLeftSide() ? M_PI_2 : -M_PI_2,
 				std::pow(M_PI_2 / 2.0, 2.0),
 				true // normalize to 1.0 at mean
 			);
