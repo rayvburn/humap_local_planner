@@ -72,7 +72,11 @@ public:
 		return crossing_people_data_;
 	}
 
-	/// Returns the gap between the robot model and the person model
+	/**
+	 * @brief Returns the current gap between the robot model and the closest person model (moving one)
+	 *
+	 * "Current gap" means that the initial poses of each trajectory are considered
+	 */
 	double getGapToClosestPerson() const {
 		return gap_closest_person_;
 	}
