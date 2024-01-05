@@ -105,7 +105,10 @@ bool PathCrossingDetector::detect(
 			// trim in case of collision detection
 			dist_gap = std::max(0.0, dist_gap);
 
-			gap_closest_person_ = std::min(gap_closest_person_, dist_gap);
+			// store only the actual (not predicted) closest gap - update this only during the first iteration
+			if (first_iteration) {
+				gap_closest_person_ = std::min(gap_closest_person_, dist_gap);
+			}
 
 			if (dist_gap > separation_threshold_) {
 				timestamp += traj_person.getTimeDelta();
