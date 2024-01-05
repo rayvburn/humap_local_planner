@@ -109,7 +109,13 @@ HumapPlanner::HumapPlanner(
 		pose.pose = pose_.getAsMsgPose();
 		geometry_msgs::PoseStamped goal_pose;
 		goal_pose.pose = goal_.getAsMsgPose();
-		return stop_rotate_controller_.isPositionReached(goal_pose, pose, cfg_->getLimits()->xy_goal_tolerance);
+		double dist = base_local_planner::getGoalPositionDistance(
+			pose,
+			goal_.getX(),
+			goal_.getY()
+		);
+		double dist_threshold = XY_GOAL_TOLERANCE_MULTIPLIER * cfg_->getLimits()->xy_goal_tolerance;
+		return dist <= dist_threshold;
 	});
 	auto crossing_detected_fun = std::function<bool()>([&]{
 		return crossing_.isCrossingDetected();

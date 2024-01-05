@@ -72,6 +72,12 @@ public:
 	 */
 	static constexpr double PERSON_POLYGON_CONTAINMENT_RATE = 0.667;
 
+	/**
+	 * Multiplier for the xy_goal_tolerance
+	 * Used for reaching the goal position more accurately before adjusting to the goal orientation. Should be <1.0
+	 */
+	static constexpr double XY_GOAL_TOLERANCE_MULTIPLIER = 0.65;
+
 	// both environmental and internal drivers
 	struct MotionDriverData {
 		Vector force_combined_;
