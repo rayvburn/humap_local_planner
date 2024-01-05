@@ -69,6 +69,10 @@ void PlannerState::update(bool new_goal_received) {
 			} else if (!new_goal_received && pointing_towards_goal) {
 				// already rotated to point base's nose towards goal position
 				state_ = MOVE;
+			} else if (!new_goal_received && pos_reached_fun_()) {
+				state_ = ADJUST_ORIENTATION;
+			} else if (!new_goal_received && goal_reached_fun_()) {
+				state_ = STOPPED;
 			}
 			break;
 		}
