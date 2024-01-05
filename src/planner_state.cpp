@@ -147,9 +147,11 @@ void PlannerState::update(bool new_goal_received) {
 		case RECOVERY_ROTATE_AND_RECEDE: {
 			if (!can_recover) {
 				state_ = STOPPED;
-			} else if (!oscillating && !stuck && !near_collision) {
+			} else if (!oscillating && !near_collision) {
 				// recovery finished or robot is unstuck, moving further is possible
 				state_ = MOVE;
+			} else if (!stuck && !near_collision) {
+				state_ = INITIATE_EXECUTION;
 			}
 			break;
 		}
