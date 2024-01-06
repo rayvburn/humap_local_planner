@@ -15,6 +15,7 @@ PlannerState::PlannerState(
 	std::function<bool()> yield_way_crossing_finished_fun,
 	std::function<bool()> oscillating_fun,
 	std::function<bool()> stuck_fun,
+	std::function<bool()> deviating_fp_fun,
 	std::function<bool()> near_collision_fun,
 	std::function<bool()> can_recover_fun,
 	double initiation_yaw_threshold):
@@ -30,6 +31,7 @@ PlannerState::PlannerState(
 	yield_way_crossing_finished_fun_(yield_way_crossing_finished_fun),
 	oscillating_fun_(oscillating_fun),
 	stuck_fun_(stuck_fun),
+	deviating_fp_fun_(deviating_fp_fun),
 	near_collision_fun_(near_collision_fun),
 	can_recover_fun_(can_recover_fun)
 {}

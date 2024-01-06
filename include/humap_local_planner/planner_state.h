@@ -44,6 +44,7 @@ public:
 	 * @param yield_way_crossing_finished_fun checks if yielding routine has finished
 	 * @param oscillating_fun function that allows to check whether the robot is oscillating
 	 * @param stuck_fun function that allows to check whether the robot is stuck
+	 * @param deviating_fp_fun function that allows to check whether the robot deviates From the reference Path
 	 * @param near_collision_fun function that allows to check whether the robot is close to colliding with its env.
 	 * @param can_recover_fun function that allows to check whether the robot can recover from being stuck
 	 * @param initiation_yaw_threshold
@@ -59,6 +60,7 @@ public:
 		std::function<bool()> yield_way_crossing_finished_fun = std::function<bool()>([]() -> bool { return true; }),
 		std::function<bool()> oscillating_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> stuck_fun = std::function<bool()>([]() -> bool { return false; }),
+		std::function<bool()> deviating_fp_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> near_collision_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> can_recover_fun = std::function<bool()>([]() -> bool { return false; }),
 		double initiation_yaw_threshold	= IGN_DTOR(30)
@@ -116,6 +118,8 @@ protected:
 	std::function<bool()> oscillating_fun_;
 	/// Event checker
 	std::function<bool()> stuck_fun_;
+	/// Event checker
+	std::function<bool()> deviating_fp_fun_;
 	/// Event checker
 	std::function<bool()> near_collision_fun_;
 	/// Event checker

@@ -129,6 +129,9 @@ HumapPlanner::HumapPlanner(
 	auto is_stuck_fun = std::function<bool()>([&]{
 		return recovery_.isStuck();
 	});
+	auto is_deviating_from_ref_path_fun = std::function<bool()>([&]{
+		return recovery_.isDeviatingFromGlobalPath();
+	});
 	auto near_collision_fun = std::function<bool()>([&]{
 		return recovery_.isNearCollision();
 	});
@@ -147,6 +150,7 @@ HumapPlanner::HumapPlanner(
 		yield_way_crossing_finished_fun,
 		is_oscillating_fun,
 		is_stuck_fun,
+		is_deviating_from_ref_path_fun,
 		near_collision_fun,
 		can_recover_fun
 	);
