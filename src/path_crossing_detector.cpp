@@ -71,7 +71,10 @@ bool PathCrossingDetector::detect(
 		double timestamp = 0.0;
 		// filtered motion directions of a robot and a person
 		double direction_robot = traj_robot.getPoses().front().getYaw();
-		double direction_person = traj_person.getPoses().front().getYaw();
+		double direction_person = std::atan2(
+			traj_person.getVelocities().front().getY(),
+			traj_person.getVelocities().front().getX()
+		);
 
 		bool first_iteration = true;
 		// iterate over human poses and compare against robot poses
