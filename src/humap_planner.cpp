@@ -1400,7 +1400,7 @@ bool HumapPlanner::planYieldWayCrossing() {
 		yield_way_crossing_.finish();
 		return true;
 	}
-	// gap will be "Inf" if no people nearby are detected
+	// gap will be "Inf" if no "dynamic" people nearby are detected
 	if (crossing_.getGapToClosestPerson() > cfg_->getGeneral()->person_model_radius) {
 		yield_way_crossing_.finish();
 		return true;
