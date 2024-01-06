@@ -17,6 +17,7 @@
 #include <humap_local_planner/fformation_space_intrusion_cost_function.h>
 #include <humap_local_planner/passing_speed_cost_function.h>
 #include <humap_local_planner/unsaturated_translation_cost_function.h>
+#include <humap_local_planner/map_grid_cost_function.h>
 
 //for creating a local cost grid
 #include <base_local_planner/map_grid_visualizer.h>
@@ -643,10 +644,10 @@ protected:
 	base_local_planner::MapGridCostFunction path_costs_;
 	/// Cost function that prefers trajectories that go towards (local) goal, based on wave propagation
 	base_local_planner::MapGridCostFunction goal_costs_;
-	/// Cost function that prefers trajectories that keep the robot nose on nose path
-	base_local_planner::MapGridCostFunction alignment_costs_;
-	/// Cost function that prefers trajectories that make the nose go towards (local) nose goal
-	base_local_planner::MapGridCostFunction goal_front_costs_;
+	/// Cost function that prefers trajectories that keep the robot nose on nose path (customized)
+	MapGridCostFunction alignment_costs_;
+	/// Cost function that prefers trajectories that make the nose go towards (local) nose goal (customized)
+	MapGridCostFunction goal_front_costs_;
 	// Penalizes robot for not saturating the trans. vels - moving slower than the maximum speed allows
 	UnsaturatedTranslationCostFunction unsaturated_trans_costs_;
 	/// Cost function that prefers forward trajectories instead of those that consist of backward motions
