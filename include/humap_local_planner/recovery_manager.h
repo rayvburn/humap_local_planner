@@ -1,8 +1,8 @@
 #pragma once
 
-#include <base_local_planner/map_grid_cost_function.h>
 #include <base_local_planner/trajectory.h>
 
+#include <humap_local_planner/map_grid_cost_function.h>
 #include <humap_local_planner/obstacle_separation_cost_function.h>
 
 // custom implementation of the CircularBuffer
@@ -132,8 +132,8 @@ public:
 	 */
 	void checkDeviation(
 		base_local_planner::Trajectory traj,
-		base_local_planner::MapGridCostFunction& goal_front_costfun,
-		base_local_planner::MapGridCostFunction& alignment_costfun
+		MapGridCostFunction& goal_front_costfun,
+		MapGridCostFunction& alignment_costfun
 	);
 
 	/**

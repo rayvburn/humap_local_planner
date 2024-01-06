@@ -218,6 +218,7 @@ add_library(humap_local_planner
     src/recovery_manager.cpp
     src/path_crossing_detector.cpp
     src/yield_way_crossing_manager.cpp
+    src/map_grid_cost_function.cpp
 )
 add_dependencies(humap_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(humap_local_planner

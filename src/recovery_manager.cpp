@@ -61,8 +61,8 @@ void RecoveryManager::checkOscillation(
 
 void RecoveryManager::checkDeviation(
 	base_local_planner::Trajectory traj,
-	base_local_planner::MapGridCostFunction& goal_front_costfun,
-	base_local_planner::MapGridCostFunction& alignment_costfun
+	MapGridCostFunction& goal_front_costfun,
+	MapGridCostFunction& alignment_costfun
 ) {
 	double cost_alignment = alignment_costfun.scoreTrajectory(traj);
 	double goal_front_cost = goal_front_costfun.scoreTrajectory(traj);
