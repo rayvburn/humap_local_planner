@@ -447,6 +447,10 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		trajs_people.push_back(traj_person);
 	}
 	crossing_.detect(traj_robot_g, trajs_people);
+
+	geometry_msgs::PoseStamped goal_pose;
+	goal_pose.pose = goal_.getAsMsgPose();
+	group_intrusion_.detect(groups_env_model_, global_plan_, goal_pose);
 	return result_traj_;
 }
 

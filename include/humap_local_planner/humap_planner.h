@@ -55,6 +55,7 @@
 #include <humap_local_planner/path_crossing_detector.h>
 #include <humap_local_planner/yield_way_crossing_manager.h>
 #include <humap_local_planner/recovery_manager.h>
+#include <humap_local_planner/group_intrusion_detector.h>
 
 #include <nav_msgs/Path.h>
 
@@ -273,6 +274,16 @@ public:
 
 	Pose getGoalRecovery() const {
 		return Pose(recovery_.getRecoveryGoalX(), recovery_.getRecoveryGoalY(), recovery_.getRecoveryGoalYaw());
+	}
+
+	/// Returns alternative intermediate goals to avoid crossing of a group (obtained using a heuristic algorithm)
+	std::vector<GroupIntrusionDetector::AltGoalCandidate> getGroupIntrusionGoalAlternatives() const {
+		return group_intrusion_.getIntermediateGoals();
+	}
+
+	/// Returns a container that is mostly used for visualization purposes
+	const std::vector<GroupIntrusionDetector::AltGoalCandidate>& getGroupIntrusionAltGoalCandidates() const {
+		return group_intrusion_.getIntermediateGoalCandidates();
 	}
 
 	/**
@@ -626,6 +637,8 @@ protected:
 
 	// Detector of crossing the robot's path by a nearby people
 	PathCrossingDetector crossing_;
+	// Detector of robot intruding the group of people (namely an O-space of a F-formation)
+	GroupIntrusionDetector group_intrusion_;
 	// Helps to perform the yielding way procedure
 	YieldWayCrossingManager yield_way_crossing_;
 
