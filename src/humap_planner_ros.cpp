@@ -60,6 +60,10 @@ void HumapPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, c
 		ttc_markers_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("ttc_prediction", 1);
 		cost_grid_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>("cost_cloud", 1);
 		planner_state_pub_ = private_nh.advertise<std_msgs::UInt8>("planner_state", 1);
+		group_intrusion_alt_pcl_pub_ = private_nh.advertise<sensor_msgs::PointCloud2>(
+			"group_intrusion_alt_goal_candidates",
+			1
+		);
 
 		std::string people_topic("/people");
 		private_nh.param("people_topic", people_topic, people_topic);
@@ -319,6 +323,10 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	// publish the visualization of the grid costs
 	if (cost_grid_pcl_pub_.getNumSubscribers() > 0) {
 		cost_grid_pcl_pub_.publish(createCostGridPcl());
+	}
+
+	if (group_intrusion_alt_pcl_pub_.getNumSubscribers() > 0) {
+		group_intrusion_alt_pcl_pub_.publish(createGroupIntrusionAltGoalCandidatesGridPcl());
 	}
 
 	// publish planner state to ROS topic
@@ -952,6 +960,45 @@ sensor_msgs::PointCloud2 HumapPlannerROS::createCostGridPcl() const {
 				++iter_x;
 			}
 		}
+	}
+	return cost_cloud;
+}
+
+sensor_msgs::PointCloud2 HumapPlannerROS::createGroupIntrusionAltGoalCandidatesGridPcl() const {
+	sensor_msgs::PointCloud2 cost_cloud;
+	cost_cloud.header.frame_id = planner_util_->getGlobalFrame();
+	cost_cloud.header.stamp = ros::Time::now();
+
+	sensor_msgs::PointCloud2Modifier cloud_mod(cost_cloud);
+	cloud_mod.setPointCloud2Fields(
+		5,
+		"x", 1, sensor_msgs::PointField::FLOAT32,
+		"y", 1, sensor_msgs::PointField::FLOAT32,
+		"z", 1, sensor_msgs::PointField::FLOAT32,
+		"cost", 1, sensor_msgs::PointField::FLOAT32,
+		"id", 1, sensor_msgs::PointField::FLOAT32
+	);
+
+	auto candidates = planner_->getGroupIntrusionAltGoalCandidates();
+	auto alt_goals = planner_->getGroupIntrusionGoalAlternatives();
+	cloud_mod.resize(candidates.size() + alt_goals.size());
+	sensor_msgs::PointCloud2Iterator<float> iter_x(cost_cloud, "x");
+
+	for (const auto& candidate: candidates) {
+		iter_x[0] = candidate.x;
+		iter_x[1] = candidate.y;
+		iter_x[2] = 0.0;
+		iter_x[3] = candidate.cost;
+		iter_x[4] = candidate.id;
+		++iter_x;
+	}
+	for (const auto& goal_alternative: alt_goals) {
+		iter_x[0] = goal_alternative.x;
+		iter_x[1] = goal_alternative.y;
+		iter_x[2] = 0.0;
+		iter_x[3] = goal_alternative.cost;
+		iter_x[4] = candidates.size() + goal_alternative.id;
+		++iter_x;
 	}
 	return cost_cloud;
 }
