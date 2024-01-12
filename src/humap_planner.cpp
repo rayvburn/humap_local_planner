@@ -1083,6 +1083,19 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 
 	// reset TTC datasets collected during previous iteration
 	ttc_costs_.reset();
+
+	if (!group_intrusion_.isGlobalGoalWithinGroup()) {
+		fformation_space_costs_.setScale(cfg_->getCost()->fformation_space_scale);
+	} else {
+		// scale the cost based on the distance between the closest edges: of the group and the footprint
+		double dist_to_group = std::max(
+			group_intrusion_.getDistanceToGroupEdgeGoalWithin() - robot_model_->getInscribedRadius(),
+			0.0
+		);
+		static const double EXPONENT_FACTOR = -0.7;
+		double multiplier = 1.0 - std::exp(EXPONENT_FACTOR * dist_to_group);
+		fformation_space_costs_.setScale(multiplier * cfg_->getCost()->fformation_space_scale);
+	}
 }
 
 Pose HumapPlanner::getPoseFromPlan(
