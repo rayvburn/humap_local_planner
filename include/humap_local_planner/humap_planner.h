@@ -128,6 +128,13 @@ public:
 
 	void reconfigure(HumapConfigConstPtr cfg);
 
+	void setGlobalPathQueryService(
+		std::function<nav_msgs::Path(
+			const geometry_msgs::PoseStamped&,
+			const geometry_msgs::PoseStamped&, double
+		)> fun
+	);
+
 	/**
 	 * @brief  Check if a trajectory is legal for a position/velocity pair
 	 *
@@ -561,6 +568,8 @@ protected:
 	std::unique_ptr<PlannerState> state_ptr_;
 
 	std::shared_ptr<base_local_planner::LocalPlannerUtil> planner_util_;
+
+	std::function<nav_msgs::Path(const Pose&, const Pose&)> global_path_query_fun_;
 
 	/// Stores all trajectories explored in last @ref findBestTrajectory execution
 	std::vector<base_local_planner::Trajectory> traj_explored_;

@@ -164,6 +164,30 @@ HumapPlanner::~HumapPlanner() {
 	);
 }
 
+void HumapPlanner::setGlobalPathQueryService(
+	std::function<nav_msgs::Path(
+		const geometry_msgs::PoseStamped&,
+		const geometry_msgs::PoseStamped&,
+		double
+	)> fun
+) {
+	static constexpr double DIST_TOLERANCE = 1.0;
+	global_path_query_fun_ = [&, fun](
+		const Pose& start,
+		const Pose& goal
+	) -> nav_msgs::Path {
+		geometry_msgs::PoseStamped start_stamped;
+		start_stamped.header.stamp = ros::Time::now();
+		start_stamped.header.frame_id = planner_util_->getGlobalFrame();
+		start_stamped.pose = start.getAsMsgPose();
+		geometry_msgs::PoseStamped goal_stamped;
+		goal_stamped.header.stamp = ros::Time::now();
+		goal_stamped.header.frame_id = planner_util_->getGlobalFrame();
+		goal_stamped.pose = goal.getAsMsgPose();
+		return fun(start_stamped, goal_stamped, DIST_TOLERANCE);
+	};
+}
+
 void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 	// make sure that our configuration doesn't change mid-run
 	std::lock_guard<std::mutex> l(cfg->getMutex());

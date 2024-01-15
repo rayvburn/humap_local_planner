@@ -169,6 +169,12 @@ protected:
 	 */
 	sensor_msgs::PointCloud2 createGroupIntrusionAltGoalCandidatesGridPcl() const;
 
+	nav_msgs::Path queryGlobalPath(
+		const geometry_msgs::PoseStamped& start,
+		const geometry_msgs::PoseStamped& goal,
+		double tolerance = 1.0
+	);
+
 	/// @brief Callback mutex
 	std::mutex cb_mutex_;
 	/// @brief Parameters reconfigure mutex
@@ -237,6 +243,7 @@ protected:
 	std::string odom_topic_;
 	// helpers
 	tf2_ros::TransformBroadcaster tf_broadcaster_;
+	ros::ServiceClient srv_get_plan_;
 
 	Visualization vis_;
 

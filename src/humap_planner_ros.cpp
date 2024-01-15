@@ -14,6 +14,8 @@
 
 #include <people_msgs_utils/utils.h>
 
+#include <nav_msgs/GetPlan.h>
+
 #include <memory>
 #include <regex>
 
@@ -65,6 +67,16 @@ void HumapPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, c
 			1
 		);
 
+		// srv_get_plan_ = private_nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
+		/*
+		 * This should be remapped to a planner-specific case - connecting to the "/move_base/make_plan" service will
+		 * probably always complain with
+		 *   "move_base must be in an inactive state to make a plan for an external user"
+		 * connecting to "/move_base/GlobalPlanner/make_plan" or "/move_base/NavfnROS/make_plan"
+		 */
+		srv_get_plan_ = private_nh.serviceClient<nav_msgs::GetPlan>("/move_base/GlobalPlanner/make_plan"); // TODO
+		// srv_get_plan_ = private_nh.serviceClient<nav_msgs::GetPlan>("/move_base/NavfnROS/make_plan");
+
 		std::string people_topic("/people");
 		private_nh.param("people_topic", people_topic, people_topic);
 		people_sub_ = private_nh.subscribe(people_topic, 5, &HumapPlannerROS::peopleCB, this);
@@ -100,6 +112,15 @@ void HumapPlannerROS::initialize(std::string name, tf2_ros::Buffer* tf_buffer, c
 		// local planner
 		planner_ = std::make_shared<HumapPlanner>(name, planner_util_, robot_model, footprint_spec);
 		planner_->reconfigure(cfg_);
+		planner_->setGlobalPathQueryService(
+			std::bind(
+				&HumapPlannerROS::queryGlobalPath,
+				this,
+				std::placeholders::_1,
+				std::placeholders::_2,
+				std::placeholders::_3
+			)
+		);
 
 		// visualization
 		vis_ = Visualization(costmap_ros_->getGlobalFrameID());
@@ -195,6 +216,44 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	}
 
 	// retrieve environment information and pass them to the Humap planner
+
+	static int replan_num = 10;
+	if (srv_get_plan_.exists() && replan_num-- > 0) {
+		ROS_WARN("/computeVelocityCommands/ ... Checking async path planning!");
+		// TODO: test valid for "012 extended world" - "hall group passing" scenario
+		// geometry_msgs::PoseStamped start_test;
+		// start_test.header.frame_id = "map";
+		// start_test.header.stamp = ros::Time::now();
+		// start_test.pose.position.x = 7.16492176056;
+		// start_test.pose.position.y = -0.710495471954;
+		// start_test.pose.orientation.w = 1.0;
+		// geometry_msgs::PoseStamped intermediate_test1;
+		// intermediate_test1.header.frame_id = "map";
+		// intermediate_test1.header.stamp = ros::Time::now();
+		// intermediate_test1.pose.position.x = 6.02806949615;
+		// intermediate_test1.pose.position.y = 1.31902468204;
+		// intermediate_test1.pose.orientation.w = 1.0;
+		// geometry_msgs::PoseStamped intermediate_test2;
+		// intermediate_test2.header.frame_id = "map";
+		// intermediate_test2.header.stamp = ros::Time::now();
+		// intermediate_test2.pose.position.x = 8.75505256653;
+		// intermediate_test2.pose.position.y = 0.711858510971;
+		// intermediate_test2.pose.orientation.w = 1.0;
+		// geometry_msgs::PoseStamped goal_test;
+		// goal_test.header.frame_id = "map";
+		// goal_test.header.stamp = ros::Time::now();
+		// goal_test.pose.position.x = 8.32390785217;
+		// goal_test.pose.position.y = 4.01764774323;
+		// goal_test.pose.orientation.w = 1.0;
+		// auto path_test1 = queryGlobalPath(start_test, intermediate_test1, 3.0);
+		// auto path_test2 = queryGlobalPath(start_test, intermediate_test2, 3.0);
+		// auto path_goal_test1 = queryGlobalPath(intermediate_test1, goal_test, 3.0);
+		// auto path_goal_test2 = queryGlobalPath(intermediate_test2, goal_test, 3.0);
+		// ROS_WARN("/computeVelocityCommands/ ... Async path planning returned start-intermediate1 path with %3lu poses", path_test1.poses.size());
+		// ROS_WARN("/computeVelocityCommands/ ... Async path planning returned start-intermediate2 path with %3lu poses", path_test2.poses.size());
+		// ROS_WARN("/computeVelocityCommands/ ... Async path planning returned intermediate1-goal  path with %3lu poses", path_goal_test1.poses.size());
+		// ROS_WARN("/computeVelocityCommands/ ... Async path planning returned intermediate1-goal  path with %3lu poses", path_goal_test2.poses.size());
+	}
 
 	// Get robot pose
 	geometry_msgs::PoseStamped robot_pose_geom;
@@ -1001,6 +1060,131 @@ sensor_msgs::PointCloud2 HumapPlannerROS::createGroupIntrusionAltGoalCandidatesG
 		++iter_x;
 	}
 	return cost_cloud;
+}
+
+nav_msgs::Path HumapPlannerROS::queryGlobalPath(
+	const geometry_msgs::PoseStamped& start,
+	const geometry_msgs::PoseStamped& goal,
+	double tolerance
+) {
+	if (start.header.frame_id.empty() || goal.header.frame_id.empty()) {
+		ROS_ERROR_NAMED(
+			"HumapPlannerROS",
+			"Empty frame name of poses to compute path for. Start pose's frame `%s`, goal pose's frame `%s`",
+			start.header.frame_id.c_str(),
+			goal.header.frame_id.c_str()
+		);
+		return nav_msgs::Path();
+	}
+	if (start.header.frame_id != goal.header.frame_id) {
+		ROS_ERROR_NAMED(
+			"HumapPlannerROS",
+			"Frame names of poses to compute path for should be equal to transform the path to the known frame. "
+			"Start pose's frame `%s`, goal pose's frame `%s`",
+			start.header.frame_id.c_str(),
+			goal.header.frame_id.c_str()
+		);
+		return nav_msgs::Path();
+	}
+
+	// check if possessing the name of the global path planner's frame
+	if (global_plan_.empty()) {
+		ROS_ERROR_NAMED(
+			"HumapPlannerROS",
+			"Cannot access the name of the global path planner's frame due to an empty global plan"
+		);
+		return nav_msgs::Path();
+	}
+	auto global_planner_frame = global_plan_.front().header.frame_id;
+	// does not matter if "start" or "goal" is used, this function requires them to be equal
+	auto source_frame = start.header.frame_id;
+
+	auto lookupTransformFun = [&](
+		const std::string& source_frame,
+		const std::string& target_frame,
+		geometry_msgs::TransformStamped& transform
+	) -> bool {
+		// transform poses to global path planner's frame - by default = no transform
+		transform.child_frame_id = target_frame;
+		transform.header.frame_id = source_frame;
+		transform.header.stamp = ros::Time::now();
+		// indicates no transform
+		transform.transform.rotation.w = 1.0;
+
+		// lookup transform if frame IDs are not equal
+		if (transform.child_frame_id != transform.header.frame_id) {
+			try {
+				transform = tf_buffer_->lookupTransform(
+					transform.child_frame_id,
+					transform.header.frame_id,
+					ros::Time(0)
+				);
+			} catch (tf2::LookupException& ex) {
+				ROS_ERROR_NAMED(
+					"HumapPlannerROS",
+					"Cannot find a valid transform to query for a global path. Looking for a transform from %s to %s. "
+					"Exception: %s",
+					transform.header.frame_id.c_str(),
+					transform.child_frame_id.c_str(),
+					ex.what()
+				);
+				return false;
+			}
+		}
+		return true;
+	};
+
+	// transform to the frame of the global path planner (requested by the service server)
+	geometry_msgs::TransformStamped transform;
+	if (!lookupTransformFun(source_frame, global_planner_frame, transform)) {
+		return nav_msgs::Path();
+	}
+
+	geometry_msgs::PoseStamped start_transformed;
+	geometry_msgs::PoseStamped goal_transformed;
+	tf2::doTransform(start, start_transformed, transform);
+	tf2::doTransform(goal, goal_transformed, transform);
+
+	nav_msgs::GetPlan::Request req;
+	req.start = start_transformed;
+	req.goal = goal_transformed;
+	if (req.start.header.stamp.isZero()) {
+		req.start.header.stamp = ros::Time::now();
+	}
+	if (req.goal.header.stamp.isZero()) {
+		req.goal.header.stamp = ros::Time::now();
+	}
+	req.tolerance = tolerance;
+
+	nav_msgs::GetPlan::Response resp;
+	int retry_num = 0;
+	bool success = false;
+
+	static const int RETRY_NUM_MAX = 10;
+	while (!success && retry_num++ <= RETRY_NUM_MAX) {
+		success = srv_get_plan_.call(req, resp);
+		// TODO: sleep when success is false
+	}
+
+	if (!success) {
+		return nav_msgs::Path();
+	}
+
+	// transform the output path back to the source frame
+	geometry_msgs::TransformStamped transform_inv;
+	if (!lookupTransformFun(global_planner_frame, source_frame, transform_inv)) {
+		return nav_msgs::Path();
+	}
+	nav_msgs::Path transformed_path;
+	transformed_path.header.stamp = ros::Time::now();
+	transformed_path.header.frame_id = source_frame;
+	for (const auto& pose: resp.plan.poses) {
+		geometry_msgs::PoseStamped tpose;
+		tf2::doTransform(pose, tpose, transform_inv);
+		// add transformed pose to a transformed plan
+		transformed_path.poses.push_back(tpose);
+	}
+	return transformed_path;
 }
 
 }; // namespace humap_local_planner
