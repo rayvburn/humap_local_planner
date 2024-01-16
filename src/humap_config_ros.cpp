@@ -34,6 +34,18 @@ void HumapConfigROS::loadFromParamServer(const ros::NodeHandle& nh) {
 		);
 	}
 
+	std::string planner_frequency_param;
+	nh.searchParam("planner_frequency", planner_frequency_param);
+	double planner_frequency = 2.0;
+	if (nh.param(planner_frequency_param, planner_frequency, planner_frequency)) {
+		general_->path_planning_period = 1.0 / planner_frequency;
+		ROS_INFO(
+			"Path planning period set to %6.3f s. Computed based on `planner_frequency` which is %6.3f Hz",
+			general_->path_planning_period,
+			planner_frequency
+		);
+	}
+
 	// Limits
 	// default values based on PAL's TIAGo config
 	nh.param("max_vel_trans", limits_->max_vel_trans, 1.5);

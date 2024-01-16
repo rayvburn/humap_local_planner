@@ -26,6 +26,8 @@ namespace humap_local_planner {
 	struct GeneralParams {
 		/// Whether to use planning (True) or proactive approach (False) for trajectory generation
 		bool planning_approach = true;
+		/// How often the global path is expected to be updated
+		double path_planning_period = 0.5;
 		/// The amount of time to roll trajectories out for in seconds
 		double sim_time = 1.2;
 		/// The granularity with which to check for collisions along each trajectory in meters
