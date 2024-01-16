@@ -15,11 +15,18 @@ RecoveryManager::RecoveryManager():
 	can_recover_from_collision_(true),
 	rr_recovery_goal_(geometry::Pose(NAN, NAN, NAN, NAN, NAN, NAN, NAN)),
 	prev_cmd_vx(0.0),
-	prev_cmd_omega(0.0)
+	prev_cmd_omega(0.0),
+	global_path_plan_outdated_(false),
+	global_path_plan_max_age_(3.0),
+	global_path_plan_update_timestamp_(0.0)
 {}
 
 void RecoveryManager::setOscillationBufferLength(int length) {
 	buffer_.set_capacity(length);
+}
+
+void RecoveryManager::setGlobalPathPlanMaxAge(double global_path_plan_max_age) {
+	global_path_plan_max_age_ = global_path_plan_max_age;
 }
 
 void RecoveryManager::checkOscillation(
@@ -108,6 +115,13 @@ void RecoveryManager::checkCollision(
 		double obstacle_keepout_distance = obstacle_costfun.getSeparationDistance();
 		can_recover_from_collision_ = obstacle_keepout_distance > 0.0;
 	}
+}
+
+double RecoveryManager::computeGlobalPlanAge() {
+	double current_time = ros::Time::now().toSec();
+	double path_age = current_time - global_path_plan_update_timestamp_.load();
+	global_path_plan_outdated_ = path_age > global_path_plan_max_age_;
+	return path_age;
 }
 
 bool RecoveryManager::planRecoveryRotateAndRecede(
@@ -233,6 +247,10 @@ bool RecoveryManager::planRecoveryRotateAndRecede(
 void RecoveryManager::clear() {
 	buffer_.clear();
 	oscillating_ = false;
+}
+
+void RecoveryManager::markGlobalPlanUpdate() {
+	global_path_plan_update_timestamp_.store(ros::Time::now().toSec());
 }
 
 bool RecoveryManager::isPoseCollisionFree(double costmap_cost) {

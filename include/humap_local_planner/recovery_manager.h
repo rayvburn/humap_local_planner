@@ -9,6 +9,8 @@
 #include <deque>
 #include <stdexcept>
 
+#include <atomic>
+
 namespace humap_local_planner {
 
 template <typename T>
@@ -101,6 +103,18 @@ public:
 	void setOscillationBufferLength(int length);
 
 	/**
+	 * @brief Sets the maximum age of a global path plan
+	 *
+	 * @param global_path_plan_max_age maximum age of a global path plan to consider the plan as outdated
+	 */
+	void setGlobalPathPlanMaxAge(double global_path_plan_max_age);
+
+	/**
+	 * @brief Updates the internal state that checks whether the global plan is outdated
+	 */
+	void markGlobalPlanUpdate();
+
+	/**
 	 * @brief Adds a new twist measurement to the internal buffer and computes a new decision
 	 *
 	 * @param v_x linear X component of the current velocity command
@@ -146,6 +160,11 @@ public:
 		base_local_planner::Trajectory traj,
 		ObstacleSeparationCostFunction& obstacle_costfun
 	);
+
+	/**
+	 * @brief Computes the age of the global path plan and returns its value
+	 */
+	double computeGlobalPlanAge();
 
 	/**
 	 * @brief Searches for a safe pose near the robot to recover from being stuck
@@ -198,6 +217,10 @@ public:
 		return rr_recovery_goal_;
 	}
 
+	inline bool isGlobalPathPlanOutdated() const {
+		return global_path_plan_outdated_;
+	}
+
 	static bool isPoseCollisionFree(double costmap_cost);
 
 	/// Helper function that evaluates whether the components of a 2D pose are valid (not NAN and not INF)
@@ -243,6 +266,13 @@ protected:
 	/// Stores previous linear velocity of the velocity command send to the mobile base
 	double prev_cmd_vx;
 	double prev_cmd_omega;
+
+	/// True indicates that the global path plan has not been updated for too long
+	bool global_path_plan_outdated_;
+	/// Maximum age of the global path plan
+	double global_path_plan_max_age_;
+	/// Timestamp (seconds) of the last global path plan update (atomic as it might be updated asynchronously)
+	std::atomic<double> global_path_plan_update_timestamp_;
 };
 
 } // namespace humap_local_planner
