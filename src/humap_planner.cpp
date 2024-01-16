@@ -207,6 +207,9 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 			cfg_->getPlannerBehaviors()->oscillation_buffer_length / cfg_->getGeneral()->sim_period
 		))
 	);
+	recovery_.setGlobalPathPlanMaxAge(
+		cfg_->getGeneral()->path_planning_period * cfg_->getPlannerBehaviors()->path_plan_update_violation_multiplier
+	);
 }
 
 bool HumapPlanner::checkTrajectory(
@@ -440,6 +443,8 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		obstacle_costs_
 	);
 
+	recovery_.computeGlobalPlanAge();
+
 	auto traj_robot_g = Trajectory(result_traj_, true);
 	auto traj_robot_poses = traj_robot_g.getPoses();
 	std::vector<Trajectory> trajs_people;
@@ -552,6 +557,7 @@ bool HumapPlanner::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_g
 	stop_rotate_controller_.resetLatching();
 
 	bool plan_updated = planner_util_->setPlan(orig_global_plan);
+	recovery_.markGlobalPlanUpdate();
 
 	// get goal pose transformed to the local frame (usually 'odom')
 	geometry_msgs::PoseStamped goal_new;
