@@ -61,6 +61,11 @@ namespace humap_local_planner {
 		double path_crossing_confidence_threshold = 0.6;
 		/// Maximum distance that the robot can travel while in the YIELD_WAY_CROSSING state
 		double yield_way_max_travel_distance = 0.75;
+		/**
+		 * The multiplier of expected path planning frequency; once the global path plan is older than
+		 * 'expected_freq * multiplier', it is considered a violation
+		 */
+		double path_plan_update_violation_multiplier = 5.0;
 	};
 
 	/// \brief Declaration of an SfmParams typedef'ed struct;
