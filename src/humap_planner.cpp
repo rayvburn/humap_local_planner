@@ -1103,6 +1103,18 @@ void HumapPlanner::updateLocalCosts(const std::vector<geometry_msgs::Point>& foo
 		double multiplier = 1.0 - std::exp(EXPONENT_FACTOR * dist_to_group);
 		fformation_space_costs_.setScale(multiplier * cfg_->getCost()->fformation_space_scale);
 	}
+
+	// reduce the scale of cost function that favours higher linear velocities - prevents overshooting the goal pos.
+	double unsaturated_trans_costs_dist_threshold = 3.0 * robot_model_->getInscribedRadius();
+	if (dist_to_goal > unsaturated_trans_costs_dist_threshold) {
+		unsaturated_trans_costs_.setScale(cfg_->getCost()->unsaturated_translation_scale);
+	} else {
+		double lin_slope_a = cfg_->getCost()->unsaturated_translation_scale / unsaturated_trans_costs_dist_threshold;
+		double lin_val = lin_slope_a * dist_to_goal;
+		// trim just in case
+		double dynamic_scale = std::min(std::max(lin_val, 0.0), cfg_->getCost()->unsaturated_translation_scale);
+		unsaturated_trans_costs_.setScale(dynamic_scale);
+	}
 }
 
 Pose HumapPlanner::getPoseFromPlan(
