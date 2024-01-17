@@ -282,10 +282,16 @@ bool adjustTwistWithAccAndGoalLimits(
 	double speed_init_max = std::sqrt(2.0 * acc_lim_decel * dist_to_goal);
 
 	// to trim both velocity components proportionally
-	double vel_vector_angle = std::atan2(vel.getY(), vel.getX());
+	double vel_vector_angle = 0.0;
+	// NOTE: when the robot is stopped, X might be slightly negative and thus, this procedure generates cmd_vel
+	// that always forces backward motions;
+	// To properly handle this edge case, at least one of the linear component should be significant
+	if (std::abs(vel.getX()) >= 1e-04 || std::abs(vel.getY()) >= 1e-04) {
+		vel_vector_angle = std::atan2(vel.getY(), vel.getX());
+	}
 	// updated velocity limits that prevent from overshooting the goal pose
-	double vx_safe = cos(vel_vector_angle) * speed_init_max;
-	double vy_safe = sin(vel_vector_angle) * speed_init_max;
+	double vx_safe = std::cos(vel_vector_angle) * speed_init_max;
+	double vy_safe = std::sin(vel_vector_angle) * speed_init_max;
 
 	// original kinematic limits related to max. velocity may be reduced to avoid overshooting the goal pose
 	double vel_max_x_corrected = std::max(std::min(vel_max_x, vx_safe), vel_min_x);
