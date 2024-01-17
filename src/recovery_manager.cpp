@@ -1,7 +1,6 @@
 #include <humap_local_planner/recovery_manager.h>
 
 #include <costmap_2d/cost_values.h>
-#include <humap_local_planner/geometry/pose.h>
 
 namespace humap_local_planner {
 
@@ -179,38 +178,13 @@ bool RecoveryManager::planRecoveryRotateAndRecede(
 		checked_directions.push_back(angle.getRadian());
 	}
 
-	// helper function that finds coordinates of the shifted pose compared to the reference one
-	auto computeCoordsAtDistanceAndDirection = [](
-		double x,
-		double y,
-		double th,
-		double direction,
-		double distance,
-		double waypoint_separation = 0.025
-	) -> std::vector<geometry::Vector> {
-		geometry::Angle dir_angle(direction);
-		geometry::Vector vec_towards_target(dir_angle);
-		vec_towards_target *= waypoint_separation;
-		size_t num_of_poses = std::ceil(distance / waypoint_separation);
-
-		std::vector<geometry::Vector> container;
-		container.emplace_back(x, y, th);
-		for (size_t i = 0; i < num_of_poses; i++) {
-			double x_shifted = container.back().getX() + vec_towards_target.getX();
-			double y_shifted = container.back().getY() + vec_towards_target.getY();
-			double th_shifted = geometry::Angle(direction).getRadian();
-			container.emplace_back(x_shifted, y_shifted, th_shifted);
-		}
-		return container;
-	};
-
 	// let's assume that we'll try to travel N cm plus the separation distance
 	double dist = RECOVERY_ROTATE_AND_RECEDE_DISTANCE + obstacle_costfun.getSeparationDistance();
 
 	// iterate over the investigated directions - choose the first one (the most upfront)
 	for (int i = 0; i < RECOVERY_ROTATE_AND_RECEDE_SURROUNDING_PTS; i++) {
 		// find a pose to evaluate against the cost function - search among the straight paths
-		auto poses_eval = computeCoordsAtDistanceAndDirection(
+		auto poses_eval = RecoveryManager::computeCoordsAtDistanceAndDirection(
 			x,
 			y,
 			th,
@@ -221,7 +195,7 @@ bool RecoveryManager::planRecoveryRotateAndRecede(
 		bool in_collision = false;
 		// iterate over the poses of the straight path
 		for (const auto& pose: poses_eval) {
-			auto cost = obstacle_costfun.getFootprintCost(pose.getX(), pose.getY(), pose.getZ(), 0.0);
+			auto cost = obstacle_costfun.getFootprintCost(pose.getX(), pose.getY(), pose.getYaw(), 0.0);
 			if (cost < 0.0 || cost >= costmap_2d::LETHAL_OBSTACLE) {
 				in_collision = true;
 				break;
@@ -231,10 +205,10 @@ bool RecoveryManager::planRecoveryRotateAndRecede(
 			continue;;
 		}
 		// found an obstacle-free pose lying nearby along the straight path
-		rr_recovery_goal_ = geometry::Vector(
+		rr_recovery_goal_ = geometry::Pose(
 			poses_eval.back().getX(),
 			poses_eval.back().getY(),
-			poses_eval.back().getZ()
+			poses_eval.back().getYaw()
 		);
 		return true;
 	}
@@ -264,6 +238,30 @@ bool RecoveryManager::isPoseValid(const geometry::Pose& pose) {
 		&& !std::isnan(pose.getY())
 		&& !std::isinf(pose.getYaw())
 		&& !std::isnan(pose.getYaw());
+}
+
+std::vector<geometry::Pose> RecoveryManager::computeCoordsAtDistanceAndDirection(
+	double x,
+	double y,
+	double th,
+	double direction,
+	double distance,
+	double waypoint_separation
+) {
+	geometry::Angle dir_angle(direction);
+	geometry::Vector vec_towards_target(dir_angle);
+	vec_towards_target *= waypoint_separation;
+	size_t num_of_poses = std::ceil(distance / waypoint_separation);
+
+	std::vector<geometry::Pose> container;
+	container.emplace_back(x, y, th);
+	for (size_t i = 0; i < num_of_poses; i++) {
+		double x_shifted = container.back().getX() + vec_towards_target.getX();
+		double y_shifted = container.back().getY() + vec_towards_target.getY();
+		double th_shifted = geometry::Angle(direction).getRadian();
+		container.emplace_back(x_shifted, y_shifted, th_shifted);
+	}
+	return container;
 }
 
 void RecoveryManager::detectOscillation(double v_eps, double omega_eps) {

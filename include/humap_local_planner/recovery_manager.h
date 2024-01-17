@@ -2,6 +2,7 @@
 
 #include <base_local_planner/trajectory.h>
 
+#include <humap_local_planner/geometry/pose.h>
 #include <humap_local_planner/map_grid_cost_function.h>
 #include <humap_local_planner/obstacle_separation_cost_function.h>
 
@@ -225,6 +226,16 @@ public:
 
 	/// Helper function that evaluates whether the components of a 2D pose are valid (not NAN and not INF)
 	static bool isPoseValid(const geometry::Pose& pose);
+
+	/// Helper function that finds coordinates of shifted poses, compared to the reference one
+	static std::vector<geometry::Pose> computeCoordsAtDistanceAndDirection(
+		double x,
+		double y,
+		double th,
+		double direction,
+		double distance,
+		double waypoint_separation = 0.025
+	);
 
 protected:
 	/** Variables to be monitored */
