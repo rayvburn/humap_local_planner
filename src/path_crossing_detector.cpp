@@ -146,7 +146,7 @@ bool PathCrossingDetector::detect(
 			double angle_confidence = social_nav_utils::calculateGaussianAngle(
 				cross_angle.getRadian(),
 				rel_loc.isLeftSide() ? M_PI_2 : -M_PI_2,
-				std::pow(M_PI_2 / 2.0, 2.0),
+				std::pow(M_PI_4 / 2.0, 2.0),
 				true // normalize to 1.0 at mean
 			);
 
