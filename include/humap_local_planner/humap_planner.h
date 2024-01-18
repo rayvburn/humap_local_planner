@@ -276,6 +276,10 @@ public:
 		return recovery_.getRotateAndRecedeRecoveryGoal();
 	}
 
+	Pose getGoalLookAroundRecovery() const {
+		return recovery_.getLookAroundRecoveryGoal();
+	}
+
 	/// Returns alternative intermediate goals to avoid crossing of a group (obtained using a heuristic algorithm)
 	std::vector<GroupIntrusionDetector::AltGoalCandidate> getGroupIntrusionGoalAlternatives() const {
 		return group_intrusion_.getIntermediateGoals();

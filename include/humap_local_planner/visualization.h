@@ -73,6 +73,7 @@ public:
 	bool publishGoalLocal(const Vector& pos);
 	bool publishGoal(const Vector& pos);
 	bool publishGoalRecoveryRotateAndRecede(const Vector& pos);
+	bool publishGoalRecoveryLookAround(const Vector& pos);
 	bool publishPlannerState(const Vector& pos, const std::string& state);
 	virtual ~Visualization() = default;
 
