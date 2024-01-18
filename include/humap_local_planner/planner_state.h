@@ -47,6 +47,7 @@ public:
 	 * @param deviating_fp_fun function that allows to check whether the robot deviates From the reference Path
 	 * @param near_collision_fun function that allows to check whether the robot is close to colliding with its env.
 	 * @param can_recover_fun function that allows to check whether the robot can recover from being stuck
+	 * @param global_plan_outdated_fun function that allows to check whether the global path plan is outdated
 	 * @param initiation_yaw_threshold
 	 */
 	PlannerState(
@@ -63,6 +64,7 @@ public:
 		std::function<bool()> deviating_fp_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> near_collision_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> can_recover_fun = std::function<bool()>([]() -> bool { return false; }),
+		std::function<bool()> global_plan_outdated_fun = std::function<bool()>([]() -> bool { return false; }),
 		double initiation_yaw_threshold	= IGN_DTOR(30)
 	);
 
@@ -124,6 +126,8 @@ protected:
 	std::function<bool()> near_collision_fun_;
 	/// Event checker
 	std::function<bool()> can_recover_fun_;
+	/// Event checker
+	std::function<bool()> global_plan_outdated_fun_;
 };
 
 } // namespace humap_local_planner

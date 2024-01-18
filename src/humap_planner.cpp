@@ -138,6 +138,9 @@ HumapPlanner::HumapPlanner(
 	auto can_recover_fun = std::function<bool()>([&]{
 		return recovery_.canRecover();
 	});
+	auto is_global_plan_outdated_fun = std::function<bool()>([&]{
+		return recovery_.isGlobalPathPlanOutdated();
+	});
 
 	state_ptr_ = std::make_unique<PlannerState>(
 		pose_,
@@ -152,7 +155,8 @@ HumapPlanner::HumapPlanner(
 		is_stuck_fun,
 		is_deviating_from_ref_path_fun,
 		near_collision_fun,
-		can_recover_fun
+		can_recover_fun,
+		is_global_plan_outdated_fun
 	);
 }
 

@@ -18,6 +18,7 @@ PlannerState::PlannerState(
 	std::function<bool()> deviating_fp_fun,
 	std::function<bool()> near_collision_fun,
 	std::function<bool()> can_recover_fun,
+	std::function<bool()> global_plan_outdated_fun,
 	double initiation_yaw_threshold):
 	state_(STOPPED),
 	initiation_yaw_threshold_(initiation_yaw_threshold),
@@ -33,7 +34,8 @@ PlannerState::PlannerState(
 	stuck_fun_(stuck_fun),
 	deviating_fp_fun_(deviating_fp_fun),
 	near_collision_fun_(near_collision_fun),
-	can_recover_fun_(can_recover_fun)
+	can_recover_fun_(can_recover_fun),
+	global_plan_outdated_fun_(global_plan_outdated_fun)
 {}
 
 void PlannerState::update(bool new_goal_received) {
@@ -51,6 +53,7 @@ void PlannerState::update(bool new_goal_received) {
 	bool stuck = stuck_fun_();
 	bool near_collision = near_collision_fun_();
 	bool can_recover = can_recover_fun_();
+	bool global_plan_outdated = global_plan_outdated_fun_();
 
 	switch (getState()) {
 		case INITIATE_EXECUTION: {
