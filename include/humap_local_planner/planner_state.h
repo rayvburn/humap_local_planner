@@ -88,7 +88,7 @@ public:
 	 * Checks if goal has been reached
 	 */
 	bool isGoalReached() const {
-		return getState() == STOPPED;
+		return goal_reached_fun_();
 	}
 
 protected:
