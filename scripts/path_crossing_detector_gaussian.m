@@ -18,6 +18,19 @@ Xcrossdeg = Xcross * 180 / pi;
 gauss_cross_norm = gauss_cross / max(gauss_cross);
 plot(Xcrossdeg, gauss_cross_norm);
 
+% frontal detections
+front_mean = 0.0;
+front_range = deg2rad(180.0);
+% 2 sigma rule applied to the range
+front_stddev = front_range / 2;
+front_variance = front_stddev * front_stddev;
+figure_cross = figure('Name', 'Front detections Gaussian visualization');
+
+[Xfront, gauss_front_pos, ~, ~] = prepareGaussianAngleDomain(+front_mean, front_variance);
+Xfrontdeg = Xcross * 180 / pi;
+gauss_front_pos_norm = gauss_front_pos / max(gauss_front_pos);
+plot(Xfrontdeg, gauss_front_pos_norm);
+
 
 % NOTE: Copied from Matlab resources related to "benchmark"
 % Prepares mesh with X coords and Gaussian value in each point,

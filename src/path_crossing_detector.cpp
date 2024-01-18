@@ -150,7 +150,18 @@ bool PathCrossingDetector::detect(
 				true // normalize to 1.0 at mean
 			);
 
-			double confidence = cross_confidence * angle_confidence;
+			/*
+			 * Consider only those detections that are in front of the robot (a 90 deg "cone" in front)
+			 * The relative location is expressed in the robot's local coordinate system, therefore mean is 0.0
+			 */
+			double front_confidence = social_nav_utils::calculateGaussianAngle(
+				rel_loc.getAngle(),
+				0.0,
+				std::pow(M_PI / 2.0, 2.0),
+				true // normalize to 1.0 at mean
+			);
+
+			double confidence = cross_confidence * angle_confidence * front_confidence;
 			bool person_crossing = confidence >= confidence_threshold_;
 
 			// do not clear the flag if previously set
