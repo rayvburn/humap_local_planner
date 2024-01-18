@@ -1685,6 +1685,170 @@ bool HumapPlanner::planRecoveryRotateAndRecede() {
 	return traj_valid;
 }
 
+bool HumapPlanner::planRecoveryLookAround() {
+	// wrapped in a lambda as this sequence is used multiple times in this function
+	auto setStopCommandAsResult = [this]() {
+		result_traj_.resetPoints();
+		result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
+		result_traj_.xv_ = 0.0;
+		result_traj_.yv_ = 0.0;
+		result_traj_.thetav_ = 0.0;
+		result_traj_.cost_ = 0.0;
+		// add at least the current pose so the trajectory can be somehow scored
+		result_traj_.addPoint(pose_.getX(), pose_.getY(), pose_.getYaw());
+		// update explored trajectories (1 valid trajectory will be added to the list)
+		traj_explored_.clear();
+	};
+
+	if (!recovery_.planRecoveryLookAround(pose_.getX(), pose_.getY(), pose_.getYaw(), obstacle_costs_)) {
+		setStopCommandAsResult();
+		ROS_ERROR_THROTTLE_NAMED(
+			5.0,
+			"HumapPlanner",
+			"Cannot find a feasible pose for the look around recovery routine. "
+			"Waiting for the navigation stack's recovery behaviour."
+		);
+		return false;
+	}
+
+	// let's make the goal tolerances and acceleration limits strict here
+	base_local_planner::LocalPlannerLimits limits = *cfg_->getLimits();
+	limits.xy_goal_tolerance /= 5.0;
+	limits.acc_lim_x /= 5.0;
+	limits.acc_lim_y /= 5.0;
+	limits.acc_lim_theta /= 2.0;
+	limits.min_vel_theta /= 2.0;
+
+	// get a recovery goal pose from the recovery pose search
+	geometry::Pose goal_recovery = recovery_.getLookAroundRecoveryGoal();
+
+	// whether robot already rotated towards the recovery goal (expect that it should be done)
+	auto calculateAngularDiffToGoal = [this, goal_recovery]() -> double {
+		return std::abs(pose_.getYaw() - goal_recovery.getYaw());
+	};
+	double dist_to_goal_orient = calculateAngularDiffToGoal();
+	bool goal_orientation_reached = dist_to_goal_orient <= limits.yaw_goal_tolerance;
+
+	if (goal_orientation_reached) {
+		// select next goal as the valid one
+		recovery_.reachedGoalRecoveryLookAround();
+		goal_recovery = recovery_.getLookAroundRecoveryGoal();
+		// recalculate angular diff
+		dist_to_goal_orient = calculateAngularDiffToGoal();
+	}
+
+	// goal has been updated above, possibly we're out of other goals and should finish here
+	if (!recovery_.isLookAroundRecoveryActive()) {
+		setStopCommandAsResult();
+		ROS_INFO_NAMED(
+			"HumapPlanner",
+			"Look around recovery routine has finished operation - returning a stop command."
+		);
+		return true;
+	}
+
+	double distance_to_goal_pos = (pose_.getPosition() - goal_recovery.getPosition()).calculateLength();
+	bool goal_position_reached = distance_to_goal_pos <= limits.xy_goal_tolerance;
+	auto bup_dist = (pose_.getPosition() - recovery_.getLookAroundRecoveryStartPose().getPosition()).calculateLength();
+	bool goal_position_overshoot = bup_dist >= RecoveryManager::BACKING_UP_DISTANCE;
+	// reached or slightly overshoot - does not matter here, in fact
+	goal_position_reached |= goal_position_overshoot;
+
+	// planned velocity command - the result of recovery routine
+	geometry_msgs::Twist cmd_vel;
+	bool traj_valid = false;
+
+	// 2 stage procedure: first slowly moving backwards to the goal position, then rotate to the goal orientation
+	if (!goal_position_reached) {
+		// It is not guaranteed that its angular velocity is 0, once getting there. Therefore, check if angular
+		// velocity from the rotation step should be shut off first.
+		bool angular_vel_nonzero = std::abs(vel_.getZ()) >= 1e-02;
+
+		// move with the minimum velocity regarding the acceleration limits
+		double vel_x_backward = limits.min_vel_x < 0.0 ? std::max(limits.min_vel_x, -0.1) : -0.1;
+		geometry::Vector cmd_vel_bwd(vel_x_backward, 0.0, 0.0);
+
+		adjustTwistWithAccLimits(
+			vel_,
+			limits.acc_lim_x,
+			limits.acc_lim_y,
+			limits.acc_lim_theta,
+			limits.min_vel_x,
+			limits.min_vel_y,
+			-limits.max_vel_theta,
+			limits.max_vel_x,
+			limits.max_vel_y,
+			limits.max_vel_theta,
+			cfg_->getGeneral()->sim_period,
+			cmd_vel_bwd,
+			false // hard-coded maintain_vel_components_rate
+		);
+
+		// all velocity components zeroed at first
+		cmd_vel.linear.x = 0.0;
+		cmd_vel.linear.y = 0.0;
+		cmd_vel.linear.z = 0.0;
+		cmd_vel.angular.x = 0.0;
+		cmd_vel.angular.y = 0.0;
+		cmd_vel.angular.z = 0.0;
+
+		if (angular_vel_nonzero) {
+			// see note at the top of the branch; wait until angular velocity is zeroed
+			cmd_vel.angular.z = cmd_vel_bwd.getZ();
+		} else {
+			// safe to move with a linear motion only
+			cmd_vel.linear.x = cmd_vel_bwd.getX();
+			cmd_vel.linear.y = cmd_vel_bwd.getY();
+		}
+		traj_valid = true;
+
+	} else {
+		// NOTE: LatchedStopRotateController assumes that all received poses are expressed in the same frame,
+		// headers of stamped types are not required then
+		geometry_msgs::PoseStamped velocity;
+		velocity.pose = Pose(vel_.getX(), vel_.getY(), vel_.getZ()).getAsMsgPose();
+
+		geometry_msgs::PoseStamped pose;
+		pose.pose = pose_.getAsMsgPose();
+
+		geometry_msgs::PoseStamped goal_pose;
+		goal_pose.pose = goal_recovery.getAsMsgPose();
+
+		traj_valid = stop_rotate_controller_.computeVelocityCommandsStopRotate(
+			cmd_vel,
+			limits.getAccLimits(),
+			cfg_->getGeneral()->sim_period,
+			goal_pose,
+			velocity,
+			pose,
+			limits,
+			std::bind(
+				&HumapPlanner::checkTrajectory,
+				this,
+				std::placeholders::_1,
+				std::placeholders::_2,
+				std::placeholders::_3
+			)
+		);
+	}
+
+	result_traj_.resetPoints();
+	result_traj_.time_delta_ = cfg_->getGeneral()->sim_period;
+	result_traj_.xv_ = cmd_vel.linear.x;
+	result_traj_.yv_ = cmd_vel.linear.y;
+	result_traj_.thetav_ = cmd_vel.angular.z;
+	// negative cost when trajectory is invalid
+	result_traj_.cost_ = traj_valid ? 0.0 : -1.0;
+	// add at least the current pose so the trajectory can be somehow scored
+	result_traj_.addPoint(pose_.getX(), pose_.getY(), pose_.getYaw());
+
+	// update explored trajectories (1 valid trajectory will be added to the list)
+	traj_explored_.clear();
+	traj_explored_.push_back(result_traj_);
+
+	return traj_valid;
+}
+
 void HumapPlanner::collectTrajectoryMotionData() {
 	if (generator_social_.getGeneratedTrajectories().empty()) {
 		motion_data_.behaviour_active_ = "unknown";

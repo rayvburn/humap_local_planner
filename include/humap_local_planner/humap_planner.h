@@ -537,6 +537,11 @@ protected:
 	bool planRecoveryRotateAndRecede();
 
 	/**
+	 * @brief Performs a recovery once the robot is stuck according to the cost functions
+	 */
+	bool planRecoveryLookAround();
+
+	/**
 	 * @brief Updates motion driving factors based on the newest data from the trajectory generator
 	 */
 	void collectTrajectoryMotionData();
