@@ -13,6 +13,7 @@ PlannerState::PlannerState(
 	std::function<bool()> goal_reached_fun,
 	std::function<bool()> crossing_detected_fun,
 	std::function<bool()> yield_way_crossing_finished_fun,
+	std::function<bool()> look_around_finished_fun,
 	std::function<bool()> oscillating_fun,
 	std::function<bool()> stuck_fun,
 	std::function<bool()> deviating_fp_fun,
@@ -30,6 +31,7 @@ PlannerState::PlannerState(
 	goal_reached_fun_(goal_reached_fun),
 	crossing_detected_fun_(crossing_detected_fun),
 	yield_way_crossing_finished_fun_(yield_way_crossing_finished_fun),
+	look_around_finished_fun_(look_around_finished_fun),
 	oscillating_fun_(oscillating_fun),
 	stuck_fun_(stuck_fun),
 	deviating_fp_fun_(deviating_fp_fun),
@@ -58,9 +60,11 @@ void PlannerState::update(bool new_goal_received) {
 	switch (getState()) {
 		case INITIATE_EXECUTION: {
 			// emergency transition has a higher priority than normal transitions
-			if (oscillating || stuck || near_collision) {
-				// recovery should be started
+			if (near_collision) {
 				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			} else if (oscillating || stuck || global_plan_outdated) {
+				state_ = RECOVERY_LOOK_AROUND;
 				break;
 			}
 
@@ -84,9 +88,11 @@ void PlannerState::update(bool new_goal_received) {
 
 		case MOVE: {
 			// emergency transition has a higher priority than normal transitions
-			if (oscillating || stuck || near_collision) {
-				// recovery should be started
+			if (near_collision) {
 				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			} else if (oscillating || stuck || global_plan_outdated) {
+				state_ = RECOVERY_LOOK_AROUND;
 				break;
 			}
 
@@ -115,9 +121,11 @@ void PlannerState::update(bool new_goal_received) {
 
 		case ADJUST_ORIENTATION: {
 			// emergency transition has a higher priority than normal transitions
-			if (oscillating || stuck || near_collision) {
-				// recovery should be started
+			if (near_collision) {
 				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			} else if (oscillating || stuck || global_plan_outdated) {
+				state_ = RECOVERY_LOOK_AROUND;
 				break;
 			}
 
@@ -141,9 +149,11 @@ void PlannerState::update(bool new_goal_received) {
 		case YIELD_WAY_CROSSING: {
 			bool routine_finished = yield_way_crossing_finished_fun_();
 
-			if (oscillating || stuck || near_collision) {
-				// recovery should be started
+			if (near_collision) {
 				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			} else if (oscillating || stuck || global_plan_outdated) {
+				state_ = RECOVERY_LOOK_AROUND;
 				break;
 			}
 
@@ -160,6 +170,25 @@ void PlannerState::update(bool new_goal_received) {
 				// recovery finished or robot is unstuck, moving further is possible
 				state_ = MOVE;
 			} else if (!stuck && !near_collision) {
+				state_ = INITIATE_EXECUTION;
+			} else if ((oscillating || stuck) && !near_collision) {
+				state_ = RECOVERY_LOOK_AROUND;
+			}
+			break;
+		}
+
+		case RECOVERY_LOOK_AROUND: {
+			bool routine_finished = look_around_finished_fun_();
+
+			if (near_collision) {
+				state_ = RECOVERY_ROTATE_AND_RECEDE;
+				break;
+			} else if (!oscillating && !stuck && !global_plan_outdated) {
+				state_ = MOVE;
+				break;
+			}
+			if (routine_finished) {
+				// routine as finished but oscillating or stuck flag is still set
 				state_ = INITIATE_EXECUTION;
 			}
 			break;

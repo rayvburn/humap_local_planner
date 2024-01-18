@@ -141,6 +141,9 @@ HumapPlanner::HumapPlanner(
 	auto is_global_plan_outdated_fun = std::function<bool()>([&]{
 		return recovery_.isGlobalPathPlanOutdated();
 	});
+	auto is_look_around_finished_fun = std::function<bool()>([&]{
+		return !recovery_.isLookAroundRecoveryActive();
+	});
 
 	state_ptr_ = std::make_unique<PlannerState>(
 		pose_,
@@ -151,6 +154,7 @@ HumapPlanner::HumapPlanner(
 		goal_reached_fun,
 		crossing_detected_fun,
 		yield_way_crossing_finished_fun,
+		is_look_around_finished_fun,
 		is_oscillating_fun,
 		is_stuck_fun,
 		is_deviating_from_ref_path_fun,
@@ -385,6 +389,9 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 			break;
 		case PlannerState::RECOVERY_ROTATE_AND_RECEDE:
 			traj_valid = planRecoveryRotateAndRecede();
+			break;
+		case PlannerState::RECOVERY_LOOK_AROUND:
+			traj_valid = planRecoveryLookAround();
 			break;
 		default:
 			break;

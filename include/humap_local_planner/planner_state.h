@@ -24,6 +24,8 @@ public:
 		YIELD_WAY_CROSSING,
 		/// Mobile base looks for a safe pose to reach (and moves to this pose) once got stuck
 		RECOVERY_ROTATE_AND_RECEDE,
+		/// Mobile base backs-up and rotates to the left and right to update the environment model
+		RECOVERY_LOOK_AROUND,
 		/// Noop state after started after reaching the latest goal
 		STOPPED
 	};
@@ -42,6 +44,7 @@ public:
 	 * @param goal_reached_fun function that allows to check if goal orientation is reached
 	 * @param crossing_detected_fun checks if yielding way to a human crossing the robot's path is necessary
 	 * @param yield_way_crossing_finished_fun checks if yielding routine has finished
+	 * @param look_around_finished_fun function that checks if "look around" routine has finished
 	 * @param oscillating_fun function that allows to check whether the robot is oscillating
 	 * @param stuck_fun function that allows to check whether the robot is stuck
 	 * @param deviating_fp_fun function that allows to check whether the robot deviates From the reference Path
@@ -59,6 +62,7 @@ public:
 		std::function<bool()> goal_reached_fun,
 		std::function<bool()> crossing_detected_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> yield_way_crossing_finished_fun = std::function<bool()>([]() -> bool { return true; }),
+		std::function<bool()> look_around_finished_fun = std::function<bool()>([]() -> bool { return true; }),
 		std::function<bool()> oscillating_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> stuck_fun = std::function<bool()>([]() -> bool { return false; }),
 		std::function<bool()> deviating_fp_fun = std::function<bool()>([]() -> bool { return false; }),
@@ -95,6 +99,7 @@ protected:
 		{State::ADJUST_ORIENTATION, "adjust"},
 		{State::YIELD_WAY_CROSSING, "yield"},
 		{State::RECOVERY_ROTATE_AND_RECEDE, "recovery_rr"},
+		{State::RECOVERY_LOOK_AROUND, "recovery_la"},
 		{State::STOPPED, "stop"}
 	};
 
@@ -116,6 +121,8 @@ protected:
 	std::function<bool()> crossing_detected_fun_;
 	/// Event checker
 	std::function<bool()> yield_way_crossing_finished_fun_;
+	/// Event checker
+	std::function<bool()> look_around_finished_fun_;
 	/// Event checker
 	std::function<bool()> oscillating_fun_;
 	/// Event checker
