@@ -218,6 +218,133 @@ bool RecoveryManager::planRecoveryRotateAndRecede(
 	return false;
 }
 
+bool RecoveryManager::planRecoveryLookAround(
+	double x,
+	double y,
+	double th,
+	const ObstacleSeparationCostFunction& obstacle_costfun
+) {
+	double back_up_distance = BACKING_UP_DISTANCE;
+
+	// This procedure is only planned once - when a valid set of goals is determined, it is only checked whether
+	// the initially computed poses are still valid
+	if (!la_recovery_goals_.empty()) {
+		bool goals_still_valid = true;
+		for (const auto& pose: la_recovery_goals_) {
+			auto cost = obstacle_costfun.getFootprintCost(pose.getX(), pose.getY(), pose.getYaw());
+			if (!RecoveryManager::isPoseCollisionFree(cost)) {
+				goals_still_valid = false;
+				break;
+			}
+		}
+		if (goals_still_valid) {
+			return true;
+		}
+		// let's skip back-up stage that we'd do at the start (non-negative back_up_distance might lead to a receding
+		// horizon problem here)
+		back_up_distance = 0.0;
+	}
+
+	resetLookAroundRecoveryGoals();
+
+	/*
+	 * Stage 1: Back up a bit, if possible
+	 */
+	auto back_up_poses = RecoveryManager::computeCoordsAtDistanceAndDirection(
+		x,
+		y,
+		th,
+		geometry::Angle(th + M_PI).getRadian(), // sample backwards
+		back_up_distance,
+		obstacle_costfun.getSeparationDistance()
+	);
+
+	// stores the furthest collision-free position for backing up
+	geometry::Vector recovery_pos(NAN, NAN, NAN);
+	bool back_up_possible = false;
+	// iterate over the poses of the straight path to check if any intermediate pose is in collision
+	for (const auto& pose: back_up_poses) {
+		auto cost = obstacle_costfun.getFootprintCost(pose.getX(), pose.getY(), pose.getYaw());
+		if (!RecoveryManager::isPoseCollisionFree(cost)) {
+			break;
+		}
+		recovery_pos = geometry::Vector(pose.getX(), pose.getY(), pose.getZ());
+		back_up_possible = true;
+	}
+	if (!back_up_possible) {
+		// make sure that the current pose is collision-free
+		auto cost = obstacle_costfun.getFootprintCost(x, y, th);
+		if (!RecoveryManager::isPoseCollisionFree(cost)) {
+			resetLookAroundRecoveryGoals();
+			return false;
+		}
+		recovery_pos = geometry::Vector(x, y, th);
+	}
+
+	/*
+	 * Stage 2: Find a direction opposite compared to the angular velocities stored in the velocity buffer
+	 * If can't tell, choose left due to the right-hand side
+	 */
+	bool start_with_left_rotation = true;
+	if (!buffer_.empty()) {
+		auto newest_vel_measurement = buffer_.at(buffer_.size() - 1);
+		bool last_rotation_left = newest_vel_measurement.omega >= 0.0;
+		start_with_left_rotation = !last_rotation_left;
+	}
+
+	/*
+	 * Stage 3: Collect subsequent goal poses that should be reached during the recovery procedure:
+	 * - orientate with 60 degrees offset (from the current angle) in the first direction
+	 * - orientate with 120 degrees offset (from the current angle) in the second direction
+	 * - orientate with 120 degrees offset (from the current angle) in the first direction
+	 */
+	static const double ANGULAR_DIST_BASE = IGN_DTOR(60);
+	la_recovery_goals_.emplace_back(
+		recovery_pos.getX(),
+		recovery_pos.getY(),
+		start_with_left_rotation
+			? geometry::Angle(th + ANGULAR_DIST_BASE).getRadian()
+			: geometry::Angle(th - ANGULAR_DIST_BASE).getRadian()
+	);
+	la_recovery_goals_.emplace_back(
+		recovery_pos.getX(),
+		recovery_pos.getY(),
+		start_with_left_rotation
+			? geometry::Angle(th - 2.0 * ANGULAR_DIST_BASE).getRadian()
+			: geometry::Angle(th + 2.0 * ANGULAR_DIST_BASE).getRadian()
+	);
+	la_recovery_goals_.emplace_back(
+		recovery_pos.getX(),
+		recovery_pos.getY(),
+		start_with_left_rotation
+			? geometry::Angle(th + 2.0 * ANGULAR_DIST_BASE).getRadian()
+			: geometry::Angle(th - 2.0 * ANGULAR_DIST_BASE).getRadian()
+	);
+
+	bool poses_valid = std::all_of(
+		la_recovery_goals_.cbegin(),
+		la_recovery_goals_.cend(),
+		[](const auto& pose) -> bool {
+			return RecoveryManager::isPoseValid(pose);
+		}
+	);
+	if (!poses_valid) {
+		resetLookAroundRecoveryGoals();
+		return false;
+	}
+	la_recovery_start_pose_ = geometry::Pose(x, y, th);
+	return true;
+}
+
+bool RecoveryManager::reachedGoalRecoveryLookAround() {
+	if (la_recovery_goals_.empty()) {
+		resetLookAroundRecoveryGoals();
+		return false;
+	}
+	la_recovery_goals_.pop_front();
+	return true;
+}
+
 void RecoveryManager::clear() {
 	buffer_.clear();
 	oscillating_ = false;
@@ -308,6 +435,11 @@ void RecoveryManager::detectOscillation(double v_eps, double omega_eps) {
 
 void RecoveryManager::resetRotateAndRecedeRecoveryGoal() {
 	rr_recovery_goal_ = geometry::Pose(NAN, NAN, NAN, NAN, NAN, NAN, NAN);
+}
+
+void RecoveryManager::resetLookAroundRecoveryGoals() {
+	la_recovery_goals_.clear();
+	la_recovery_start_pose_ = geometry::Pose(NAN, NAN, NAN, NAN, NAN, NAN, NAN);
 }
 
 } // namespace humap_local_planner

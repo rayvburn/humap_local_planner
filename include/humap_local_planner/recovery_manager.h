@@ -94,6 +94,8 @@ public:
 	static constexpr int RECOVERY_ROTATE_AND_RECEDE_SURROUNDING_PTS = 16;
 	/// Defines length of the path whose poses must be collision-free to choose it for recovery
 	static constexpr double RECOVERY_ROTATE_AND_RECEDE_DISTANCE = 0.3;
+	/// Distance of moving backwards during the "look around" routine
+	static constexpr double BACKING_UP_DISTANCE = 0.25;
 
 	RecoveryManager();
 
@@ -185,6 +187,31 @@ public:
 	);
 
 	/**
+	 * @brief Plans a recovery strategy that rotates the robot in place to catch unmarking observations in the costmap
+	 *
+	 * @param x x-component of the current robot pose
+	 * @param y y-component of the current robot pose
+	 * @param th theta-component of the current robot pose
+	 * @param obstacle_costfun cost function that evaluates whether a pose in world coordinates is collision-free
+	 * @return true If recovery goal pose is found (recovery is feasible)
+	 * @return false If recovery goal pose was not found
+	 */
+	bool planRecoveryLookAround(
+		double x,
+		double y,
+		double th,
+		const ObstacleSeparationCostFunction& obstacle_costfun
+	);
+
+	/**
+	 * The class managing the robot controls should call to this after each pose of the planned sequence is reached
+	 *
+	 * @return true when there are still some goals in the container
+	 * @return false when the goals container is empty
+	 */
+	bool reachedGoalRecoveryLookAround();
+
+	/**
 	 * @brief Clear the current internal state
 	 *
 	 * This call also resets the internal buffer
@@ -216,6 +243,21 @@ public:
 
 	inline geometry::Pose getRotateAndRecedeRecoveryGoal() const {
 		return rr_recovery_goal_;
+	}
+
+	inline bool isLookAroundRecoveryActive() const {
+		return !la_recovery_goals_.empty();
+	}
+
+	/// Returns the current goal pose of the "look around" recovery
+	inline geometry::Pose getLookAroundRecoveryGoal() const {
+		return la_recovery_goals_.empty()
+			? geometry::Pose(NAN, NAN, NAN, NAN, NAN, NAN, NAN)
+			: la_recovery_goals_.front();
+	}
+
+	inline geometry::Pose getLookAroundRecoveryStartPose() const {
+		return la_recovery_start_pose_;
 	}
 
 	inline bool isGlobalPathPlanOutdated() const {
@@ -255,6 +297,9 @@ protected:
 	/// Sets all coordinates of the rotate&recede recovery goal to NAN
 	void resetRotateAndRecedeRecoveryGoal();
 
+	/// Sets all coordinates of the recovery goal to NAN
+	void resetLookAroundRecoveryGoals();
+
 	/// Circular buffer to store the last measurements @see setOscillationBufferLength
 	CircularBuffer<VelMeasurement> buffer_;
 
@@ -273,6 +318,11 @@ protected:
 
 	/// Coordinates of the rotate&recede recovery goal
 	geometry::Pose rr_recovery_goal_;
+
+	/// Subsequent poses of the "look around" recovery goals
+	std::list<geometry::Pose> la_recovery_goals_;
+	/// Start pose of the "look around" recovery
+	geometry::Pose la_recovery_start_pose_;
 
 	/// Stores previous linear velocity of the velocity command send to the mobile base
 	double prev_cmd_vx;
