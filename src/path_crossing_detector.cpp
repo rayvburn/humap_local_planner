@@ -55,6 +55,11 @@ bool PathCrossingDetector::detect(
 	auto traj_robot_poses = traj_robot.getPoses();
 
 	for (const auto& traj_person: traj_people) {
+		// velocity data is required for further calculations
+		if (traj_person.getVelocities().empty()) {
+			continue;
+		}
+
 		auto vel_person = traj_person.getVelocities().front();
 		double speed_person = std::hypot(vel_person.getX(), vel_person.getY());
 
@@ -64,6 +69,9 @@ bool PathCrossingDetector::detect(
 
 		// iterator must be referenced to an allocated container
 		auto traj_person_poses = traj_person.getPoses();
+		if (traj_person_poses.empty()) {
+			continue;
+		}
 
 		auto robot_pose_it = traj_robot_poses.cbegin();
 		auto person_pose_it = traj_person_poses.cbegin();
