@@ -22,6 +22,11 @@ public:
 	 */
 	static constexpr double SAFE_POINT_DISTANCE_MULTIPLIER_DEFAULT = 0.70;
 
+	/// Innovation factor for the motion direction filtering
+	static constexpr double ROBOT_INNOV_FACTOR_DEFAULT = 0.8;
+	/// Innovation factor for the motion direction filtering (person predictions have smaller confidence)
+	static constexpr double PERSON_INNOV_FACTOR_DEFAULT = 0.6;
+
 	PathCrossingDetector();
 
 	void setParameters(
@@ -37,11 +42,25 @@ public:
 	 * @brief Performs crossing detection and tries to find the safe directions for further motion for the robot
 	 *
 	 * @param traj_robot evaluated robot trajectory (with velocities expressed in global coordinates)
+	 * @param global_plan global path plan of the robot
 	 * @param traj_people predicted trajectories of surrounding people
 	 * @return true when crossing was detected
 	 */
 	bool detect(
 		const Trajectory& traj_robot,
+		const std::vector<geometry_msgs::PoseStamped>& global_plan,
+		const std::vector<Trajectory>& traj_people
+	);
+
+	/// @brief Performs crossing detection and tries to find the safe directions for further motion for the robot
+	bool detect(
+		const Trajectory& traj_robot,
+		const std::vector<Trajectory>& traj_people
+	);
+
+	/// @brief Performs crossing detection and tries to find the safe directions for further motion for the robot
+	bool detect(
+		const std::vector<geometry_msgs::PoseStamped>& global_plan,
 		const std::vector<Trajectory>& traj_people
 	);
 
@@ -81,7 +100,72 @@ public:
 		return gap_closest_person_;
 	}
 
+	/**
+	 * @brief Implements a complementary filter to process the motion direction (from poses)
+	 *
+	 * @param direction the newest motion direction
+	 * @param pose_prev previous pose
+	 * @param pose_current current pose
+	 * @param innovation_factor the bigger the value is, the more confident we are about the new observations
+	 * @return a new motion direction
+	 */
+	static double motionDirectionFilter(
+		double direction,
+		const geometry::Pose& pose_prev,
+		const geometry::Pose& pose_current,
+		double innovation_factor
+	);
+
 protected:
+	/**
+	 * @brief Resets class' members to clear any pending detections
+	 */
+	void prepareForDetecting();
+
+	/**
+	 * @return true if any crossing was detected
+	 */
+	bool detectCrossingTrajectory(
+		const Trajectory& traj_robot,
+		const std::vector<Trajectory>& traj_people
+	);
+
+	/**
+	 * @return true if any crossing was detected
+	 */
+	bool detectCrossingPath(
+		const std::vector<geometry_msgs::PoseStamped>& global_plan,
+		const std::vector<Trajectory>& traj_people
+	);
+
+	/**
+	 * @brief Performs detection of a human proximity that may indicate crossing of the robot's path
+	 *
+	 * Method that needs to be called in each step of the prediction horizon
+	 *
+	 * @param robot_pose
+	 * @param person_pose
+	 * @param timestamp_prediction
+	 * @param save_gap_to_closest_person
+	 *
+	 * @return true if crossing was detected and its confidence exceeds the threshold
+	 */
+	bool performCrossingDetection(
+		const geometry::Pose& robot_pose,
+		const geometry::Pose& person_pose,
+		double timestamp_prediction,
+		bool save_gap_to_closest_person,
+		bool compute_crossing_angle_confidence = true
+	);
+
+	/**
+	 * @brief
+	 *
+	 * @param robot_pose the current pose of the robot (first of the predicted trajectory)
+	 * @return true if safe direction has been found
+	 */
+	bool findSafeDirectionsAndClosestPair(const geometry::Pose& robot_pose);
+
 	double person_model_radius_;
 	double robot_model_radius_;
 	double separation_threshold_;
