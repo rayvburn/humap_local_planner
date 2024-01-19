@@ -743,12 +743,13 @@ sensor_msgs::PointCloud2 HumapPlannerROS::createExploredTrajectoriesPcl() const 
 
 	sensor_msgs::PointCloud2Modifier cloud_mod(traj_cloud);
 	cloud_mod.setPointCloud2Fields(
-		5,
+		6,
 		"x", 1, sensor_msgs::PointField::FLOAT32,
 		"y", 1, sensor_msgs::PointField::FLOAT32,
 		"z", 1, sensor_msgs::PointField::FLOAT32,
 		"theta", 1, sensor_msgs::PointField::FLOAT32,
-		"cost", 1, sensor_msgs::PointField::FLOAT32
+		"cost", 1, sensor_msgs::PointField::FLOAT32,
+		"id", 1, sensor_msgs::PointField::FLOAT32
 	);
 
 	// check how many points there will be in a point cloud
@@ -786,6 +787,8 @@ sensor_msgs::PointCloud2 HumapPlannerROS::createExploredTrajectoriesPcl() const 
 			iter_x[2] = 0.0;
 			iter_x[3] = p_th;
 			iter_x[4] = t->cost_;
+			// ID of the trajectory
+			iter_x[5] = static_cast<double>(std::distance(explored_trajs.cbegin(), t));
 			++iter_x;
 		}
 	}
