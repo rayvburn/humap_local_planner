@@ -463,7 +463,7 @@ base_local_planner::Trajectory HumapPlanner::findBestTrajectory(
 		auto traj_person = person.getTrajectoryPrediction();
 		trajs_people.push_back(traj_person);
 	}
-	if (crossing_.detect(traj_robot_g, trajs_people)) {
+	if (crossing_.detect(traj_robot_g, global_plan_, trajs_people)) {
 		ROS_WARN_NAMED(
 			"HumapPlanner",
 			"Detected the intersection of robot's and %lu people's trajectories. Gap to the closest person is %5.2f m.",
