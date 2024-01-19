@@ -118,7 +118,9 @@ HumapPlanner::HumapPlanner(
 		return dist <= dist_threshold;
 	});
 	auto crossing_detected_fun = std::function<bool()>([&]{
-		return crossing_.isCrossingDetected();
+		// also check if the closest dynamic person is far enough (to prevent switching states immediately)
+		double dist_threshold = 2.0 * cfg_->getGeneral()->person_model_radius;
+		return crossing_.isCrossingDetected() && crossing_.getGapToClosestPerson() <= dist_threshold;
 	});
 	auto yield_way_crossing_finished_fun = std::function<bool()>([&]{
 		return !yield_way_crossing_.isActive();
@@ -1454,7 +1456,7 @@ bool HumapPlanner::planYieldWayCrossing() {
 		return true;
 	}
 	// gap will be "Inf" if no "dynamic" people nearby are detected
-	if (crossing_.getGapToClosestPerson() > cfg_->getGeneral()->person_model_radius) {
+	if (crossing_.getGapToClosestPerson() > 2.0 * cfg_->getGeneral()->person_model_radius) {
 		yield_way_crossing_.finish();
 		return true;
 	}
