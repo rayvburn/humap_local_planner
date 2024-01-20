@@ -59,6 +59,12 @@ namespace humap_local_planner {
 		double oscillation_buffer_length = 5.0;
 		/// Confidence threshold to consider geometrical arrangement between the robot and a person as path crossing
 		double path_crossing_confidence_threshold = 0.6;
+		/**
+		 * Standard deviation (in radians) of the relative location (angle from robot to human)
+		 * Taken into account while calculating the confidence of the crossing;
+		 * Default value reflects a 120-degree-wide bell (2-sigma rule applied)
+		 */
+		double path_crossing_front_stddev = (2.0 / 3.0 * M_PI) / 2.0;
 		/// Maximum distance that the robot can travel while in the YIELD_WAY_CROSSING state
 		double yield_way_max_travel_distance = 0.75;
 		/**

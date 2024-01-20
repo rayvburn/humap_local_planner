@@ -104,6 +104,7 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 
 	planner_behaviors_->oscillation_buffer_length = cfg.oscillation_buffer_length;
 	planner_behaviors_->path_crossing_confidence_threshold = cfg.path_crossing_confidence_threshold;
+	planner_behaviors_->path_crossing_front_stddev = cfg.path_crossing_front_stddev;
 	planner_behaviors_->yield_way_max_travel_distance = cfg.yield_way_max_travel_distance;
 	planner_behaviors_->path_plan_update_violation_multiplier = cfg.path_plan_update_violation_multiplier;
 
