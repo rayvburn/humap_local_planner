@@ -152,12 +152,12 @@ void PlannerState::update(bool new_goal_received) {
 			if (near_collision) {
 				state_ = RECOVERY_ROTATE_AND_RECEDE;
 				break;
-			} else if (oscillating || stuck || global_plan_outdated) {
+			} else if (oscillating || stuck || (routine_finished && global_plan_outdated)) {
 				state_ = RECOVERY_LOOK_AROUND;
 				break;
 			}
 
-			if (routine_finished) {
+			if (!crossing_detected || routine_finished) {
 				state_ = MOVE;
 			}
 			break;
