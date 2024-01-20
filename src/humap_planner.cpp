@@ -208,7 +208,8 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 		cfg_->getGeneral()->person_model_radius,
 		robot_model_->getInscribedRadius(),
 		std::max(cfg_->getCost()->occdist_separation, 0.025),
-		cfg_->getPlannerBehaviors()->path_crossing_confidence_threshold
+		cfg_->getPlannerBehaviors()->path_crossing_confidence_threshold,
+		cfg_->getPlannerBehaviors()->path_crossing_front_stddev
 	);
 
 	// keep N sec of history (buffer length not parameterized)
