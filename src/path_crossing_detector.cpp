@@ -22,6 +22,7 @@ void PathCrossingDetector::setParameters(
 	double robot_model_radius,
 	double separation_threshold,
 	double confidence_threshold,
+	double front_angle_stddev,
 	double safe_point_distance,
 	double speed_negligible_threshold
 ) {
@@ -29,6 +30,7 @@ void PathCrossingDetector::setParameters(
 	robot_model_radius_ = robot_model_radius;
 	separation_threshold_ = separation_threshold;
 	confidence_threshold_ = confidence_threshold;
+	front_angle_stddev_ = front_angle_stddev;
 	safe_point_distance_multiplier_ = safe_point_distance;
 	speed_negligible_threshold_ = speed_negligible_threshold;
 }
@@ -376,7 +378,7 @@ bool PathCrossingDetector::performCrossingDetection(
 	double front_confidence = social_nav_utils::calculateGaussianAngle(
 		rel_loc.getAngle(),
 		0.0,
-		std::pow((2.0 / 3.0 * M_PI) / 2.0, 2.0),
+		std::pow(front_angle_stddev_, 2.0),
 		true // normalize to 1.0 at mean
 	);
 

@@ -22,6 +22,12 @@ public:
 	 */
 	static constexpr double SAFE_POINT_DISTANCE_MULTIPLIER_DEFAULT = 0.70;
 
+	/**
+	 * Standard deviation (in radians) of the relative location (angle from robot to human)
+	 * Default value reflects a 120-degree-wide bell (2-sigma rule applied)
+	 */
+	static constexpr double FRONT_ANGLE_STDDEV_DEFAULT = (2.0 / 3.0 * M_PI) / 2.0;
+
 	/// Innovation factor for the motion direction filtering
 	static constexpr double ROBOT_INNOV_FACTOR_DEFAULT = 0.8;
 	/// Innovation factor for the motion direction filtering (person predictions have smaller confidence)
@@ -34,6 +40,7 @@ public:
 		double robot_model_radius,
 		double separation_threshold,
 		double confidence_threshold,
+		double front_angle_stddev = FRONT_ANGLE_STDDEV_DEFAULT,
 		double safe_point_distance_multiplier = SAFE_POINT_DISTANCE_MULTIPLIER_DEFAULT,
 		double speed_negligible_threshold = SPEED_NEGLIGIBLE_THRESHOLD_DEFAULT
 	);
@@ -182,6 +189,8 @@ protected:
 	std::pair<geometry::Vector, double> closest_safe_direction_;
 
 	double gap_closest_person_;
+	/// Standard deviation (in radians) of the relative location (angle from robot to human)
+	double front_angle_stddev_;
 };
 
 } // namespace humap_local_planner
