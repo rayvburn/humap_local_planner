@@ -103,6 +103,7 @@ void HumapConfigROS::reconfigure(HumapPlannerConfig& cfg) {
 	general_->groups_closest_num = cfg.groups_closest_num;
 
 	planner_behaviors_->oscillation_buffer_length = cfg.oscillation_buffer_length;
+	planner_behaviors_->path_crossing_person_speed_threshold = cfg.path_crossing_person_speed_threshold;
 	planner_behaviors_->path_crossing_confidence_threshold = cfg.path_crossing_confidence_threshold;
 	planner_behaviors_->path_crossing_front_stddev = cfg.path_crossing_front_stddev;
 	planner_behaviors_->yield_way_max_travel_distance = cfg.yield_way_max_travel_distance;

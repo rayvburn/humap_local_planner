@@ -57,6 +57,8 @@ namespace humap_local_planner {
 	struct PlannerBehaviorsParams {
 		/// Length of a buffer to detect oscillations. Expressed as a number of seconds to keep the measurements
 		double oscillation_buffer_length = 5.0;
+		/// The minimum speed (m/s) of a person to consider them in path crossing calculations
+		double path_crossing_person_speed_threshold = 0.1;
 		/// Confidence threshold to consider geometrical arrangement between the robot and a person as path crossing
 		double path_crossing_confidence_threshold = 0.6;
 		/**
