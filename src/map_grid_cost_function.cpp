@@ -55,7 +55,9 @@ MapGridCostFunction::MapGridCostFunction(
 	is_local_goal_function_(is_local_goal_function),
 	stop_on_failure_(true),
 	n_kernel_size_(3),
-	n_cost_multiplier_(3.0)
+	n_cost_multiplier_(3.0),
+	highest_valid_cost_prev_(0.0),
+	highest_valid_cost_(0.0)
 {}
 
 void MapGridCostFunction::setTargetPoses(std::vector<geometry_msgs::PoseStamped> target_poses) {
@@ -70,6 +72,9 @@ bool MapGridCostFunction::prepare() {
 	} else {
 		map_.setTargetCells(*costmap_, target_poses_);
 	}
+
+	highest_valid_cost_prev_ = highest_valid_cost_;
+	highest_valid_cost_ = 0.0;
 	return true;
 }
 
@@ -78,6 +83,9 @@ double MapGridCostFunction::getCellCosts(unsigned int px, unsigned int py) {
 
 	// check if some processing related to cell's neighbours is reasonable
 	if (grid_dist != map_.unreachableCellCosts() || n_kernel_size_ <= 0) {
+		if (grid_dist != map_.obstacleCosts()) {
+			highest_valid_cost_ = std::max(highest_valid_cost_, grid_dist);
+		}
 		return grid_dist;
 	}
 
@@ -122,11 +130,13 @@ double MapGridCostFunction::getCellCosts(unsigned int px, unsigned int py) {
 	double max_cost = *std::max_element(npts.cbegin(), npts.cend());
 
 	if (max_cost != map_.obstacleCosts() && max_cost != map_.unreachableCellCosts()) {
-		// return min_cost
-		return *std::min_element(npts.cbegin(), npts.cend()) * n_cost_multiplier_;
+		// find and return the min_cost
+		auto min_cost = *std::min_element(npts.cbegin(), npts.cend()) * n_cost_multiplier_;
+		highest_valid_cost_ = std::max(highest_valid_cost_, min_cost);
+		return min_cost;
 	}
-	// return unchanged cost value
-	return grid_dist;
+	// return a reasonable cost value instead of map_.unreachableCellCosts()
+	return highest_valid_cost_prev_;
 }
 
 double MapGridCostFunction::scoreTrajectory(base_local_planner::Trajectory& traj) {

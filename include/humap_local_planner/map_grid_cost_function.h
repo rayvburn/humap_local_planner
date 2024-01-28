@@ -164,6 +164,13 @@ protected:
 	unsigned int n_kernel_size_;
 	/// The multiplier of a cost when the resultant cost is obtained based on the neighbors
 	double n_cost_multiplier_;
+
+	// @rayvburn added this
+	// variables to employ a heuristic assigning valid costs to cells that are marked unreachable (while they aren't)
+	/// The highest cost collected since the last @ref prepare call
+	double highest_valid_cost_;
+	/// The highest overall cost collected during the previous iteration (from one @ref prepare call to another)
+	double highest_valid_cost_prev_;
 };
 
 } // namespace humap_local_planner
