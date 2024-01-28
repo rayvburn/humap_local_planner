@@ -209,7 +209,9 @@ void HumapPlanner::reconfigure(HumapConfigConstPtr cfg) {
 		robot_model_->getInscribedRadius(),
 		std::max(cfg_->getCost()->occdist_separation, 0.025),
 		cfg_->getPlannerBehaviors()->path_crossing_confidence_threshold,
-		cfg_->getPlannerBehaviors()->path_crossing_front_stddev
+		cfg_->getPlannerBehaviors()->path_crossing_front_stddev,
+		PathCrossingDetector::SAFE_POINT_DISTANCE_MULTIPLIER_DEFAULT,
+		cfg_->getPlannerBehaviors()->path_crossing_person_speed_threshold
 	);
 
 	// keep N sec of history (buffer length not parameterized)
