@@ -55,3 +55,7 @@ git clone https://github.com/fuzzylite/fuzzylite.git
 ```
 
 The run `fuzzylite/build.sh` script as pointed in [library build instructions](https://github.com/fuzzylite/fuzzylite#unix-1).
+
+## Disclaimer
+
+This research code is provided with the intention of being helpful, but it comes with no guarantees; neither the implied warranty of merchantability nor fitness for any specific purpose is provided.
