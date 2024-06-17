@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/grid.h>
+#include <humap_local_planner/vis/grid.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -100,4 +100,4 @@ Grid::~Grid() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

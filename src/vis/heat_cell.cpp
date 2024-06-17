@@ -5,10 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/heat_cell.h>
+#include <humap_local_planner/vis/heat_cell.h>
 #include <std_msgs/ColorRGBA.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // --------------------------------------------------------------
@@ -39,6 +39,7 @@ visualization_msgs::Marker HeatCell::create(const Vector& pos, const double& for
 	marker.header.frame_id = this->frame_;
 	marker.type = visualization_msgs::Marker::CUBE;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	// assign marker coordinates according to current point that is pointed by grid index
 	marker.pose.position.x = pos.getX();
@@ -186,4 +187,4 @@ HeatCell::HsvColor HeatCell::convertMagnitudeToHSV(const double& magnitude) cons
 // --------------------------------------------------------------
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

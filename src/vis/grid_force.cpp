@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/grid_force.h>
+#include <humap_local_planner/vis/grid_force.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 GridForce::GridForce() {
@@ -27,4 +27,4 @@ GridForce::~GridForce() {
 }
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

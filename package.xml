@@ -1,11 +1,11 @@
 <package>
-    <name>hubero_local_planner</name>
+    <name>humap_local_planner</name>
     <version>0.0.1</version>
-    <description>HuBeRo local planner package</description>
+    <description>Humap local planner package</description>
     <author email="jaroslaw.karwowski.dokt@pw.edu.pl">Jarosław Karwowski</author>
     <maintainer email="jaroslaw.karwowski.dokt@pw.edu.pl">Jarosław Karwowski</maintainer>
     <license>BSD</license>
-    <url>https://github.com/rayvburn/hubero_local_planner</url>
+    <url>https://github.com/rayvburn/humap_local_planner</url>
 
     <buildtool_depend>catkin</buildtool_depend>
 
@@ -23,6 +23,8 @@
     <build_depend>tf2_ros</build_depend>
     <build_depend>teb_local_planner</build_depend>
     <build_depend>costmap_converter</build_depend>
+    <build_depend>people_msgs_utils</build_depend>
+    <build_depend>social_nav_utils</build_depend>
 
     <run_depend>base_local_planner</run_depend>
     <run_depend>costmap_2d</run_depend>
@@ -36,11 +38,11 @@
     <run_depend>tf2_ros</run_depend>
     <run_depend>teb_local_planner</run_depend>
     <run_depend>costmap_converter</run_depend>
+    <run_depend>people_msgs_utils</run_depend>
+    <run_depend>social_nav_utils</run_depend>
 
     <export>
         <nav_core plugin="${prefix}/blp_plugin.xml" />
     </export>
 
 </package>
-
-

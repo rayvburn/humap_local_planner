@@ -1,16 +1,16 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/geometry/geometry.h>
-#include <hubero_local_planner/fuzz/processor.h>
+#include <humap_local_planner/geometry/geometry.h>
+#include <humap_local_planner/fuzz/processor.h>
 
 #include <chrono>
 #include <thread>
 
 // #define PRINT_DEBUG
 
-using namespace hubero_local_planner::geometry;
-using namespace hubero_local_planner::fuzz;
+using namespace humap_local_planner::geometry;
+using namespace humap_local_planner::fuzz;
 
 // Helpers
 static void calculateDynamicObjectData(

@@ -1,7 +1,7 @@
-#include <hubero_local_planner/geometry/vector.h>
+#include <humap_local_planner/geometry/vector.h>
 #include <ignition/math/Pose3.hh> // Quaternion
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace geometry {
 
 Vector::Vector(const double& x, const double& y, const double& z): v_(x, y, z) {}
@@ -26,7 +26,7 @@ Vector::Vector(const tf::Stamped<tf::Pose>& pose):
 
 Vector::Vector(const geometry_msgs::Pose& pose) {
     ignition::math::Vector3d pos(pose.position.x, pose.position.y, pose.position.z);
-    ignition::math::Quaterniond quat(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+    ignition::math::Quaterniond quat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
     v_ = ignition::math::Vector3d(pos.X(), pos.Y(), quat.Yaw());
 }
 
@@ -90,14 +90,6 @@ geometry_msgs::Pose Vector::getAsMsgPose() const {
     return pose;
 }
 
-Eigen::Vector3d Vector::getAsEigen() const {
-    Eigen::Vector3d v_out;
-    v_out[0] = getX();
-    v_out[1] = getY();
-    v_out[2] = getZ();
-    return v_out;
-}
-
 geometry_msgs::Twist Vector::getAsTwist() const {
     geometry_msgs::Twist twist;
     twist.linear.x = getX();
@@ -107,4 +99,4 @@ geometry_msgs::Twist Vector::getAsTwist() const {
 }
 
 }; // namespace geometry
-}; // namespace hubero_local_planner
+}; // namespace humap_local_planner

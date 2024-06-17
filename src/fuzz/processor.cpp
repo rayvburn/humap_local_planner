@@ -5,15 +5,15 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/fuzz/regions.h>
-#include <hubero_local_planner/fuzz/processor.h>
-#include <hubero_local_planner/geometry/angle.h>
+#include <humap_local_planner/fuzz/regions.h>
+#include <humap_local_planner/fuzz/processor.h>
+#include <humap_local_planner/geometry/angle.h>
 
 #include <fl/fuzzylite.h>
 
 // ------------------------------------------------------------------- //
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace fuzz {
 
 Processor::Processor():
@@ -101,9 +101,9 @@ Processor::Processor():
     social_behavior_ptr_->setDefaultValue(fl::nan);
     social_behavior_ptr_->setLockPreviousValue(false);
 
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("accelerate",            IGN_DTOR(-30),  IGN_DTOR(-15),  IGN_DTOR(-15),  IGN_DTOR(+30), TERM_HEIGHT));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(-75),  IGN_DTOR(-60),  IGN_DTOR(-30),  IGN_DTOR(-15), TERM_HEIGHT));
-	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(-120), IGN_DTOR(-105), IGN_DTOR(-75), IGN_DTOR(-60),  TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("accelerate",            IGN_DTOR(-30),  IGN_DTOR(-15),  IGN_DTOR(-15),  IGN_DTOR(+30),  TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_accelerate", IGN_DTOR(-75),  IGN_DTOR(-60),  IGN_DTOR(-30),  IGN_DTOR(-15),  TERM_HEIGHT));
+	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right",            IGN_DTOR(-120), IGN_DTOR(-105), IGN_DTOR(-75),  IGN_DTOR(-60),  TERM_HEIGHT));
 	social_behavior_ptr_->addTerm(new fl::Trapezoid("turn_right_decelerate", IGN_DTOR(-155), IGN_DTOR(-140), IGN_DTOR(-120), IGN_DTOR(-105), TERM_HEIGHT));
 	social_behavior_ptr_->addTerm(new fl::Trapezoid("decelerateA",           IGN_DTOR(-180), IGN_DTOR(-165), IGN_DTOR(-155), IGN_DTOR(-140), TERM_HEIGHT));
 	social_behavior_ptr_->addTerm(new fl::Triangle( "stopA",                 IGN_DTOR(-195), IGN_DTOR(-180), IGN_DTOR(-165),                 TERM_HEIGHT));
@@ -181,14 +181,18 @@ Processor::Processor():
 
 void Processor::printFisConfiguration() const {
 	// system basic information
+	std::cout << std::endl;
 	std::cout << "Fuzzy Inference System configuration" << std::endl;
-	std::cout << "\tinputs: " << engine_ptr_->numberOfInputVariables() <<
-		", outputs: " << engine_ptr_->numberOfOutputVariables() <<
-		", rule_blocks: " << engine_ptr_->numberOfRuleBlocks() << std::endl;
+	std::cout <<
+		"  inputs: " << engine_ptr_->numberOfInputVariables() << std::endl <<
+		"  outputs: " << engine_ptr_->numberOfOutputVariables() << std::endl <<
+		"  rule_blocks: " << engine_ptr_->numberOfRuleBlocks()
+	<< std::endl;
 	std::string status;
-	std::cout << "\tFIS engine ready flag: " << engine_ptr_->isReady(&status) << " (" << status << ")" << std::endl;
+	std::cout << "  FIS engine ready flag: " << engine_ptr_->isReady(&status) << " (" << status << ")" << std::endl;
 	// print rules
 	std::cout << "FIS 'Processor' class rule block" << std::endl << rule_block_ptr_->toString() << std::endl;
+	std::cout << std::endl;
 }
 
 // ------------------------------------------------------------------- //
@@ -221,7 +225,7 @@ bool Processor::process(
 		updateRegions(dir_alpha, dir_beta_v.at(i), dist_vector_angle_v.at(i), rel_loc_v.at(i));
 
 		// calculate the gamma angle for the current alpha-beta configuration
-		Angle gamma(dist_vector_angle_v.at(i) - dir_alpha - dir_beta_v.at(i));
+		Angle gamma = Angle(dir_beta_v.at(i));
 		direction_ptr_->setValue(fl::scalar(gamma.getRadian()));
 
 		// execute fuzzy calculations
@@ -232,7 +236,12 @@ bool Processor::process(
 
 		// check whether proper term was found, if not - `nullptr` will be detected
 		if (term_highest_ptr == nullptr) {
-			// no output generated
+			// no actual output generated, but add a dummy entry into the output vector
+			FisOutput output {};
+			output.value = 0.0;
+			output.membership = 0.0;
+			output.term_name = std::string("none");
+			output_v_.push_back(output);
 			continue;
 		}
 
@@ -256,7 +265,9 @@ bool Processor::process(
 		output_v_.push_back(output);
 
 	}
-	return true;
+
+	// loop may skip if highest membership term pointer is null, check vector contents
+	return !output_v_.empty();
 }
 
 // ------------------------------------------------------------------- //
@@ -331,9 +342,9 @@ void Processor::computeDirCrossBorderValues(
 	RelativeLocation& side
 ) {
 	// calculate threshold angle values, normalize
-	gamma_eq = Angle(dist_angle - 2 * alpha_dir);
-	gamma_opp = Angle(gamma_eq.getRadian() - IGN_PI);
-	gamma_cc = Angle(IGN_PI - alpha_dir);
+	gamma_eq = Angle(alpha_dir);
+	gamma_opp = Angle(gamma_eq.getRadian() + IGN_PI);
+	gamma_cc = Angle(dist_angle + IGN_PI);
 	side = Processor::decodeRelativeLocation(rel_loc_angle);
 }
 
@@ -353,11 +364,11 @@ void Processor::updateRegions(const double &alpha_dir, const double &beta_dir, c
 
 	/* - - - - - Terms sensitive to side changes - - - - - */
 	// `outwards`
-	trapezoid_out_.update(side, gamma_eq, gamma_opp);
+	trapezoid_out_.update(side, gamma_opp, gamma_eq);
 	// `cross_front`
-	trapezoid_cf_.update(side, gamma_cc, gamma_eq);
+	trapezoid_cf_.update(side, gamma_eq, gamma_cc);
 	// `cross_behind`
-	trapezoid_cb_.update(side, gamma_opp, gamma_cc);
+	trapezoid_cb_.update(side, gamma_cc, gamma_opp);
 
 	/* - - - - - Terms insensitive to side changes - - - - - */
 	// `equal`
@@ -385,4 +396,4 @@ RelativeLocation Processor::decodeRelativeLocation(const double &rel_loc) {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

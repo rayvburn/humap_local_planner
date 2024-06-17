@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/geometry/geometry.h>
+#include <humap_local_planner/geometry/geometry.h>
 
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner::geometry;
 
-TEST(HuberoGeometryPose, ctor) {
+TEST(HumapGeometryPose, ctor) {
 	// default
 	Pose pose_def;
 	ASSERT_DOUBLE_EQ(pose_def.getX(), 0.0);
@@ -86,7 +86,7 @@ TEST(HuberoGeometryPose, ctor) {
 	ASSERT_DOUBLE_EQ(pose4.getYaw(), IGN_PI_4);
 }
 
-TEST(HuberoGeometryPose, setters) {
+TEST(HumapGeometryPose, setters) {
 	Pose pose1;
 	pose1.setPosition(0.1, 0.2, 0.3);
 	ASSERT_DOUBLE_EQ(pose1.getX(), 0.1);
@@ -109,7 +109,7 @@ TEST(HuberoGeometryPose, setters) {
 	ASSERT_DOUBLE_EQ(pose2.getYaw(), IGN_PI);
 }
 
-TEST(HuberoGeometryPose, conversion) {
+TEST(HumapGeometryPose, conversion) {
 	Pose pose_ref(0.567, 1.234, 0.987, 0.0, 0.0, IGN_PI);
 
 	geometry_msgs::Pose pose_geom_msg = pose_ref.getAsMsgPose();

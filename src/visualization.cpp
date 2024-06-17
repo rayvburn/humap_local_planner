@@ -5,15 +5,17 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/visualization.h>
+#include <humap_local_planner/visualization.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 Visualization::Visualization(const std::string& frame, const double& marker_stack_height)
 	: marker_stack_height_(marker_stack_height) {
 	marker_force_.init(frame);
 	marker_behaviour_.init(frame);
-	marker_closest_pts_.init(frame);
+	marker_state_.init(frame);
+	marker_closest_pts_static_.init(frame);
+	marker_closest_pts_dynamic_.init(frame);
 	marker_path_.header.frame_id = frame;
 	marker_force_grid_.init(frame);
 	marker_footprint_.init(frame);
@@ -22,13 +24,16 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 	marker_path_.header.frame_id = frame;
 
 	// const parameters
-	marker_behaviour_.setParameters(0.5f);
+	marker_behaviour_.setParameters(0.25f);
+	marker_state_.setParameters(0.2f);
 	marker_footprint_.setHeight(1.2f);
 	marker_point_.setSize(0.25f);
 
 	// colors
 	marker_behaviour_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
-	marker_closest_pts_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
+	marker_state_.setColor(0.0f, 0.0f, 0.0f, 1.0f);
+	marker_closest_pts_static_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
+	marker_closest_pts_dynamic_.setColor(1.0f, 0.3f, 0.0f, 0.7f);
 	marker_force_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 	marker_footprint_.setColor(1.0f, 1.0f, 1.0f, 0.65f);
 
@@ -117,14 +122,23 @@ bool Visualization::publishBehaviourActive(const Vector& pos, const std::string&
 	return true;
 }
 
-bool Visualization::publishClosestPoints(const std::vector<Pose>& pts) {
+bool Visualization::publishClosestPoints(const std::vector<Pose>& pts_static, const std::vector<Pose>& pts_dynamic) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
 
-	marker_closest_pts_.setNamespace("closest_points");
-	auto marker = marker_closest_pts_.create(pts);
-	pub_marker_.publish(marker);
+	// do not publish if there is no points inside the marker, also avoid rviz complains
+	if (!pts_static.empty()) {
+		marker_closest_pts_static_.setNamespace("closest_static_points");
+		auto marker_static = marker_closest_pts_static_.create(pts_static);
+		pub_marker_.publish(marker_static);
+	}
+
+	if (!pts_dynamic.empty()) {
+		marker_closest_pts_dynamic_.setNamespace("closest_dynamic_points");
+		auto marker_dynamic = marker_closest_pts_dynamic_.create(pts_dynamic);
+		pub_marker_.publish(marker_dynamic);
+	}
 	return true;
 }
 
@@ -136,6 +150,12 @@ bool Visualization::publishVelocity(
 		const double& angle_ang,
 		const double& angular_z
 ) {
+	if (!isPositionValid(pos_start)) {
+		return false;
+	}
+	if (!isPositionValid(pos_lin_end)) {
+		return false;
+	}
 	if (pub_marker_array_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -150,6 +170,7 @@ bool Visualization::publishVelocity(
 	marker.ns = "velocity";
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	marker.scale.x = linear_x;
 	marker.scale.y = 0.05;
@@ -189,6 +210,10 @@ bool Visualization::publishVelocity(
 }
 
 bool Visualization::publishPath(const Pose& new_pos) {
+	if (!isPositionValid(new_pos.getPosition())) {
+		return false;
+	}
+
 	marker_path_.header.seq++;
 	marker_path_.header.stamp = ros::Time::now();
 
@@ -220,8 +245,11 @@ void Visualization::resetPath() {
 
 bool Visualization::publishGrid(
 		const Pose& pos_current,
-		HuberoPlanner& planner
+		HumapPlanner& planner
 ) {
+	if (!isPositionValid(pos_current.getPosition())) {
+		return false;
+	}
 	if (pub_grid_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -248,9 +276,7 @@ bool Visualization::publishGrid(
 		pose.setPosition(marker_force_grid_.getNextGridElement());
 
 		// calculate social force for actor located in current pose hard-coded time delta
-		Vector force;
-
-		planner.compute(pose, force);
+		auto force = planner.computeForceAtPosition(pose.getPosition());
 
 		// pass a result to vector of grid forces
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.getPosition(), force));
@@ -263,6 +289,9 @@ bool Visualization::publishRobotFootprint(
 		const Pose& pos_current,
 		const RobotFootprintModelConstPtr footprint
 ) {
+	if (!isPositionValid(pos_current.getPosition())) {
+		return false;
+	}
 	if (pub_marker_array_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -273,7 +302,25 @@ bool Visualization::publishRobotFootprint(
 	return true;
 }
 
+bool Visualization::publishGoalInitiation(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_init");
+	marker_point_.setColor(0.25f, 0.25f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
 bool Visualization::publishGoalLocal(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -286,6 +333,9 @@ bool Visualization::publishGoalLocal(const Vector& pos) {
 }
 
 bool Visualization::publishGoal(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -297,5 +347,55 @@ bool Visualization::publishGoal(const Vector& pos) {
 	return true;
 }
 
+bool Visualization::publishGoalRecoveryRotateAndRecede(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
 
-} /* namespace hubero_local_planner */
+	marker_point_.setNamespace("goal_rr_recovery");
+	marker_point_.setColor(0.75f, 0.0f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::publishGoalRecoveryLookAround(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_la_recovery");
+	marker_point_.setColor(0.75f, 0.0f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::publishPlannerState(const Vector& pos, const std::string& state) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_state_.setNamespace("planner_state");
+	// arbitrary height but above the ground
+	auto marker = marker_state_.create(Vector(pos.getX(), pos.getY(), 0.15), state);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::isPositionValid(const Vector& pos) const {
+	bool inf = std::isinf(pos.getX()) || std::isinf(pos.getY()) || std::isinf(pos.getZ());
+	bool nan = std::isnan(pos.getX()) || std::isnan(pos.getY()) || std::isnan(pos.getZ());
+	return !inf && !nan;
+}
+
+} /* namespace humap_local_planner */

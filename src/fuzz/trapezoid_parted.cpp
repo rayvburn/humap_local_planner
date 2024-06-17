@@ -5,12 +5,12 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/fuzz/trapezoid_parted.h>
-#include <hubero_local_planner/geometry/angle.h>
+#include <humap_local_planner/fuzz/trapezoid_parted.h>
+#include <humap_local_planner/geometry/angle.h>
 #include <stdexcept>
 #include <math.h> // fabs()
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace fuzz {
 
 using namespace geometry;
@@ -254,4 +254,4 @@ void TrapezoidParted::resetWrapped() {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

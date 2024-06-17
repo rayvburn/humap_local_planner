@@ -5,10 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/text.h>
+#include <humap_local_planner/vis/text.h>
 #include <string>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 // ------------------------------------------------------------------- //
@@ -44,6 +44,7 @@ visualization_msgs::Marker Text::create(const Vector& pos, const std::string& te
 	marker.ns = this->namespace_;
 	marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	// assign marker coordinates according to current point that is pointed by grid index
 	marker.pose.position.x = pos.getX();
@@ -68,4 +69,4 @@ Text::~Text() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

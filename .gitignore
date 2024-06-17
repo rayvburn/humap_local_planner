@@ -1,27 +1,16 @@
-# disable temporarily
+# notes
 doc/
-include/hubero_local_planner/sfm/core/
-src/sfm/core/
 
-# libraries
+# compiled libraries
 lib/
-
-# temporarily
-include/hubero_local_planner/inflation/
-src/inflation/
-
-include/hubero_local_planner/trajectory_generator.h
-src/trajectory_generator.cpp
 
 build/
 debug/
+git-patch/
 
-matlab/*.asv
-matlab/ignore/
+# directory with Matlab and Python scripts for visualisation or debugging
+scripts/*.asv
+scripts/ignore/
 
-# WIP tests
-test/fuzzylite_test.cpp
-test/test_hubero_planner.cpp
-test/test_pose_addition.cpp
-test/test_robot_footprint_model_extension.cpp
-test/test_debug_fis.cpp
+# script that copies the .cfg file with planner params; commonly used during cost functions tuning
+copy_cfg.sh
