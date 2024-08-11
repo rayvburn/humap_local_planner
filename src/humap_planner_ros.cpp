@@ -290,6 +290,7 @@ bool HumapPlannerROS::computeVelocityCommands(geometry_msgs::Twist& cmd_vel) {
 	vis_.publishGoalRecoveryRotateAndRecede(planner_->getGoalRotateAndRecedeRecovery().getPosition());
 	vis_.publishGoalRecoveryLookAround(planner_->getGoalLookAroundRecovery().getPosition());
 	vis_.publishPlannerState(robot_pose.getPosition(), planner_->getStateName());
+	vis_.publishPeople(*people_, planner_util_->getGlobalFrame());
 
 	base_local_planner::publishPlan(createLocalPlan(trajectory), l_plan_pub_);
 	base_local_planner::publishPlan(global_plan_, g_plan_pub_);

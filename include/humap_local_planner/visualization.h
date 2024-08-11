@@ -75,6 +75,8 @@ public:
 	bool publishGoalRecoveryRotateAndRecede(const Vector& pos);
 	bool publishGoalRecoveryLookAround(const Vector& pos);
 	bool publishPlannerState(const Vector& pos, const std::string& state);
+	// NOTE: it is assumed that @ref people is given in the frame passed to the constructor
+	bool publishPeople(const People& people, const std::string& frame_id);
 	virtual ~Visualization() = default;
 
 private:
@@ -86,6 +88,7 @@ private:
 
 	ros::Publisher pub_marker_;
 	ros::Publisher pub_marker_array_;
+	ros::Publisher pub_people_;
 	/// \brief Separate publisher to @ref pub_marker_array_ as grid computations are quite heavy and
 	/// theirs execution is not disabled by simply unticking `grid` markers namespace in rViz (this would disable
 	/// all MarkerArray publications)

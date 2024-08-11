@@ -43,6 +43,7 @@ void Visualization::initialize(ros::NodeHandle& nh) {
 	static const std::string PREFIX = "vis/";
 	pub_marker_ = nh.advertise<visualization_msgs::Marker>(PREFIX + "marker", 1);
 	pub_marker_array_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "marker_array", 1);
+	pub_people_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "people", 1);
 	pub_grid_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "force_grid", 1);
 
 	pub_path_ = nh.advertise<nav_msgs::Path>(PREFIX + "path", 3);
@@ -390,6 +391,175 @@ bool Visualization::publishPlannerState(const Vector& pos, const std::string& st
 	auto marker = marker_state_.create(Vector(pos.getX(), pos.getY(), 0.15), state);
 	pub_marker_.publish(marker);
 	return true;
+}
+
+bool Visualization::publishPeople(const People& people, const std::string& frame_id) {
+	visualization_msgs::MarkerArray marker_array;
+
+	// default color with no transparency at all
+	std_msgs::ColorRGBA color;
+	color.a = 1.0;
+	color.r = 1.0;
+	color.g = 1.0;
+	color.b = 1.0;
+
+	// default header
+	std_msgs::Header header;
+	header.frame_id = frame_id;
+	header.stamp = ros::Time::now();
+
+	// default value of the marker's lifetime
+	const ros::Duration MARKER_LIFETIME(1.0);
+
+	// lambdas creating subsequent marker types
+	auto create_shape_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "shape";
+		marker.type = visualization_msgs::Marker::CUBE;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose = person.getPose();
+		// scale of the shape
+		marker.scale.x = 0.25;
+		marker.scale.y = 0.50;
+		marker.scale.z = 1.75;
+		// adjust height (let the bottom be at the ground); must be executed once the scale is updated
+		marker.pose.position.z += marker.scale.z / 2;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		return marker;
+	};
+
+	auto create_text_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id,
+		double shape_height,
+		double shape_width
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "text";
+		marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose = person.getPose();
+		// adjust height (let the bottom of text be above the marker)
+		marker.pose.position.z = 1.2 * shape_height;
+		// scale of the text
+		marker.scale.z = shape_width;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		// let the marker show provided name of the person
+		marker.text = person.getName();
+		return marker;
+	};
+
+	auto create_orientation_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id,
+		double shape_height,
+		double shape_depth
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "orientation";
+		marker.type = visualization_msgs::Marker::ARROW;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose = person.getPose();
+		// adjust height (let the bottom of the arrow be above the shape)
+		marker.pose.position.z = shape_height;
+		// scale of the arrow
+		marker.scale.x = shape_depth; // in fact, 2 * 0.5 * shape_depth
+		marker.scale.y = 0.1;
+		marker.scale.z = 0.1;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		return marker;
+	};
+
+	auto create_velocity_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id,
+		double shape_depth
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "velocity";
+		marker.type = visualization_msgs::Marker::ARROW;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose.position = person.getPosition();
+		// adjust height (let the bottom of the arrow be at the ground level)
+		marker.pose.position.z = 0.0;
+
+		// set marker's orientation according to the velocity of a person
+		tf2::Quaternion vel_orientation;
+		// NOTE: for a proper yaw angle, yaw, pitch and roll angles must be reordered (compared to the documentation)
+		vel_orientation.setEuler(
+			0.0,
+			0.0,
+			std::atan2(person.getVelocityY(), person.getVelocityX())
+		);
+		marker.pose.orientation = tf2::toMsg(vel_orientation);
+
+		// scale of the arrow
+		// velocity value based on "Moussaid et al., Experimental study (...), 2009"
+		const double VEL_MAX = 1.29;
+		double vel_magnitude = std::hypot(person.getVelocityX(), person.getVelocityY());
+		double vel_percentage = std::min(vel_magnitude / VEL_MAX, 1.0);
+		// shape_depth offset so the vel. vector is visible in front of the "shape"
+		marker.scale.x = shape_depth + vel_percentage;
+		marker.scale.y = 0.1;
+		marker.scale.z = 0.1;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		return marker;
+	};
+
+	for (const auto& person: people) {
+		int person_id = 0;
+		try {
+			person_id = std::stoi(person.getName());
+		} catch (const std::invalid_argument& e) {
+			person_id = std::numeric_limits<int>::max();
+			ROS_ERROR(
+				"Could not convert '%s' to an integer! Assigned '%d' as a fallback person ID",
+				person.getName().c_str(),
+				person_id
+			);
+		}
+
+		// create markers
+		auto shape = create_shape_marker_fun(person, person_id);
+		auto text = create_text_marker_fun(person, person_id, shape.scale.z, shape.scale.y);
+		auto orientation = create_orientation_marker_fun(person, person_id, shape.scale.z, shape.scale.x);
+		auto vel = create_velocity_marker_fun(person, person_id, shape.scale.x);
+
+		// collect markers
+		marker_array.markers.push_back(shape);
+		marker_array.markers.push_back(text);
+		marker_array.markers.push_back(orientation);
+		marker_array.markers.push_back(vel);
+	}
+
+	pub_people_.publish(marker_array);
 }
 
 bool Visualization::isPositionValid(const Vector& pos) const {
