@@ -5,15 +5,17 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/visualization.h>
+#include <humap_local_planner/visualization.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 Visualization::Visualization(const std::string& frame, const double& marker_stack_height)
 	: marker_stack_height_(marker_stack_height) {
 	marker_force_.init(frame);
 	marker_behaviour_.init(frame);
-	marker_closest_pts_.init(frame);
+	marker_state_.init(frame);
+	marker_closest_pts_static_.init(frame);
+	marker_closest_pts_dynamic_.init(frame);
 	marker_path_.header.frame_id = frame;
 	marker_force_grid_.init(frame);
 	marker_footprint_.init(frame);
@@ -22,13 +24,16 @@ Visualization::Visualization(const std::string& frame, const double& marker_stac
 	marker_path_.header.frame_id = frame;
 
 	// const parameters
-	marker_behaviour_.setParameters(0.5f);
+	marker_behaviour_.setParameters(0.25f);
+	marker_state_.setParameters(0.2f);
 	marker_footprint_.setHeight(1.2f);
 	marker_point_.setSize(0.25f);
 
 	// colors
 	marker_behaviour_.setColor(0.9f, 0.9f, 0.9f, 0.95f);
-	marker_closest_pts_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
+	marker_state_.setColor(0.0f, 0.0f, 0.0f, 1.0f);
+	marker_closest_pts_static_.setColor(1.0f, 1.0f, 0.0f, 0.7f);
+	marker_closest_pts_dynamic_.setColor(1.0f, 0.3f, 0.0f, 0.7f);
 	marker_force_grid_.setColor(0.2f, 1.0f, 0.0f, 0.7f);
 	marker_footprint_.setColor(1.0f, 1.0f, 1.0f, 0.65f);
 
@@ -38,6 +43,7 @@ void Visualization::initialize(ros::NodeHandle& nh) {
 	static const std::string PREFIX = "vis/";
 	pub_marker_ = nh.advertise<visualization_msgs::Marker>(PREFIX + "marker", 1);
 	pub_marker_array_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "marker_array", 1);
+	pub_people_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "people", 1);
 	pub_grid_ = nh.advertise<visualization_msgs::MarkerArray>(PREFIX + "force_grid", 1);
 
 	pub_path_ = nh.advertise<nav_msgs::Path>(PREFIX + "path", 3);
@@ -117,14 +123,23 @@ bool Visualization::publishBehaviourActive(const Vector& pos, const std::string&
 	return true;
 }
 
-bool Visualization::publishClosestPoints(const std::vector<Pose>& pts) {
+bool Visualization::publishClosestPoints(const std::vector<Pose>& pts_static, const std::vector<Pose>& pts_dynamic) {
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
 
-	marker_closest_pts_.setNamespace("closest_points");
-	auto marker = marker_closest_pts_.create(pts);
-	pub_marker_.publish(marker);
+	// do not publish if there is no points inside the marker, also avoid rviz complains
+	if (!pts_static.empty()) {
+		marker_closest_pts_static_.setNamespace("closest_static_points");
+		auto marker_static = marker_closest_pts_static_.create(pts_static);
+		pub_marker_.publish(marker_static);
+	}
+
+	if (!pts_dynamic.empty()) {
+		marker_closest_pts_dynamic_.setNamespace("closest_dynamic_points");
+		auto marker_dynamic = marker_closest_pts_dynamic_.create(pts_dynamic);
+		pub_marker_.publish(marker_dynamic);
+	}
 	return true;
 }
 
@@ -136,6 +151,12 @@ bool Visualization::publishVelocity(
 		const double& angle_ang,
 		const double& angular_z
 ) {
+	if (!isPositionValid(pos_start)) {
+		return false;
+	}
+	if (!isPositionValid(pos_lin_end)) {
+		return false;
+	}
 	if (pub_marker_array_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -150,6 +171,7 @@ bool Visualization::publishVelocity(
 	marker.ns = "velocity";
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	marker.scale.x = linear_x;
 	marker.scale.y = 0.05;
@@ -189,6 +211,10 @@ bool Visualization::publishVelocity(
 }
 
 bool Visualization::publishPath(const Pose& new_pos) {
+	if (!isPositionValid(new_pos.getPosition())) {
+		return false;
+	}
+
 	marker_path_.header.seq++;
 	marker_path_.header.stamp = ros::Time::now();
 
@@ -220,8 +246,11 @@ void Visualization::resetPath() {
 
 bool Visualization::publishGrid(
 		const Pose& pos_current,
-		HuberoPlanner& planner
+		HumapPlanner& planner
 ) {
+	if (!isPositionValid(pos_current.getPosition())) {
+		return false;
+	}
 	if (pub_grid_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -248,9 +277,7 @@ bool Visualization::publishGrid(
 		pose.setPosition(marker_force_grid_.getNextGridElement());
 
 		// calculate social force for actor located in current pose hard-coded time delta
-		Vector force;
-
-		planner.compute(pose, force);
+		auto force = planner.computeForceAtPosition(pose.getPosition());
 
 		// pass a result to vector of grid forces
 		marker_force_grid_.addMarker(marker_force_grid_.create(pose.getPosition(), force));
@@ -263,6 +290,9 @@ bool Visualization::publishRobotFootprint(
 		const Pose& pos_current,
 		const RobotFootprintModelConstPtr footprint
 ) {
+	if (!isPositionValid(pos_current.getPosition())) {
+		return false;
+	}
 	if (pub_marker_array_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -273,7 +303,25 @@ bool Visualization::publishRobotFootprint(
 	return true;
 }
 
+bool Visualization::publishGoalInitiation(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_init");
+	marker_point_.setColor(0.25f, 0.25f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
 bool Visualization::publishGoalLocal(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -286,6 +334,9 @@ bool Visualization::publishGoalLocal(const Vector& pos) {
 }
 
 bool Visualization::publishGoal(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
 	if (pub_marker_.getNumSubscribers() == 0) {
 		return false;
 	}
@@ -297,5 +348,224 @@ bool Visualization::publishGoal(const Vector& pos) {
 	return true;
 }
 
+bool Visualization::publishGoalRecoveryRotateAndRecede(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
 
-} /* namespace hubero_local_planner */
+	marker_point_.setNamespace("goal_rr_recovery");
+	marker_point_.setColor(0.75f, 0.0f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::publishGoalRecoveryLookAround(const Vector& pos) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_point_.setNamespace("goal_la_recovery");
+	marker_point_.setColor(0.75f, 0.0f, 0.0f, 0.65f);
+	auto marker = marker_point_.create(pos);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::publishPlannerState(const Vector& pos, const std::string& state) {
+	if (!isPositionValid(pos)) {
+		return false;
+	}
+	if (pub_marker_.getNumSubscribers() == 0) {
+		return false;
+	}
+
+	marker_state_.setNamespace("planner_state");
+	// arbitrary height but above the ground
+	auto marker = marker_state_.create(Vector(pos.getX(), pos.getY(), 0.15), state);
+	pub_marker_.publish(marker);
+	return true;
+}
+
+bool Visualization::publishPeople(const People& people, const std::string& frame_id) {
+	visualization_msgs::MarkerArray marker_array;
+
+	// default color with no transparency at all
+	std_msgs::ColorRGBA color;
+	color.a = 1.0;
+	color.r = 1.0;
+	color.g = 1.0;
+	color.b = 1.0;
+
+	// default header
+	std_msgs::Header header;
+	header.frame_id = frame_id;
+	header.stamp = ros::Time::now();
+
+	// default value of the marker's lifetime
+	const ros::Duration MARKER_LIFETIME(1.0);
+
+	// lambdas creating subsequent marker types
+	auto create_shape_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "shape";
+		marker.type = visualization_msgs::Marker::CUBE;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose = person.getPose();
+		// scale of the shape
+		marker.scale.x = 0.25;
+		marker.scale.y = 0.50;
+		marker.scale.z = 1.75;
+		// adjust height (let the bottom be at the ground); must be executed once the scale is updated
+		marker.pose.position.z += marker.scale.z / 2;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		return marker;
+	};
+
+	auto create_text_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id,
+		double shape_height,
+		double shape_width
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "text";
+		marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose = person.getPose();
+		// adjust height (let the bottom of text be above the marker)
+		marker.pose.position.z = 1.2 * shape_height;
+		// scale of the text
+		marker.scale.z = shape_width;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		// let the marker show provided name of the person
+		marker.text = person.getName();
+		return marker;
+	};
+
+	auto create_orientation_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id,
+		double shape_height,
+		double shape_depth
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "orientation";
+		marker.type = visualization_msgs::Marker::ARROW;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose = person.getPose();
+		// adjust height (let the bottom of the arrow be above the shape)
+		marker.pose.position.z = shape_height;
+		// scale of the arrow
+		marker.scale.x = shape_depth; // in fact, 2 * 0.5 * shape_depth
+		marker.scale.y = 0.1;
+		marker.scale.z = 0.1;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		return marker;
+	};
+
+	auto create_velocity_marker_fun = [=](
+		const people_msgs_utils::Person& person,
+		int person_id,
+		double shape_depth
+	) -> visualization_msgs::Marker {
+		visualization_msgs::Marker marker;
+		marker.header = header;
+		marker.ns = "velocity";
+		marker.type = visualization_msgs::Marker::ARROW;
+		marker.action = visualization_msgs::Marker::ADD;
+		marker.lifetime = MARKER_LIFETIME;
+		marker.id = person_id;
+		marker.pose.position = person.getPosition();
+		// adjust height (let the bottom of the arrow be at the ground level)
+		marker.pose.position.z = 0.0;
+
+		// set marker's orientation according to the velocity of a person
+		tf2::Quaternion vel_orientation;
+		// NOTE: for a proper yaw angle, yaw, pitch and roll angles must be reordered (compared to the documentation)
+		vel_orientation.setEuler(
+			0.0,
+			0.0,
+			std::atan2(person.getVelocityY(), person.getVelocityX())
+		);
+		marker.pose.orientation = tf2::toMsg(vel_orientation);
+
+		// scale of the arrow
+		// velocity value based on "Moussaid et al., Experimental study (...), 2009"
+		const double VEL_MAX = 1.29;
+		double vel_magnitude = std::hypot(person.getVelocityX(), person.getVelocityY());
+		double vel_percentage = std::min(vel_magnitude / VEL_MAX, 1.0);
+		// shape_depth offset so the vel. vector is visible in front of the "shape"
+		marker.scale.x = shape_depth + vel_percentage;
+		marker.scale.y = 0.1;
+		marker.scale.z = 0.1;
+
+		marker.color = color;
+		// will fade to a fully transparent marker when reliability becomes 0
+		marker.color.a = person.getReliability();
+		return marker;
+	};
+
+	for (const auto& person: people) {
+		int person_id = 0;
+		try {
+			person_id = std::stoi(person.getName());
+		} catch (const std::invalid_argument& e) {
+			person_id = std::numeric_limits<int>::max();
+			ROS_ERROR(
+				"Could not convert '%s' to an integer! Assigned '%d' as a fallback person ID",
+				person.getName().c_str(),
+				person_id
+			);
+		}
+
+		// create markers
+		auto shape = create_shape_marker_fun(person, person_id);
+		auto text = create_text_marker_fun(person, person_id, shape.scale.z, shape.scale.y);
+		auto orientation = create_orientation_marker_fun(person, person_id, shape.scale.z, shape.scale.x);
+		auto vel = create_velocity_marker_fun(person, person_id, shape.scale.x);
+
+		// collect markers
+		marker_array.markers.push_back(shape);
+		marker_array.markers.push_back(text);
+		marker_array.markers.push_back(orientation);
+		marker_array.markers.push_back(vel);
+	}
+
+	pub_people_.publish(marker_array);
+}
+
+bool Visualization::isPositionValid(const Vector& pos) const {
+	bool inf = std::isinf(pos.getX()) || std::isinf(pos.getY()) || std::isinf(pos.getZ());
+	bool nan = std::isnan(pos.getX()) || std::isnan(pos.getY()) || std::isnan(pos.getZ());
+	return !inf && !nan;
+}
+
+} /* namespace humap_local_planner */

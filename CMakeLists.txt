@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
-project(hubero_local_planner)
+project(humap_local_planner)
 
 add_definitions(-std=c++17)
 
 # prevent some unrelated warnings
-cmake_policy(SET CMP0054 OLD)
 include(FindPackageHandleStandardArgs)
 set(FPHSA_NAME_MISMATCHED TRUE)
 
@@ -29,11 +28,13 @@ find_package(catkin REQUIRED
         roscpp
         tf2
         tf2_ros
+        people_msgs_utils
+        social_nav_utils
 )
 
 if(NOT DEFINED IGN_MATH_VER)
    # this version is valid for Ubuntu 16 with ROS Kinetic
-   set(IGN_MATH_VER 3)
+   set(IGN_MATH_VER 4)
 endif(NOT DEFINED IGN_MATH_VER)
 find_package(ignition-math${IGN_MATH_VER} REQUIRED system)
 
@@ -45,18 +46,19 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${EIGEN3_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
+    ${people_msgs_utils_INCLUDE_DIRS}
     ${IGNITION-MATH_INCLUDE_DIRS}
 )
 add_definitions(${EIGEN3_DEFINITIONS})
 
 # dynamic reconfigure
 generate_dynamic_reconfigure_options(
-    cfg/HuberoPlanner.cfg
+    cfg/HumapPlanner.cfg
 )
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES hubero_local_planner
+    LIBRARIES humap_local_planner
     CATKIN_DEPENDS
         base_local_planner
         dynamic_reconfigure
@@ -67,6 +69,8 @@ catkin_package(
         costmap_converter
         tf2
         tf2_ros
+        people_msgs_utils
+        social_nav_utils
 )
 
 set(HEADERS_FUZZY
@@ -128,7 +132,7 @@ set(SOURCES_VIS
 )
 
 set(HEADERS_CONFIG
-    include/${PROJECT_NAME}/hubero_config.h
+    include/${PROJECT_NAME}/humap_config.h
 )
 
 set(HEADERS_GEOMETRY
@@ -151,22 +155,26 @@ set(SOURCES_GEOMETRY
 add_library(geometry ${HEADERS_GEOMETRY} ${SOURCES_GEOMETRY})
 target_link_libraries(geometry ${IGNITION-MATH_LIBRARIES})
 set_target_properties(geometry PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
+### Transformations
+add_library(transformations include/${PROJECT_NAME}/utils/transformations.h src/utils/transformations.cpp)
+target_link_libraries(transformations geometry)
+set_target_properties(transformations PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
 ### Config
 add_library(config ${HEADERS_CONFIG})
 target_link_libraries(config ${catkin_LIBRARIES})
 set_target_properties(config PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib LINKER_LANGUAGE CXX)
+### SFM
+add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
+target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES} ${social_nav_utils_LIBRARIES})
+set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Fuzzy
 add_library(fuzzy ${HEADERS_FUZZY} ${SOURCES_FUZZY})
-target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(fuzzy ${fuzzylite_LIBRARY} config geometry sfm ${IGNITION-MATH_LIBRARIES})
 set_target_properties(fuzzy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### World - ontology
 add_library(world ${HEADERS_WORLD} ${SOURCES_WORLD})
-target_link_libraries(world geometry ${IGNITION-MATH_LIBRARIES})
+target_link_libraries(world geometry transformations ${IGNITION-MATH_LIBRARIES})
 set_target_properties(world PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-### SFM
-add_library(sfm ${HEADERS_SFM} ${SOURCES_SFM} ${HEADERS_CONFIG})
-target_link_libraries(sfm config geometry ${IGNITION-MATH_LIBRARIES})
-set_target_properties(sfm PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 ### Visualization - Helper library
 add_library(vis_helper ${HEADERS_VIS} ${SOURCES_VIS})
 target_link_libraries(vis_helper ${IGNITION-MATH_LIBRARIES})
@@ -177,33 +185,63 @@ target_link_libraries(vis vis_helper)
 set_target_properties(vis PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 ### ConfigROS
-add_library(config_ros include/${PROJECT_NAME}/hubero_config_ros.h src/hubero_config_ros.cpp)
+add_library(config_ros include/${PROJECT_NAME}/humap_config_ros.h src/humap_config_ros.cpp)
 target_link_libraries(config_ros config ${catkin_LIBRARIES})
 set_target_properties(config_ros PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+#### Below helps with the `fatal error: humap_local_planner/HumapPlannerConfig.h: No such file or directory in
+#### humap_config_ros.h` when running tests
+add_dependencies(config_ros ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Library
-add_library(hubero_local_planner
-    include/${PROJECT_NAME}/hubero_planner.h
-    src/hubero_planner.cpp
-    include/${PROJECT_NAME}/hubero_planner_ros.h
-    src/hubero_planner_ros.cpp
-    include/hubero_local_planner/obstacles.h
-    include/hubero_local_planner/robot_footprint_model.h
+add_library(humap_local_planner
+    include/${PROJECT_NAME}/humap_planner.h
+    src/humap_planner.cpp
+    include/${PROJECT_NAME}/humap_planner_ros.h
+    src/humap_planner_ros.cpp
+    include/humap_local_planner/obstacles.h
+    include/humap_local_planner/robot_footprint_model.h
+    include/humap_local_planner/social_trajectory_generator.h
+    # class definition in the header, see doc in the file for details
+    include/humap_local_planner/trajectory.h
+    src/social_trajectory_generator.cpp
+    src/obstacle_separation_cost_function.cpp
+    src/ttc_cost_function.cpp
+    src/heading_change_smoothness_cost_function.cpp
+    src/velocity_smoothness_cost_function.cpp
+    src/personal_space_intrusion_cost_function.cpp
+    src/fformation_space_intrusion_cost_function.cpp
+    src/heading_disturbance_cost_function.cpp
+    src/passing_speed_cost_function.cpp
+    src/unsaturated_translation_cost_function.cpp
+    src/latched_stop_rotate_controller.cpp
+    src/planner_state.cpp
+    src/recovery_manager.cpp
+    src/path_crossing_detector.cpp
+    src/yield_way_crossing_manager.cpp
+    src/map_grid_cost_function.cpp
+    src/group_intrusion_detector.cpp
 )
-add_dependencies(hubero_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(hubero_local_planner ${catkin_LIBRARIES} fuzzy sfm vis config config_ros geometry world ${IGNITION-MATH_LIBRARIES})
+add_dependencies(humap_local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(humap_local_planner
+    ${catkin_LIBRARIES}
+    fuzzy
+    sfm
+    vis
+    config
+    config_ros
+    geometry
+    world
+    transformations
+    ${people_msgs_utils_LIBRARIES}
+    ${social_nav_utils_LIBRARIES}
+    ${IGNITION-MATH_LIBRARIES}
+)
 
 ## Executables
-add_executable(test_executable
-	src/test_executable.cpp
-)
-target_link_libraries(test_executable
-	hubero_local_planner
-	${catkin_LIBRARIES}
-)
+# None
 
 ## Install
-install(TARGETS hubero_local_planner
+install(TARGETS humap_local_planner
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
     LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 )
@@ -220,17 +258,17 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #############
 ## Testing ##
 #############
-
+# catkin run_tests --no-deps humap_local_planner --verbose
 if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_velocity_conversions test/test_velocity_conversions.cpp)
   if(TARGET test_velocity_conversions)
-    target_link_libraries(test_velocity_conversions hubero_local_planner)
+    target_link_libraries(test_velocity_conversions humap_local_planner)
   endif()
 
   # world
   catkin_add_gtest(test_world_generation test/test_world_generation.cpp)
   if(TARGET test_world_generation)
-    target_link_libraries(test_world_generation hubero_local_planner)
+    target_link_libraries(test_world_generation humap_local_planner)
   endif()
 
   catkin_add_gtest(test_geometry_angle test/test_geometry_angle.cpp)
@@ -271,5 +309,15 @@ if (CATKIN_ENABLE_TESTING)
   catkin_add_gtest(test_fuzzy_trapezoids_dynamic test/test_fuzzy_trapezoids_dynamic.cpp)
   if(TARGET test_fuzzy_trapezoids_dynamic)
     target_link_libraries(test_fuzzy_trapezoids_dynamic fuzzy)
+  endif()
+
+  catkin_add_gtest(test_planner_state test/test_planner_state.cpp)
+  if(TARGET test_planner_state)
+    target_link_libraries(test_planner_state humap_local_planner)
+  endif()
+
+  catkin_add_gtest(test_trajectory test/test_trajectory.cpp)
+  if(TARGET test_trajectory)
+    target_link_libraries(test_trajectory humap_local_planner)
   endif()
 endif()

@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/fuzz/trapezoid_loc_dep.h>
+#include <humap_local_planner/fuzz/trapezoid_loc_dep.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace fuzz {
 
 // ------------------------------------------------------------------- //
@@ -46,4 +46,4 @@ TrapezoidLocDep::~TrapezoidLocDep() {
 // ------------------------------------------------------------------- //
 
 } /* namespace fuzz */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

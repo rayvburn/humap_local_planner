@@ -1,7 +1,7 @@
-<library path="lib/libhubero_local_planner">
-  <class name="hubero_local_planner/HuberoPlannerROS" type="hubero_local_planner::HuberoPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
+<library path="lib/libhumap_local_planner">
+  <class name="humap_local_planner/HumapPlannerROS" type="humap_local_planner::HumapPlannerROS" base_class_type="nav_core::BaseLocalPlanner">
     <description>
-      A implementation of a HuBeRo local planner algorithm.
+      An implementation of the HUMAP local trajectory planner.
     </description>
   </class>
 </library>

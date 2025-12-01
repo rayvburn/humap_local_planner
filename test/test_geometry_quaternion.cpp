@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/geometry/geometry.h>
+#include <humap_local_planner/geometry/geometry.h>
 
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner::geometry;
 
-TEST(HuberoGeometryQuaternion, ctor) {
+TEST(HumapGeometryQuaternion, ctor) {
     // yaw
     Quaternion quat1(IGN_PI_4);
     ASSERT_NEAR(quat1.getRoll(), 0.0, 1e-06);

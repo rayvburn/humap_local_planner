@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
 
-#include <hubero_local_planner/geometry/geometry.h>
+#include <humap_local_planner/geometry/geometry.h>
 
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner::geometry;
 
-TEST(HuberoGeometryAngle, ctor) {
+TEST(HumapGeometryAngle, ctor) {
     Angle a1;
     ASSERT_DOUBLE_EQ(a1.getRadian(), 0.0);
 
@@ -18,7 +18,7 @@ TEST(HuberoGeometryAngle, ctor) {
     ASSERT_DOUBLE_EQ(a3_rad, -IGN_PI);
 }
 
-TEST(HuberoGeometryAngle, angleFromVector) {
+TEST(HumapGeometryAngle, angleFromVector) {
     Vector v1(0.0, 0.0, 0.0);
     Angle a1(v1);
     EXPECT_DOUBLE_EQ(a1.getRadian(), 0.0);
@@ -45,7 +45,7 @@ TEST(HuberoGeometryAngle, angleFromVector) {
     EXPECT_DOUBLE_EQ(a5.getRadian(), -IGN_PI_4);
 }
 
-TEST(HuberoGeometryAngle, normalization) {
+TEST(HumapGeometryAngle, normalization) {
     // wrap above +PI
     Angle a1(IGN_PI + 0.001);
     EXPECT_NEAR(a1.getRadian(), -IGN_PI, 1e-03);
@@ -70,7 +70,7 @@ TEST(HuberoGeometryAngle, normalization) {
     EXPECT_DOUBLE_EQ(a6.getRadian(), a7.getRadian());
 }
 
-TEST(HuberoGeometryAngle, addition) {
+TEST(HumapGeometryAngle, addition) {
     Angle ang_pi_2(IGN_PI_2);
     Angle ang_pi(IGN_PI);
     ASSERT_DOUBLE_EQ(ang_pi_2.getRadian(), IGN_PI_2);
@@ -94,7 +94,7 @@ TEST(HuberoGeometryAngle, addition) {
     EXPECT_DOUBLE_EQ(a3.getRadian(), -IGN_PI_2);
 }
 
-TEST(HuberoGeometryAngle, subtraction) {
+TEST(HumapGeometryAngle, subtraction) {
     Angle ang_pi_2(IGN_PI_2);
     Angle ang_pi(IGN_PI);
     ASSERT_DOUBLE_EQ(ang_pi_2.getRadian(), IGN_PI_2);
@@ -128,7 +128,7 @@ TEST(HuberoGeometryAngle, subtraction) {
     ASSERT_DOUBLE_EQ(a5.getRadian(), -IGN_PI_2);
 }
 
-TEST(HuberoGeometryAngle, multiplication) {
+TEST(HumapGeometryAngle, multiplication) {
     Angle ang_pi(IGN_PI);
     ASSERT_DOUBLE_EQ(ang_pi.getRadian(), IGN_PI);
 
@@ -141,7 +141,7 @@ TEST(HuberoGeometryAngle, multiplication) {
     ASSERT_DOUBLE_EQ(ang_multi_pi.normalized().getRadian(), ang_multi_pi_cctor.normalized().getRadian());
 }
 
-TEST(HuberoGeometryAngle, division) {
+TEST(HumapGeometryAngle, division) {
     Angle ang_pi(IGN_PI);
     ASSERT_DOUBLE_EQ(ang_pi.getRadian(), IGN_PI);
 
@@ -154,7 +154,7 @@ TEST(HuberoGeometryAngle, division) {
     ASSERT_DOUBLE_EQ(ang_multi_pi.normalized().getRadian(), ang_multi_pi_cctor.normalized().getRadian());
 }
 
-TEST(HuberoGeometryAngle, comparison) {
+TEST(HumapGeometryAngle, comparison) {
     ASSERT_TRUE(Angle(IGN_PI_2) > Angle(IGN_PI_4));
     ASSERT_TRUE(Angle(IGN_PI_2) >= Angle(IGN_PI_4));
     ASSERT_TRUE(Angle(IGN_PI_2) != Angle(IGN_PI_4));
@@ -163,7 +163,7 @@ TEST(HuberoGeometryAngle, comparison) {
     ASSERT_TRUE(Angle(-IGN_PI_2) <= Angle(IGN_PI_4));
 }
 
-TEST(HuberoGeometryAngle, setter) {
+TEST(HumapGeometryAngle, setter) {
     Angle a1;
     ASSERT_DOUBLE_EQ(a1.getRadian(), 0.0);
     a1.setRadian(IGN_PI);

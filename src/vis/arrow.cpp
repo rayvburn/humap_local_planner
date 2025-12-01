@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/arrow.h>
+#include <humap_local_planner/vis/arrow.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 Arrow::Arrow(): max_length_(1.0f), sfm_max_force_(2000.0) {}
@@ -34,6 +34,7 @@ visualization_msgs::Marker Arrow::create(const Vector& pos, const Vector& vector
 	marker.ns = namespace_;
 	marker.type = visualization_msgs::Marker::ARROW;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	// assign marker coordinates according to current point that is pointed by grid index
 	marker.pose.position.x = pos.getX();
@@ -73,4 +74,4 @@ Arrow::~Arrow() {
 // ------------------------------------------------------------------- //
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

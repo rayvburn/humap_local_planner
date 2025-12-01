@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include "gtest_cout.h"
-#include <hubero_local_planner/sfm/social_force_model.h>
+#include <humap_local_planner/sfm/social_force_model.h>
 
-using namespace hubero_local_planner;
-using namespace hubero_local_planner::geometry;
+using namespace humap_local_planner;
+using namespace humap_local_planner::geometry;
 
 // provide access to protected methods
 class SfmExposed: public sfm::SocialForceModel {
@@ -161,7 +161,7 @@ TEST(SocialForceModel, computePerpendicularToNormal) {
     // PARAMETER_DESCRIPTION_2014 -> perpendicular to normal, pointing to the direction opposite to `rel_loc`
     // PARAMETER_DESCRIPTION_2011 -> perpendicular to normal, pointing to the direction complaint with `rel_loc`
     Vector n_a1(1.0, 0.0, 0.0);
-    RelativeLocation rel_loc1 = hubero_local_planner::LOCATION_RIGHT;
+    RelativeLocation rel_loc1 = humap_local_planner::LOCATION_RIGHT;
 
     sfm::ParameterDescription param_desc_1a = sfm::PARAMETER_DESCRIPTION_2014;
     Vector p_a1a = SfmExposed::computePerpendicularToNormal(n_a1, rel_loc1, param_desc_1a);
@@ -179,7 +179,7 @@ TEST(SocialForceModel, computePerpendicularToNormal) {
 
 
     Vector n_a2(Angle(-IGN_PI_4));
-    RelativeLocation rel_loc2 = hubero_local_planner::LOCATION_LEFT;
+    RelativeLocation rel_loc2 = humap_local_planner::LOCATION_LEFT;
 
     sfm::ParameterDescription param_desc_2a = sfm::PARAMETER_DESCRIPTION_2014;
     Vector p_a2a = SfmExposed::computePerpendicularToNormal(n_a2, rel_loc2, param_desc_2a);

@@ -5,9 +5,10 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/world.h>
+#include <humap_local_planner/world.h>
+#include <humap_local_planner/utils/transformations.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 
 World::World(
 		const geometry::Pose& robot_pose_centroid,
@@ -18,7 +19,15 @@ World::World(
 ) {
 	robot_.centroid = robot_pose_centroid;
 	robot_.vel = robot_vel;
-	robot_.heading_dir = robot_vel.calculateDirection();
+
+	// to determine heading direction, use raw orientation or rely on velocity vector (if it's significant)
+	auto robot_vel_xy = geometry::Vector(robot_vel.getX(), robot_vel.getY(), 0.0);
+	robot_.speed = robot_vel_xy.calculateLength();
+	if (robot_.speed <= World::SPEED_THRESHOLD_STATIONARY_ROBOT) {
+		robot_.heading_dir = geometry::Angle(robot_.centroid.getYaw());
+	} else {
+		robot_.heading_dir = robot_vel_xy.calculateDirection();
+	}
 
 	robot_.target = createTarget(robot_pose, target_pose);
 	robot_.goal = createTarget(robot_pose, goal_pose);
@@ -37,7 +46,7 @@ void World::addObstacle(
 		const geometry::Vector& obstacle_vel,
 		bool force_dynamic_type
 ) {
-	if (force_dynamic_type || obstacle_vel.calculateLength() > 1e-06) {
+	if (force_dynamic_type || obstacle_vel.calculateLength() > World::SPEED_THRESHOLD_STATIONARY_OBJECT) {
 		obstacle_dynamic_.push_back(
 			createObstacleDynamic(
 				robot_pose_closest,
@@ -74,6 +83,53 @@ void World::addObstacles(
 	}
 }
 
+void World::predict(const geometry::Vector& robot_vel, const double& sim_period) {
+	auto robot_centroid_new = computeNextPose(robot_.centroid, robot_vel, sim_period);
+	// NOTE: for unknown reason, result of poses difference using ignition library ignored Y-dimension difference
+	auto robot_centroid_diff = subtractPoses(robot_centroid_new, robot_.centroid);
+	auto robot_pose_new = addPoses(robot_.target.robot, robot_centroid_diff);
+
+	auto world_prediction = World(
+		robot_centroid_new,
+		robot_pose_new,
+		robot_vel,
+		robot_.target.object,
+		robot_.goal.object
+	);
+
+	// only dynamic obstacles will change their poses - static ones do not need to be changed
+	for (auto& obstacle: obstacle_dynamic_) {
+		auto robot_new_pose = addPoses(obstacle.robot, robot_centroid_diff);
+		geometry::Pose obstacle_new_pose = computeNextPose(obstacle.object, obstacle.vel, sim_period);
+		world_prediction.addObstacle(robot_new_pose, obstacle_new_pose, obstacle.vel);
+	}
+
+	for (auto& obstacle: obstacle_static_) {
+		auto robot_new_pose = addPoses(obstacle.robot, robot_centroid_diff);
+		world_prediction.addObstacle(robot_new_pose, obstacle.object, geometry::Vector(0.0, 0.0, 0.0));
+	}
+
+	// override this world instance
+	*this = world_prediction;
+}
+
+std::vector<World> World::predict(const Trajectory& robot_traj) const {
+	std::vector<World> world_predictions;
+	// save current as initial state
+	world_predictions.push_back(*this);
+
+	// first velocity moves each object from initial pose (p0, saved above) to the next pose (p1, computed in the first
+	// iteration) and so on
+	for (const auto& vel: robot_traj.getVelocities()) {
+		// copy that since World::predict modifies the object
+		auto world = world_predictions.back();
+
+		world.predict(vel, robot_traj.getTimeDelta());
+		world_predictions.push_back(world);
+	}
+	return world_predictions;
+}
+
 StaticObject World::createObstacleStatic(
 		const geometry::Pose& robot_pose_closest,
 		const geometry::Pose& obstacle_pose_closest
@@ -94,6 +150,8 @@ Target World::createTarget(const geometry::Pose& robot_pose, const geometry::Pos
 	target.robot = robot_pose;
 	target.object = target_pose;
 	target.dist_v = geometry::Vector(target_pose.getRawPosition() - robot_pose.getRawPosition());
+	// assume planar poses
+	target.dist_v.setZ(0.0);
 	target.dist = target.dist_v.calculateLength();
 	return target;
 }
@@ -119,10 +177,14 @@ DynamicObject World::createObstacleDynamic(
 	computeObjectRelativeLocation(robot_yaw, obstacle.dist_v, beta_rel_location, beta_angle_rel, d_alpha_beta_angle);
 
 	obstacle.vel = obstacle_vel;
-	obstacle.dir_beta = obstacle_vel.calculateDirection();
+	auto obstacle_vel_xy = geometry::Vector(obstacle_vel.getX(), obstacle_vel.getY(), 0.0);
+	obstacle.speed = obstacle_vel_xy.calculateLength();
+
+	// normalize angles (default value of the second argument to Angle ctor)
+	obstacle.dir_beta = geometry::Angle(obstacle_vel.calculateDirection().getRadian());
 	obstacle.rel_loc = beta_rel_location;
-	obstacle.rel_loc_angle = beta_angle_rel;
-	obstacle.dist_angle = d_alpha_beta_angle;
+	obstacle.rel_loc_angle = geometry::Angle(beta_angle_rel.getRadian());
+	obstacle.dist_angle = geometry::Angle(d_alpha_beta_angle.getRadian());
 
 	return obstacle;
 }
@@ -166,4 +228,4 @@ void World::computeObjectRelativeLocation(
 	d_alpha_beta_angle = angle_d_alpha_beta;
 }
 
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

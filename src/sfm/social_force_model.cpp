@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/sfm/social_force_model.h>
+#include <humap_local_planner/sfm/social_force_model.h>
 
 // additional headers
 #include <cmath>			// atan2()
@@ -13,19 +13,22 @@
 #include <math.h>			// exp()
 #include <algorithm>    	// std::find
 #include <random>           // std::normal_distribution
+#include <stdexcept>
+
+#include <social_nav_utils/gaussians.h>
 
 // ----------------------------------------
 
 // debugging
 static bool print_info = false;
 // FIXME:
-#include <hubero_local_planner/sfm/sfm_debug.h>
+#include <humap_local_planner/sfm/sfm_debug.h>
 
 // #define SFM_DEBUG_LARGE_VECTOR_LENGTH
 // #define SFM_FUZZY_PROC_INDICATORS
 // #define SFM_PRINT_FORCE_RESULTS
 
-#include <hubero_local_planner/utils/debug.h>
+#include <humap_local_planner/utils/debug.h>
 
 #define DEBUG_BASIC 0
 #define DEBUG_WARN 1
@@ -39,7 +42,7 @@ static bool print_info = false;
 
 // ----------------------------------------
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace sfm {
 
 // ------------------------------------------------------------------- //
@@ -57,8 +60,73 @@ namespace sfm {
 SocialForceModel::SocialForceModel():
 	param_description_(PARAMETER_DESCRIPTION_2014),
 	cfg_(nullptr)
-{
+{}
+
+void SocialForceModel::init(std::shared_ptr<const humap_local_planner::SfmParams> cfg) {
+	cfg_ = cfg;
+	if (cfg_ == nullptr) {
+		throw std::runtime_error("Given nullptr to SFM instead of a valid configuration parameter struct");
+	}
 	setParameters();
+}
+
+void SocialForceModel::setEquationParameters(
+	double an,
+	double bn,
+	double cn,
+	double ap,
+	double bp,
+	double cp,
+	double aw,
+	double bw
+) {
+	An_ = an;
+	Bn_ = bn;
+	Cn_ = cn;
+	Ap_ = ap;
+	Bp_ = bp;
+	Cp_ = cp;
+	Aw_ = aw;
+	Bw_ = bw;
+}
+
+void SocialForceModel::setEquationParameters(
+	double an,
+	double bn,
+	double cn,
+	double ap,
+	double bp,
+	double cp,
+	double aw,
+	double bw,
+	double speed_desired
+) {
+	setEquationParameters(an, bn, cn, ap, bp, cp, aw, bw);
+	speed_desired_ = speed_desired;
+}
+
+void SocialForceModel::setEquationParameters(
+	double an,
+	double bn,
+	double cn,
+	double ap,
+	double bp,
+	double cp,
+	double aw,
+	double bw,
+	double speed_desired,
+	double relaxation_time
+) {
+	setEquationParameters(an, bn, cn, ap, bp, cp, aw, bw, speed_desired);
+	relaxation_time_ = relaxation_time;
+}
+
+bool SocialForceModel::areInteractionForcesDisabled() const {
+	// enabled by default
+	if (cfg_ == nullptr) {
+		return false;
+	}
+	return cfg_->disable_interaction_forces;
 }
 
 // ------------------------------------------------------------------- //
@@ -83,8 +151,10 @@ bool SocialForceModel::computeSocialForce(
 	if (cfg_->disable_interaction_forces) {
 		// multiply force vector components by parameter values
 		factorInForceCoefficients();
-		// artificially set obstacle distances to be very very big (in meters)
-		applyNonlinearOperations(100.0, 100.0);
+		if (cfg_->filter_forces) {
+			// artificially set obstacle distances to be very very big (in meters)
+			applyNonlinearOperations(100.0, 100.0);
+		}
 		return false;
 	}
 
@@ -101,7 +171,7 @@ bool SocialForceModel::computeSocialForce(
 	// investigate STATIC objects of the environment
 	for (const StaticObject& object: objects_static) {
 		f_alpha_beta = computeInteractionForce(robot, object, dt);
-		force_interaction_ += f_alpha_beta;
+		force_interaction_static_ += f_alpha_beta;
 		if (f_alpha_beta.calculateLength() >= 1e-06) {
 			meaningful_static.push_back(Distance {.robot = object.robot, .object = object.object});
 		}
@@ -110,7 +180,7 @@ bool SocialForceModel::computeSocialForce(
 	// investigate DYNAMIC objects of the environment
 	for (const DynamicObject& object: objects_dynamic) {
 		f_alpha_beta = computeInteractionForce(robot, object);
-		force_interaction_ += f_alpha_beta;
+		force_interaction_dynamic_ += f_alpha_beta;
 		if (f_alpha_beta.calculateLength() >= 1e-06) {
 			meaningful_dynamic.push_back(Distance {.robot = object.robot, .object = object.object});
 		}
@@ -122,64 +192,114 @@ bool SocialForceModel::computeSocialForce(
 	// -----------------------------------------------------------------------------------------
 	// multiply force vector components by parameter values
 	factorInForceCoefficients();
-	debug_print_basic("\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.getX(), force_internal_.getY(), force_internal_.getZ());
-	debug_print_basic("\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.getX(), force_interaction_.getY(), force_interaction_.getZ());
 
-	// extend or truncate force vectors if needed
-	applyNonlinearOperations(world.getDistanceClosestStaticObject(), world.getDistanceClosestDynamicObject());
-	debug_print_basic("\t\t force_internal_: %2.3f, %2.3f, %2.3f\r\n", force_internal_.getX(), force_internal_.getY(), force_internal_.getZ());
-	debug_print_basic("\t\t force_interaction_: %2.3f, %2.3f, %2.3f\r\n", force_interaction_.getX(), force_interaction_.getY(), force_interaction_.getZ());
+	if (cfg_->filter_forces) {
+		// extend or truncate force vectors if needed
+		applyNonlinearOperations(world.getDistanceClosestStaticObject(), world.getDistanceClosestDynamicObject());
+	}
 
 	return true;
 }
 
 // ------------------------------------------------------------------- //
 
+// static
+double SocialForceModel::computeFactorFOV(double angle_relative, double fov, bool gaussian) {
+	if (!gaussian) {
+		double fov_half = fov / 2.0;
+		// outside FOV - linear decrease, minimum of 0.0
+		if (angle_relative < -fov_half) {
+			return (IGN_PI + angle_relative) / (IGN_PI - fov_half);
+		} else if (angle_relative > fov_half) {
+			return (IGN_PI - angle_relative) / (IGN_PI - fov_half);
+		}
+		// within FOV - perfectly OK
+		return 1.0;
+	}
+
+	// 2 sigma rule applied
+	double fov_variance = std::pow(fov / 2.0, 2.0);
+	// 0.0 - axis of sight in the center of the span of FOV angles
+	return social_nav_utils::calculateGaussianAngle(angle_relative, 0.0, fov_variance);
+}
+
 // **********************************************************************
 // **********************************************************************
 // PROTECTED SECTION*****************************************************
 //					*****************************************************
 void SocialForceModel::setParameters() {
+	/*
+	* `heterogenous_population` set to true will produce slightly different parameters in each system launch.
+	* This will cause robot to move in a slightly different way each time.
+	*/
+	if (cfg_->heterogenous_population) {
+		// random number generator
+		std::default_random_engine rand_gen;
 
-	/* Invoking this function to each actor will create a population in which there are
-	 * everyone moving in a slightly other way */
+		// desired speed (based on (Moussaid et al. (2009))
+		std::normal_distribution<float> dist_spd_desired(cfg_->speed_desired, cfg_->speed_desired_stddev);
+		speed_desired_ = dist_spd_desired(rand_gen);
 
-	std::default_random_engine rand_gen;	// random number generator
+		// relaxation time (based on (Moussaid et al. (2009))
+		std::normal_distribution<float> dist_tau(cfg_->relaxation_time, cfg_->relaxation_time_stddev);
+		relaxation_time_ = dist_tau(rand_gen);
 
-	// desired speed (based on (Moussaid et al. (2009))
-	std::normal_distribution<float> dist_spd_desired(1.29F, 0.19F);
-	speed_desired_ = dist_spd_desired(rand_gen);
+		// ----------------------------- Model C ------------------------------------------------------ //
+		// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
+		// Generate random value of mean a and standard deviation b
+		std::normal_distribution<float> dist_an(cfg_->an, cfg_->an_stddev);
+		An_ = dist_an(rand_gen);
+		std::normal_distribution<float> dist_bn(cfg_->bn, cfg_->bn_stddev);
+		Bn_ = dist_bn(rand_gen);
+		std::normal_distribution<float> dist_cn(cfg_->cn, cfg_->cn_stddev);
+		Cn_ = dist_cn(rand_gen);
+		std::normal_distribution<float> dist_ap(cfg_->ap, cfg_->ap_stddev);
+		Ap_ = dist_ap(rand_gen);
+		std::normal_distribution<float> dist_bp(cfg_->bp, cfg_->bp_stddev);
+		Bp_ = dist_bp(rand_gen);
+		std::normal_distribution<float> dist_cp(cfg_->cp, cfg_->cp_stddev);
+		Cp_ = dist_cp(rand_gen);
+		std::normal_distribution<float> dist_aw(cfg_->aw, cfg_->aw_stddev);
+		Aw_ = dist_aw(rand_gen);
+		std::normal_distribution<float> dist_bw(cfg_->bw, cfg_->bw_stddev);
+		Bw_ = dist_bw(rand_gen);
+		printf(
+			"SFM parameters computed in a non-deterministic way. Values are as follows:\r\n"
+			"\tspeed_desired %2.5f\r\n"
+			"\trelaxation_time %2.5f\r\n"
+			"\tAn %2.5f\r\n"
+			"\tBn %2.5f\r\n"
+			"\tCn %2.5f\r\n"
+			"\tAp %2.5f\r\n"
+			"\tBp %2.5f\r\n"
+			"\tCp %2.5f\r\n"
+			"\tAw %2.5f\r\n"
+			"\tBw %2.5f\r\n",
+			speed_desired_,
+			relaxation_time_,
+			An_,
+			Bn_,
+			Cn_,
+			Ap_,
+			Bp_,
+			Cp_,
+			Aw_,
+			Bw_
+		);
+		return;
+	}
 
-	// relaxation time (based on (Moussaid et al. (2009))
-	std::normal_distribution<float> dist_tau(0.54F, 0.05F);
-	relaxation_time_ = dist_tau(rand_gen);
-
-	// ----------------------------- Model C ------------------------------------------------------ //
-	// Rudloff et al. (2011) model's parameters based on  S. Seer et al. (2014)
-	// Generate random value of mean a and standard deviation b
-	std::normal_distribution<float> dist_an(0.2615F, 0.0551F);		An_ = dist_an(rand_gen);
-	std::normal_distribution<float> dist_bn(0.4026F, 0.1238F);		Bn_ = dist_bn(rand_gen);
-	std::normal_distribution<float> dist_cn(2.1614F, 0.3728F);		Cn_ = dist_cn(rand_gen);
-	std::normal_distribution<float> dist_ap(1.5375F, 0.3084F);		Ap_ = dist_ap(rand_gen);
-	std::normal_distribution<float> dist_bp(0.4938F, 0.1041F);		Bp_ = dist_bp(rand_gen);
-	std::normal_distribution<float> dist_cp(0.5710F, 0.1409F);		Cp_ = dist_cp(rand_gen);
-	std::normal_distribution<float> dist_aw(0.3280F, 0.1481F);		Aw_ = dist_aw(rand_gen);
-	std::normal_distribution<float> dist_bw(0.1871F, 0.0563F);		Bw_ = dist_bw(rand_gen);
-
-#ifdef DEBUG_SFM_PARAMETERS
-	std::cout << "\t speed_desired: " << speed_desired_ << std::endl;
-	std::cout << "\t relaxation_time: " << relaxation_time_ << std::endl;
-	std::cout << "\t An: " << An_ << std::endl;
-	std::cout << "\t Bn: " << Bn_ << std::endl;
-	std::cout << "\t Cn: " << Cn_ << std::endl;
-	std::cout << "\t Ap: " << Ap_ << std::endl;
-	std::cout << "\t Bp: " << Bp_ << std::endl;
-	std::cout << "\t Cp: " << Cp_ << std::endl;
-	std::cout << "\t Aw: " << Aw_ << std::endl;
-	std::cout << "\t Bw: " << Bw_ << std::endl;
-	std::cout << std::endl;
-#endif
-
+	// homogenous (deterministic) mode selected
+	speed_desired_ = cfg_->speed_desired;
+	relaxation_time_ = cfg_->relaxation_time;
+	An_ = cfg_->an;
+	Bn_ = cfg_->bn;
+	Cn_ = cfg_->cn;
+	Ap_ = cfg_->ap;
+	Bp_ = cfg_->bp;
+	Cp_ = cfg_->cp;
+	Aw_ = cfg_->aw;
+	Bw_ = cfg_->bw;
 }
 
 // ------------------------------------------------------------------- //
@@ -237,20 +357,7 @@ Vector SocialForceModel::computeInteractionForce(
 
 	/* FOV factor is used to make interaction of objects
 	 * that are behind the actor weaker */
-	double fov_factor = 1.00;
-
-	/* check whether beta is within the field of view
-	 * to determine proper factor for force in case
-	 * beta is behind alpha */
-	if (isOutOfFOV(object.rel_loc_angle)) {
-		// exp function used: e^(-0.5*x)
-		fov_factor = std::exp(-0.5 * object.dist);
-		debug_print_verbose(
-				"dynamic obstacle out of FOV, distance: %2.3f, FOV factor: %2.3f \r\n",
-				object.dist,
-				fov_factor
-		);
-	}
+	double fov_factor = computeFactorFOV(object.rel_loc_angle);
 
 	double v_rel = computeRelativeSpeed(robot.vel, object.vel);
 	if (std::abs(v_rel) < 1e-06) {
@@ -285,21 +392,16 @@ Vector SocialForceModel::computeInteractionForce(
 	// actor's perpendicular (based on velocity vector)
 	Vector p_alpha = computePerpendicularToNormal(n_alpha, object.rel_loc);
 
-	// original
-//	double exp_normal = ( (-Bn_ * theta_alpha_beta * theta_alpha_beta) / v_rel ) - Cn_ * d_alpha_beta_length;
-//	double exp_perpendicular = ( (-Bp_ * std::fabs(theta_alpha_beta) ) / v_rel ) - Cp_ * d_alpha_beta_length;
-	// modded
 	double th_ab_angle = theta_alpha_beta.getRadian();
-	double exp_normal = ( (-Bn_ * th_ab_angle * th_ab_angle) / (2.0 * v_rel) ) - 0.5 * Cn_ * object.dist;
-	double exp_perpendicular = ( (-0.1 * Bp_ * std::abs(th_ab_angle) ) / v_rel ) - 0.5 * Cp_ * object.dist;
+	double exp_normal = ((-Bn_ * th_ab_angle * th_ab_angle) / v_rel) - Cn_ * object.dist;
+	double exp_perpendicular = ((-Bp_ * std::abs(th_ab_angle)) / v_rel) - Cp_ * object.dist;
 
-	// `fov_factor`: weaken the interaction force when beta is behind alpha
-	// original
-//	Vector n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal) * fov_factor;
-//	Vector p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular) * fov_factor;
-	// modded
-	Vector n_alpha_scaled = n_alpha * (-4.0) * An_ * std::exp(exp_normal) * fov_factor;
-	Vector p_alpha_scaled = p_alpha * (+2.0) * Ap_ * std::exp(exp_perpendicular) * fov_factor;
+	Vector n_alpha_scaled = n_alpha * An_ * std::exp(exp_normal);
+	Vector p_alpha_scaled = p_alpha * Ap_ * std::exp(exp_perpendicular);
+
+	// `fov_factor`: weakens the interaction force when beta is behind alpha
+	n_alpha_scaled *= fov_factor;
+	p_alpha_scaled *= fov_factor;
 
 	// -----------------------------------------------------
 	// debugging large vector length ----------------
@@ -316,25 +418,17 @@ Vector SocialForceModel::computeInteractionForce(
 			fov_factor
 	);
 	debug_print_verbose("\t NORMAL: %2.3f  %2.3f, PERP: %2.3f  %2.3f \r\n",
-			cfg_->interaction_force_factor * n_alpha_scaled.getX(),
-			cfg_->interaction_force_factor * n_alpha_scaled.getY(),
-			cfg_->interaction_force_factor * p_alpha_scaled.getX(),
-			cfg_->interaction_force_factor * p_alpha_scaled.getY()
+			cfg_->dynamic_interaction_force_factor * n_alpha_scaled.getX(),
+			cfg_->dynamic_interaction_force_factor * n_alpha_scaled.getY(),
+			cfg_->dynamic_interaction_force_factor * p_alpha_scaled.getX(),
+			cfg_->dynamic_interaction_force_factor * p_alpha_scaled.getY()
 	);
 	debug_print_verbose("\t total: %2.3f  %2.3f \r\n",
-			cfg_->interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getX(),
-			cfg_->interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getY()
+			cfg_->dynamic_interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getX(),
+			cfg_->dynamic_interaction_force_factor * (n_alpha_scaled + p_alpha_scaled).getY()
 	);
 	debug_print_verbose("----\r\n");
 	// -----------------------------------------------------
-
-	// factor - applicable only for dynamic objects
-	// interaction strength exponentially decreases as distance between objects becomes bigger;
-	// it is also artificially strengthened when distance is small
-	double factor = 4.0 * std::exp(-2.0 * object.dist);
-	n_alpha_scaled *= factor;
-	p_alpha_scaled *= factor;
-
 	// save interaction force vector
 	f_alpha_beta = n_alpha_scaled + p_alpha_scaled;
 
@@ -355,8 +449,12 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 	Vector y_alpha_i = robot.vel * dt;
 	y_alpha_i.setZ(0.00); // planar (this could be ommitted)
 
+	// helper to avoid duplicate operations
+	auto dy_alpha_i = d_alpha_i - y_alpha_i;
+	auto dy_alpha_i_len = dy_alpha_i.calculateLength();
+
 	// semi-minor axis of the elliptic formulation
-	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i_len + (d_alpha_i - y_alpha_i).calculateLength()),2) -
+	double w_alpha_i = 0.5 * sqrt( std::pow((d_alpha_i_len + dy_alpha_i_len), 2) -
 								   std::pow(y_alpha_i.calculateLength(), 2) );
 
 	// division by ~0 prevention - returning zeros vector instead of NaNs
@@ -383,12 +481,17 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 
 	// ~force (acceleration) calculation
 	Vector f_alpha_i;
-	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + (d_alpha_i - y_alpha_i).calculateLength()) /
-			    2*w_alpha_i) * 0.5 * (d_alpha_i.normalized() + (d_alpha_i - y_alpha_i).normalized());
+	f_alpha_i = Aw_ * exp(-w_alpha_i/Bw_) * ((d_alpha_i_len + dy_alpha_i_len) /
+			    2*w_alpha_i) * 0.5 * (d_alpha_i.normalized() + (dy_alpha_i).normalized());
 
-	// setting the `strength` (numerator) too high produces noticeable accelerations around objects
-	double factor = 90.0/(std::exp(0.5 * d_alpha_i_len));
-	f_alpha_i *= factor;
+	/*
+	 * Check whether beta is within the field of view to determine a proper factor for force in case
+	 * "beta" is behind "alpha"
+	 */
+	geometry::Angle angle_relative(object.dist_v.calculateDirection().getRadian() - robot.heading_dir.getRadian());
+	double fov_factor = computeFactorFOV(angle_relative);
+
+	f_alpha_i *= fov_factor;
 
 	debug_print_verbose("----static obstacle interaction \r\n");
 	debug_print_verbose("\t d_alpha_i: %2.3f %2.3f, len: %2.3f \r\n",
@@ -402,8 +505,8 @@ Vector SocialForceModel::computeInteractionForce(const Robot& robot, const Stati
 			w_alpha_i
 	);
 	debug_print_verbose("\t f_alpha_i (multiplied): %2.3f %2.3f \r\n",
-			cfg_->interaction_force_factor * f_alpha_i.getX(),
-			cfg_->interaction_force_factor * f_alpha_i.getY()
+			cfg_->static_interaction_force_factor * f_alpha_i.getX(),
+			cfg_->static_interaction_force_factor * f_alpha_i.getY()
 	);
 	debug_print_verbose("---- \r\n");
 
@@ -618,6 +721,17 @@ inline bool SocialForceModel::isOutOfFOV(const Angle& angle_relative) {
 
 // ------------------------------------------------------------------- //
 
+double SocialForceModel::computeFactorFOV(const Angle& angle_relative) {
+	// full FOV is passed to the static method
+	return SocialForceModel::computeFactorFOV(
+		angle_relative.getRadian(),
+		2.0 * cfg_->fov,
+		cfg_->fov_factor_method == sfm::FovCalculationMethod::GAUSSIAN
+	);
+}
+
+// ------------------------------------------------------------------- //
+
 double SocialForceModel::computeRelativeSpeed(const Vector& actor_vel, const Vector& object_vel) {
 	Vector actor_vel_no_angular = actor_vel;
 	actor_vel_no_angular.setZ(0.0);
@@ -630,10 +744,10 @@ double SocialForceModel::computeRelativeSpeed(const Vector& actor_vel, const Vec
 
 void SocialForceModel::factorInForceCoefficients() {
 
-	force_internal_ 	*= cfg_->internal_force_factor; //factor_force_internal_;
-	force_interaction_ 	*= cfg_->interaction_force_factor; //factor_force_interaction_;
-//	force_social_ 		*= factor_force_social_;
-	force_combined_ 	 = force_internal_ + force_interaction_;// + force_social_;
+	force_internal_ *= cfg_->internal_force_factor;
+	force_interaction_static_ *= cfg_->static_interaction_force_factor;
+	force_interaction_dynamic_ *= cfg_->dynamic_interaction_force_factor;
+	computeCombinedForce();
 
 }
 
@@ -647,22 +761,10 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 	// truncate the force value to max to prevent strange speedup of an actor
 	double force_combined_magnitude_init = force_combined_.calculateLength();
 
-	// TODO: additional factor which weakens internal component when there is
-	// an obstacle close to the actor
-	// FIXME: experimental
-	double internal_weakening_factor = std::exp(0.75 * dist_closest) - 1.0;
-	if ( internal_weakening_factor > 1.0 ) {
-		internal_weakening_factor = 1.0;
-	}
-	force_internal_ *= internal_weakening_factor;
-
 	// evaluate force magnitude
 	if (force_combined_magnitude_init >= cfg_->max_force) {
 
 		multiplyForces(cfg_->max_force / force_combined_magnitude_init);
-		if ( print_info ) {
-			std::cout << "\tTRUNCATED, factor: " << (cfg_->max_force / force_combined_magnitude_init);
-		}
 
 	} else if (force_combined_magnitude_init <= cfg_->min_force) {
 
@@ -752,11 +854,11 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 		// create an extension vector
 		Vector extension = extension_len * force_combined_.normalized();
 
-		// add the resulting vector to `force_interaction_`
-		force_interaction_ += extension;
+		// add the resulting vector to `force_interaction_dynamic_`
+		force_interaction_dynamic_ += extension;
 
 		// sum up
-		force_combined_ = force_internal_ + force_interaction_; // + force_social_;
+		computeCombinedForce();
 		sf_values_.update(force_combined_);
 
 		// make sure the average is a non-zero vector
@@ -782,11 +884,10 @@ void SocialForceModel::applyNonlinearOperations(const double &dist_closest_stati
 
 void SocialForceModel::multiplyForces(const double &coefficient) {
 
-	force_internal_ 	*= coefficient;
-	force_interaction_ 	*= coefficient;
-//	force_social_ 		*= coefficient;
-//	force_combined_ 	 = force_internal_ + force_interaction_ + force_social_;
-	force_combined_ 	 = force_internal_ + force_interaction_;
+	force_internal_ *= coefficient;
+	force_interaction_dynamic_ *= coefficient;
+	force_interaction_static_ *= coefficient;
+	computeCombinedForce();
 
 }
 
@@ -794,12 +895,16 @@ void SocialForceModel::multiplyForces(const double &coefficient) {
 
 void SocialForceModel::reset() {
 	force_internal_ = Vector();
-	force_interaction_ = Vector();
-//	force_social_ = Vector();
+	force_interaction_static_ = Vector();
+	force_interaction_dynamic_ = Vector();
 	force_combined_ = Vector();
+}
+
+void SocialForceModel::computeCombinedForce() {
+	force_combined_ = force_internal_ + force_interaction_dynamic_ + force_interaction_static_;
 }
 
 // ------------------------------------------------------------------- //
 
 } /* namespace sfm */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

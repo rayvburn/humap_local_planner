@@ -5,7 +5,7 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/sfm/sfm_debug.h>
+#include <humap_local_planner/sfm/sfm_debug.h>
 
 void SfmDebugSetCurrentActorName(const std::string &name) {
 	debug_current_actor_name = name;

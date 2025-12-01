@@ -1,8 +1,33 @@
-# hubero_local_planner
+# humap_local_planner
 
 A local planning module for A Framework to Simulate Human Behaviour in Robot Research
 
+## Planner behaviour
+
+Finite state machine of the planner is shown in the following diagram:
+
+```plantuml
+@startuml
+state "Initiate Movement" as init
+state "Move" as move
+state "Adjust Orientation" as adjust
+state "Stop" as stop
+
+[*] --> init
+init --> move : reached orientation \n of the first pose in a global plan \n (30 degrees tolerance)
+move --> adjust : \treached goal position
+adjust --> stop : \treached goal orientation
+stop --> init : received new \n goal pose
+@enduml
+```
+
 ## Prerequisites
+
+### `apt` packages
+
+```bash
+sudo apt install ros-$ROS_DISTRO-costmap-converter
+```
 
 ### `teb_local_planner`
 
@@ -20,7 +45,7 @@ git clone -b melodic-devel-robot-footprint-model-access-fix git@github.com:rayvb
 
 ### `fuzzylite`
 
-Additionally, `fuzzylite` library built from source is required to run `hubero_local_planner`. Follow these steps:
+Additionally, `fuzzylite` library built from source is required to run `humap_local_planner`. Follow these steps:
 
 ```bash
 cd ~/
@@ -30,3 +55,7 @@ git clone https://github.com/fuzzylite/fuzzylite.git
 ```
 
 The run `fuzzylite/build.sh` script as pointed in [library build instructions](https://github.com/fuzzylite/fuzzylite#unix-1).
+
+## Disclaimer
+
+This research code is provided with the intention of being helpful, but it comes with no guarantees; neither the implied warranty of merchantability nor fitness for any specific purpose is provided.

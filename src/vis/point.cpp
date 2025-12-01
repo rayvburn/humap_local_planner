@@ -5,9 +5,9 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/vis/point.h>
+#include <humap_local_planner/vis/point.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace vis {
 
 Point::Point():
@@ -30,6 +30,7 @@ visualization_msgs::Marker Point::create(const Vector& pos) const {
 	marker.ns = namespace_;
 	marker.type = visualization_msgs::Marker::POINTS;
 	marker.action = visualization_msgs::Marker::ADD;
+	marker.lifetime = ros::Duration(1.0);
 
 	marker.pose.orientation.w = 1.0;
 
@@ -51,4 +52,4 @@ visualization_msgs::Marker Point::create(const Vector& pos) const {
 }
 
 } /* namespace vis */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */

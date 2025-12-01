@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      // 1. Build the workspace with the Debug flag, e.g.:
+      //   catkin build -DCMAKE_BUILD_TYPE=Debug
+      // 2. Run the launch file with any navigation scenario
+      // 3. Attach the IDE to the move_base node (it will prompt for the superuser password)
+      //
+      // Further details: https://github.com/ms-iot/vscode-ros/blob/master/doc/debug-support.md
+      {
+        "name": "ROS: Attach Node",
+        "type": "ros",
+        "request": "attach",
+        "processId": "${action:pick}" // pick from the list `C++` -> `move_base`
+      }
+    ]
+}

@@ -5,12 +5,12 @@
  *      Author: rayvburn
  */
 
-#include <hubero_local_planner/sfm/inflator.h>
+#include <humap_local_planner/sfm/inflator.h>
 #include <algorithm> // std::min_element
 
-#include <hubero_local_planner/sfm/sfm_debug.h>
+#include <humap_local_planner/sfm/sfm_debug.h>
 
-namespace hubero_local_planner {
+namespace humap_local_planner {
 namespace sfm {
 
 // ------------------------------------------------------------------- //
@@ -731,4 +731,4 @@ Inflator::~Inflator() { }
 // ------------------------------------------------------------------- //
 
 } /* namespace sfm */
-} /* namespace hubero_local_planner */
+} /* namespace humap_local_planner */
